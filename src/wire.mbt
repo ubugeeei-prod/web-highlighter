@@ -246,8 +246,3 @@ pub fn analyze_handle_wire(source : String, handle : Int) -> String {
   }
   encode_analysis(analyze(language_registry[handle], source))
 }
-
-///|
-fn main {
-  // Browser consumers call the exported Wasm-GC functions.
-}
