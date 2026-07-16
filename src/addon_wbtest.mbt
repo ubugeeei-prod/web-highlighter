@@ -92,13 +92,23 @@ test "add-on validation rejects unreachable and ambiguous declarations" {
     "",
   )
   let errors = validate_addons([addon(languages=[malformed], themes=[])])
-  assert_true(errors.contains("language Bad id must be lowercase"))
-  assert_true(errors.contains("language Bad name must not be empty"))
-  assert_true(errors.contains("language Bad has an empty alias"))
-  assert_true(errors.contains("language Bad extension must be lowercase without a dot: .BAD"))
-  assert_true(errors.contains("language Bad signatures require non-empty text and positive weight"))
-  assert_true(errors.contains("language Bad declaration is not a keyword: missing"))
-  assert_true(errors.contains("language Bad line comments must put longer prefixes first"))
-  assert_true(errors.contains("language Bad has an empty block comment delimiter"))
-  assert_true(errors.contains("language Bad has an empty string delimiter"))
+  assert_eq(
+    errors,
+    [
+      "language Bad id must be lowercase",
+      "language Bad name must not be empty",
+      "language Bad has an empty alias",
+      "language Bad has an empty extension",
+      "language Bad has an empty filename",
+      "language Bad alias must be lowercase: Bad",
+      "language Bad alias must be lowercase: MixedCase",
+      "language Bad extension must be lowercase without a dot: .BAD",
+      "language Bad signatures require non-empty text and positive weight",
+      "language Bad declaration is not a keyword: missing",
+      "language Bad has an empty line comments",
+      "language Bad line comments must put longer prefixes first",
+      "language Bad has an empty block comment delimiter",
+      "language Bad has an empty string delimiter",
+    ],
+  )
 }
