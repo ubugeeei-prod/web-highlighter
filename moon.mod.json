@@ -1,0 +1,15 @@
+{
+  "name": "ubugeeei-prod/web_highlighter",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "https://github.com/ubugeeei-prod/web-highlighter",
+  "license": "MIT",
+  "keywords": [
+    "moonbit",
+    "syntax-highlighting",
+    "browser-extension",
+    "code-navigation"
+  ],
+  "description": "A tiny declarative syntax highlighter and code navigator for the web.",
+  "preferred-target": "js"
+}
