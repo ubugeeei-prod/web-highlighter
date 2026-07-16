@@ -172,6 +172,64 @@ pub fn theme_catalog_wire(
 }
 
 ///|
+/// Percent-encodes delimiters reserved by the theme catalog wire protocol.
+///
+/// Percent itself is encoded first conceptually, so the browser can recover
+/// the exact add-on value with one `decodeURIComponent` call.
+fn encode_theme_field(value : String) -> String {
+  let output = StringBuilder::new()
+  let mut start = 0
+  for index in 0..<value.length() {
+    let encoded = match value[index] {
+      '%' => "%25"
+      '\t' => "%09"
+      '\n' => "%0A"
+      '\r' => "%0D"
+      _ => continue
+    }
+    if index > start {
+      output.write_string(String::unsafe_substring(value, start~, end=index))
+    }
+    output.write_string(encoded)
+    start = index + 1
+  }
+  if start < value.length() {
+    output.write_string(
+      String::unsafe_substring(value, start~, end=value.length()),
+    )
+  }
+  output.to_string()
+}
+
+///|
+/// Lists every selectable theme in a compact, presentation-neutral protocol.
+///
+/// Each record is `T`, id, display name, and a dark-mode flag separated by
+/// tabs. Reserved delimiters use percent escapes so add-on metadata cannot
+/// create extra records. The popup only renders these MoonBit-owned values.
+pub fn theme_catalog_list_wire(catalog : Array[Theme]) -> String {
+  let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
+  let output = StringBuilder::new()
+  for theme_ in available {
+    output
+    ..write_string("T\t")
+    ..write_string(encode_theme_field(theme_.id))
+    ..write_char('\t')
+    ..write_string(encode_theme_field(theme_.name))
+    ..write_char('\t')
+    ..write_string(if theme_.dark { "1" } else { "0" })
+    .write_char('\n')
+  }
+  output.to_string()
+}
+
+///|
+/// Lists the built-in themes through the browser wire protocol.
+pub fn theme_list_wire() -> String {
+  theme_catalog_list_wire(builtin_themes())
+}
+
+///|
 /// Returns a compact CSS-variable plan selected from built-in themes.
 pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
   theme_catalog_wire(builtin_themes(), requested, prefers_dark)

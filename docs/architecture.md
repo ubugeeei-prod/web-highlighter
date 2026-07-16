@@ -10,7 +10,7 @@ Web Highlighter is an injected-language-support product, not an embeddable highl
 4. `src/scanner.mbt` performs one bounded lexical and symbol pass without constructing an AST.
 5. `src/theme.mbt` selects a declarative theme and emits semantic-role colors.
 6. `src/wire.mbt` defines the compact tab-delimited protocol in an importable core library.
-7. `cmd/analyzer` is the thin executable package that exports two Wasm-GC functions.
+7. `cmd/analyzer` is the thin executable package that exports three Wasm-GC functions.
 8. `extension/src/engine.ts` owns the Wasm instance in the extension origin.
 9. `extension/src/host.ts` discovers service DOM, renders spans, and implements hover/jump.
 
@@ -19,6 +19,7 @@ The only runtime calls crossing the Wasm boundary are:
 ```text
 analyze_request(source, language_hint, filename) -> language + spans + symbols
 theme_wire(requested_theme, prefers_dark)        -> semantic CSS variables
+themes_wire()                                    -> selectable theme metadata
 ```
 
 ## Core invariants
