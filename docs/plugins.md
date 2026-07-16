@@ -8,6 +8,8 @@ An add-on is a normal MoonBit package that imports `ubugeeei-prod/web_highlighte
 
 Catalog composition is explicit and deterministic. `addon_languages(...)` and `addon_themes(...)` retain built-ins first, then append contributions in package order. `analyze_catalog_request(...)` and `theme_catalog_wire(...)` accept those composed immutable catalogs.
 
+The bundled `addons/ush` package is the executable contract example: it imports only the public core API, owns the complete ush declaration and its tests, and is selected by the thin analyzer entrypoint. Removing its import and one `configured_addons` entry removes the language without changing the scanner.
+
 ## Language contract
 
 `language(...)` and its compact convenience constructor `make_language(...)` accept:
@@ -42,6 +44,7 @@ Inference requires a total score above one. Give unique syntax weight 3, charact
 - Include an extension and at least two independent signatures.
 - Put longer overlapping delimiters before shorter ones.
 - Test explicit hints, filename fallback, representative source, strings, comments, and at least one declaration/reference pair.
+- Assert that `validate_addons(...)` is empty so IDs and aliases cannot shadow another package.
 - Keep inference conservative; a false negative is preferable to recoloring unrelated content.
 - Run `vp run verify` and retain the 32 KiB combined Brotli budget.
 

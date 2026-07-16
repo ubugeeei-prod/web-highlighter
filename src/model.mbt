@@ -37,7 +37,7 @@ pub struct Token {
 
 ///|
 /// A symbol category used by same-file navigation and hover cards.
-pub enum SymbolKind {
+pub(all) enum SymbolKind {
   FunctionSymbol
   TypeSymbol
   ModuleSymbol

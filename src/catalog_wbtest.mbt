@@ -23,7 +23,7 @@ fn assert_builtin(
 ///|
 test "built-in ids and aliases are unique" {
   let catalog = builtin_languages()
-  assert_eq(catalog.length(), 16)
+  assert_eq(catalog.length(), 15)
   for index in 0..<catalog.length() {
     assert_true(catalog[index].aliases.length() > 0)
     assert_true(catalog[index].aliases[0] == catalog[index].id)
@@ -73,13 +73,6 @@ test "Vibe support" {
 test "tNix support" {
   assert_builtin(
     "tnix", "tnix", "flake.tnix", "let value: String = builtins.toString 1; in value",
-  )
-}
-
-///|
-test "ush support" {
-  assert_builtin(
-    "ush", "ush", "control_flow.ush", "fn greet(name: String) -> String { name }",
   )
 }
 
