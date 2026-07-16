@@ -11,6 +11,7 @@ const wasm = resolve(root, "_build/wasm-gc/release/build/src/src.wasm");
 const targets = ["chromium", "firefox", "safari"] as const;
 const automaticHosts = [
   "https://github.com/*",
+  "https://gitlab.com/*",
   "https://discord.com/*",
   "https://*.slack.com/*",
   "https://chatgpt.com/*",

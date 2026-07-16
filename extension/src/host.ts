@@ -105,6 +105,15 @@ export function discoverSurfaces(document: Document): Surface[] {
       if (surface) return [surface, ...genericSurfaces(document)];
     }
   }
+  if (document.location.pathname.includes("/-/blob/")) {
+    const lines = [
+      ...document.querySelectorAll<HTMLElement>(
+        'pre.code > code[data-testid="content"] + code > [id^="LC"].line',
+      ),
+    ];
+    const surface = makeSurface(lines, filenameOf(document));
+    if (surface) return [surface];
+  }
   return genericSurfaces(document);
 }
 
