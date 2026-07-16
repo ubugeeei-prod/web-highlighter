@@ -35,3 +35,11 @@ test "unknown theme names safely fall back" {
   assert_true(result.has_prefix("M\tadaptive\n"))
   assert_true(result.contains("C\tbackground\ttransparent\n"))
 }
+
+///|
+test "theme catalogs expose stable popup metadata" {
+  assert_eq(
+    theme_list_wire(),
+    "T\tadaptive\tAdaptive\t0\nT\tmidnight\tMidnight\t1\n",
+  )
+}

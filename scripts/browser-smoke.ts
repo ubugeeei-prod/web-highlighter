@@ -76,7 +76,16 @@ try {
   assert.equal(await page.locator('[data-testid="content"] > *').count(), 0);
   assert.equal(await page.locator("#L2").count(), 1);
   assert.equal(startupErrors.length, 0, startupErrors.join("\n"));
-  console.log("Chromium injected tNix tokens into a GitLab-shaped blob surface.");
+
+  const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
+  assert.deepEqual(await popup.locator("#theme option").allTextContents(), [
+    "Follow system",
+    "Adaptive",
+    "Midnight",
+  ]);
+  console.log("Chromium injected tNix tokens and loaded the MoonBit theme catalog.");
 } finally {
   await context?.close();
   server.closeAllConnections();

@@ -10,7 +10,7 @@ pkgtype(kind: "executable")
 options(
   link: {
     "wasm-gc": {
-      "exports": [ "analyze_request", "theme_wire" ],
+      "exports": [ "analyze_request", "theme_wire", "themes_wire" ],
       "use-js-builtin-string": true,
     },
   },

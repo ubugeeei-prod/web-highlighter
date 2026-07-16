@@ -59,9 +59,11 @@ test("the packaged Wasm-GC engine exports real injected support", async () => {
   );
   const exports = instance.exports as unknown as {
     analyze_request(source: string, hint: string, filename: string): string;
+    themes_wire(): string;
   };
   const result = exports.analyze_request("fn greet() {}\ngreet()", "ush", "example.ush");
   assert(result.startsWith("L\tush\n"));
   assert(result.includes("D\t3\t8\tfunction\t1\n"));
   assert(result.includes("R\t14\t19\tgreet\n"));
+  assert.equal(exports.themes_wire(), "T\tadaptive\tAdaptive\t0\nT\tmidnight\tMidnight\t1\n");
 });

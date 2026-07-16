@@ -172,6 +172,33 @@ pub fn theme_catalog_wire(
 }
 
 ///|
+/// Lists every selectable theme in a compact, presentation-neutral protocol.
+///
+/// Each record is `T`, id, display name, and a dark-mode flag separated by
+/// tabs. The browser popup only renders these MoonBit-owned declarations.
+pub fn theme_catalog_list_wire(catalog : Array[Theme]) -> String {
+  let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
+  let output = StringBuilder::new()
+  for theme_ in available {
+    output
+    ..write_string("T\t")
+    ..write_string(theme_.id)
+    ..write_char('\t')
+    ..write_string(theme_.name)
+    ..write_char('\t')
+    ..write_string(if theme_.dark { "1" } else { "0" })
+    .write_char('\n')
+  }
+  output.to_string()
+}
+
+///|
+/// Lists the built-in themes through the browser wire protocol.
+pub fn theme_list_wire() -> String {
+  theme_catalog_list_wire(builtin_themes())
+}
+
+///|
 /// Returns a compact CSS-variable plan selected from built-in themes.
 pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
   theme_catalog_wire(builtin_themes(), requested, prefers_dark)

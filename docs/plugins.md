@@ -36,7 +36,7 @@ Inference requires a total score above one. Give unique syntax weight 3, charact
 
 ## Theme contract
 
-`theme(...)` declares colors for stable semantic roles: foreground, background, selection, keyword, type, constant, string, number, comment, operator, function, variable, property, and punctuation. Theme selection and fallback run in MoonBit. The host only installs the resulting CSS variables.
+`theme(...)` declares colors for stable semantic roles: foreground, background, selection, keyword, type, constant, string, number, comment, operator, function, variable, property, and punctuation. Theme selection, fallback, and the popup catalog all come from the composed MoonBit values. The host only installs the resulting CSS variables.
 
 ## Quality checklist
 

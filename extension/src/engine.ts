@@ -1,10 +1,11 @@
 interface WasmAnalyzer {
   analyze_request(source: string, hint: string, filename: string): string;
   theme_wire(theme: string, dark: boolean): string;
+  themes_wire(): string;
 }
 
 interface EngineRequest {
-  kind: "analyze" | "theme";
+  kind: "analyze" | "theme" | "themes";
   source?: string;
   hint?: string;
   filename?: string;
@@ -64,11 +65,15 @@ function getAnalyzer(): Promise<WasmAnalyzer> {
 function validRequest(message: unknown): message is EngineRequest {
   if (typeof message !== "object" || message === null) return false;
   const kind = (message as { kind?: unknown }).kind;
-  return kind === "analyze" || kind === "theme";
+  return kind === "analyze" || kind === "theme" || kind === "themes";
 }
 
 async function handle(message: unknown): Promise<EngineResponse> {
   if (!validRequest(message)) return { ok: false, error: "invalid engine request" };
+  if (message.kind === "themes") {
+    const engine = await getAnalyzer();
+    return { ok: true, wire: engine.themes_wire() };
+  }
   if (message.kind === "theme") {
     if (typeof message.theme !== "string" || typeof message.dark !== "boolean")
       return { ok: false, error: "invalid theme request" };
