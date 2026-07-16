@@ -42,11 +42,16 @@ pub fn addon_themes(addons : Array[Addon]) -> Array[Theme] {
 }
 
 ///|
+/// Produces a readable owner name even when the invalid field is the ID itself.
 fn language_label(language : Language) -> String {
   if language.id == "" { "<empty>" } else { language.id }
 }
 
 ///|
+/// Reports empty strings without silently deleting author-provided entries.
+///
+/// Preserving source order keeps diagnostics deterministic and points authors
+/// back to the exact declarative table that needs repair.
 fn validate_nonempty_strings(
   owner : String,
   field : String,
@@ -82,6 +87,10 @@ fn validate_prefixes(
 }
 
 ///|
+/// Checks bounded-region declarations before the scanner consumes them.
+///
+/// Empty markers are unreachable, while a shorter opener placed first shadows
+/// every longer opener that shares its prefix.
 fn validate_delimiters(
   owner : String,
   field : String,
