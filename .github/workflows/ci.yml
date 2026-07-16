@@ -21,23 +21,30 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
-          cache: npm
+          persist-credentials: false
 
-      - name: Set up MoonBit
-        uses: hustcer/setup-moonbit@9199da0ab63ea0c0bab1dc15f03d76e17ed4f75f # v1.22
+      - name: Enforce conventional pull request title
+        if: github.event_name == 'pull_request'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9._/-]+\))?\!?:\ .+ ]]; then
+            echo "Pull request title must use Conventional Commits syntax." >&2
+            exit 1
+          fi
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Validate pinned environments
+        run: nix flake check --all-systems --no-build
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
 
       - name: Verify source, tests, distributions, and budgets
-        run: npm run verify
+        run: nix develop --command vp run verify
 
       - name: Upload unpacked extensions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
