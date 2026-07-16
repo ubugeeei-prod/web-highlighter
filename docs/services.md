@@ -5,6 +5,7 @@ The browser host produces the same internal surface shape for every service: sou
 | Service      | Discovery                                           | Language signal                                          | Rendering constraint                            |
 | ------------ | --------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
 | GitHub       | current blob line cells plus ordinary fenced blocks | filename first                                           | preserve each `#LC…` line cell and line anchor  |
+| GitLab       | visible blob lines beside its plain-source overlay  | filename first                                           | preserve `#LC…` lines and `#L…` anchors         |
 | Discord      | `pre > code`                                        | `language-*` class, then signatures                      | preserve message controls outside the code node |
 | Slack        | `pre > code` and language metadata                  | data attributes, then signatures                         | preserve message and thread containers          |
 | ChatGPT      | `pre > code` and language metadata                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome     |
@@ -20,6 +21,10 @@ GitHub currently renders visible blob text in line cells with `data-testid="code
 
 The selector set also contains older blob table and React line variants. DOM contract tests cover each supported shape, and live verification should be repeated when GitHub changes its file renderer.
 
+## GitLab blobs
+
+GitLab renders a transparent plain-source `code[data-testid="content"]` overlay followed by the visible `#LC…` line nodes. The adapter only patches those visible line nodes, leaving the overlay and separate `#L…` anchors intact. The same DOM signature also works on self-managed GitLab instances after the user grants that origin from the popup.
+
 ## Optional sites
 
-The manifest only grants automatic host access to the four supported services. The popup can request one explicit origin at a time for a generic site and inject both the content script and stylesheet. No global optional permission is activated without a user gesture.
+The manifest only grants automatic host access to the listed supported services. The popup can request one explicit origin at a time for a generic site and inject both the content script and stylesheet. No global optional permission is activated without a user gesture.

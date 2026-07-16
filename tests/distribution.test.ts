@@ -16,6 +16,7 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
     };
     assert.equal(manifest.manifest_version, 3);
     assert(manifest.content_scripts[0]?.matches.includes("https://github.com/*"));
+    assert(manifest.content_scripts[0]?.matches.includes("https://gitlab.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://discord.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://*.slack.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://chatgpt.com/*"));

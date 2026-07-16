@@ -1,6 +1,6 @@
 # Web Highlighter
 
-**Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, Discord, Slack, ChatGPT, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
+**Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
 
 When a service renders an `mbtx`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
 
@@ -15,7 +15,7 @@ The product is deliberately opinionated:
 ## What works
 
 - Manifest V3 builds for Chromium browsers, Firefox, and Safari Web Extensions.
-- GitHub blob lines with their native `LC…` nodes preserved, plus lexical hover and same-file jump-to-definition.
+- GitHub and GitLab blob lines with their native `LC…` nodes preserved, plus lexical hover and same-file jump-to-definition.
 - Discord, Slack, ChatGPT, and ordinary `pre > code` blocks, including fenced aliases.
 - Explicit aliases, filename extensions, special filenames, and conservative weighted inference when a service discards language metadata.
 - Declarative MoonBit language and theme add-ons without TextMate/tmLanguage repositories, regex callbacks, `eval`, or remote code.
@@ -67,7 +67,7 @@ vp run package   # verified browser ZIP archives and SHA256SUMS
 vp run verify    # MoonBit checks/tests + all checks above
 ```
 
-Load `dist/chromium`, `dist/firefox/manifest.json`, or convert `dist/safari` with `xcrun safari-web-extension-converter`. The four supported services receive automatic access. Any other origin is requested explicitly from the popup.
+Load `dist/chromium`, `dist/firefox/manifest.json`, or convert `dist/safari` with `xcrun safari-web-extension-converter`. The listed services receive automatic access. Any other origin is requested explicitly from the popup.
 
 ## A declarative language add-on
 

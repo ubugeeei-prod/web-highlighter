@@ -10,6 +10,7 @@ import { testWindow } from "./dom.ts";
 
 const analyzer: Analyzer = {
   analyze_request(source, hint, filename) {
+    if (filename.endsWith(".ipkg")) return "L\tidris\nT\t0\t7\tkeyword\n";
     if (hint !== "ush" && !filename.endsWith(".ush")) return "";
     const first = source.indexOf("greet");
     const second = source.lastIndexOf("greet");
@@ -56,6 +57,45 @@ test("GitHub lines remain intact while hover and jump metadata is injected", asy
     "true",
   );
   assert.equal(await host.highlight(), 0);
+});
+
+test("GitLab visible lines are injected without touching its source overlay", async () => {
+  const window = testWindow("https://gitlab.com/group/project/-/blob/main/demo.ipkg");
+  window.document.body.innerHTML = `
+    <a id="L1" data-line-number="1"></a>
+    <a id="L2" data-line-number="2"></a>
+    <pre class="code highlight gl-relative">
+      <code data-testid="content" class="line">package demo\nsourcedir = src</code>
+      <code class="gl-absolute gl-left-0">
+        <div id="LC1" class="line">package demo</div>
+        <div id="LC2" class="line">sourcedir = src</div>
+      </code>
+    </pre>`;
+
+  const surfaces = discoverSurfaces(window.document);
+  assert.equal(surfaces.length, 1);
+  assert.equal(surfaces[0]?.filename, "demo.ipkg");
+  assert.equal(surfaces[0]?.segments.length, 2);
+
+  const host = new BrowserHost(window.document, analyzer);
+  assert.equal(await host.highlight(), 1);
+  assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "package");
+  assert.equal(window.document.querySelector('[data-testid="content"]')?.childElementCount, 0);
+  assert(window.document.querySelector("#L2"));
+});
+
+test("GitLab waits for visible lines instead of treating its source overlay as code", async () => {
+  const window = testWindow("https://gitlab.com/group/project/-/blob/main/demo.ipkg");
+  window.document.body.innerHTML = `
+    <pre class="code highlight gl-relative">
+      <code data-testid="content" class="line">package demo</code>
+    </pre>`;
+  const overlay = window.document.querySelector<HTMLElement>('[data-testid="content"]')!;
+
+  assert.deepEqual(discoverSurfaces(window.document), []);
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 0);
+  assert.equal(overlay.textContent, "package demo");
+  assert.equal(overlay.childElementCount, 0);
 });
 
 test("Discord fences and theme changes use the same host", async () => {

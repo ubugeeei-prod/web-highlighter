@@ -5,8 +5,15 @@ import { join, resolve } from "node:path";
 import { chromium, type BrowserContext } from "playwright";
 
 const fixture = `<!doctype html>
-<html><body><pre><code class="language-tnix">let enabled = true;
-in if enabled then { status = "enabled"; }</code></pre></body></html>`;
+<html><body>
+<a id="L1" data-line-number="1"></a><a id="L2" data-line-number="2"></a>
+<pre class="code highlight gl-relative">
+  <code data-testid="content" class="line">let enabled = true;\nin if enabled then { status = "enabled"; }</code>
+  <code class="gl-absolute gl-left-0">
+    <div id="LC1" class="line">let enabled = true;</div>
+    <div id="LC2" class="line">in if enabled then { status = "enabled"; }</div>
+  </code>
+</pre></body></html>`;
 
 const server = createServer((_request, response) => {
   response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
@@ -44,7 +51,7 @@ try {
   page.on("console", (message) => {
     if (message.text().includes("Web Highlighter")) startupErrors.push(message.text());
   });
-  await page.goto(`http://127.0.0.1:${address.port}/fixture.tnix`);
+  await page.goto(`http://127.0.0.1:${address.port}/group/project/-/blob/main/fixture.tnix`);
   await page
     .locator(".wh-token")
     .first()
@@ -66,8 +73,10 @@ try {
     "tnix",
   );
   assert.equal(await page.locator(".wh-keyword").first().textContent(), "let");
+  assert.equal(await page.locator('[data-testid="content"] > *').count(), 0);
+  assert.equal(await page.locator("#L2").count(), 1);
   assert.equal(startupErrors.length, 0, startupErrors.join("\n"));
-  console.log("Chromium loaded the MV3 background engine and injected tNix tokens.");
+  console.log("Chromium injected tNix tokens into a GitLab-shaped blob surface.");
 } finally {
   await context?.close();
   server.closeAllConnections();
