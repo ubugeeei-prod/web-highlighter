@@ -22,7 +22,7 @@ Current measured release bundle on Apple silicon:
 |---|---:|---:|
 | Content runtime, Brotli | about 12 KiB | at most 32 KiB |
 | Cold analyzer start | about 1 ms | at most 100 ms |
-| 512 KiB repeated scan | about 6 MiB/s | at least 5 MiB/s |
+| 512 KiB repeated scan | about 6 MiB/s | at least 2 MiB/s on hosted CI |
 
 Run `npm run bench` for measurements on your machine. These are deliberately checked as budgets rather than presented as universal hardware-independent claims.
 

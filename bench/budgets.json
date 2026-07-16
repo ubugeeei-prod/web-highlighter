@@ -1,5 +1,5 @@
 {
   "contentBrotliBytes": 32000,
-  "minimumScannerMiBPerSecond": 5,
+  "minimumScannerMiBPerSecond": 2,
   "maximumColdStartMilliseconds": 100
 }

@@ -64,7 +64,9 @@ fn is_digit(char : Char) -> Bool {
 
 ///|
 fn is_identifier_start(language : Language, char : Char) -> Bool {
-  is_ascii_letter(char) || char == '_' || contains_char(language.identifier_extra, char)
+  is_ascii_letter(char) ||
+  char == '_' ||
+  contains_char(language.identifier_extra, char)
 }
 
 ///|
@@ -187,7 +189,7 @@ pub fn analyze(language : Language, source : String) -> Analysis {
   let chars = source.to_array()
   let tokens : Array[Token] = []
   let definitions : Array[Definition] = []
-  let definitions_by_name : Map[String, Definition] = {}
+  let definitions_by_name : Map[String, Definition] = Map([])
   let identifiers : Array[(String, Span)] = []
   let mut pending_definition : SymbolKind? = None
   let mut cursor = 0
