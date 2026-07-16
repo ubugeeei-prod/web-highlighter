@@ -184,16 +184,17 @@ let language_registry : Array[Language] = []
 let builtin_catalog : Array[Language] = builtin_languages()
 
 ///|
-/// Detects a built-in language and returns its complete injected-support plan.
+/// Detects a language in an explicit catalog and returns its support plan.
 ///
 /// The first line identifies the selected language. Remaining lines contain
 /// semantic tokens, definitions, and references for the browser host to apply.
-pub fn analyze_request(
+pub fn analyze_catalog_request(
+  catalog : Array[Language],
   source : String,
   hint : String,
   filename : String,
 ) -> String {
-  match detect_language(builtin_catalog, source, hint, filename) {
+  match detect_language(catalog, source, hint, filename) {
     None => ""
     Some(definition) =>
       "L\t" +
@@ -201,6 +202,16 @@ pub fn analyze_request(
       "\n" +
       encode_analysis(analyze(definition, source))
   }
+}
+
+///|
+/// Detects a built-in language and returns its complete injected-support plan.
+pub fn analyze_request(
+  source : String,
+  hint : String,
+  filename : String,
+) -> String {
+  analyze_catalog_request(builtin_catalog, source, hint, filename)
 }
 
 ///|

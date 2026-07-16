@@ -2,9 +2,15 @@
 
 Add-ons are declarative MoonBit values compiled into the extension's Wasm engine. They are build-time source dependencies, not remotely loaded code. This preserves Manifest V3 reviewability and guarantees that an add-on cannot execute an arbitrary matcher on untrusted page content.
 
+## Package contract
+
+An add-on is a normal MoonBit package that imports `ubugeeei-prod/web_highlighter/src` and exports one `Addon` value. The core package exposes `addon(...)`, `make_language(...)`, `theme(...)`, and the small delimiter/signature helpers. The executable analyzer imports selected packages and lists their values in `configured_addons`; no core source file or generated DSL is edited.
+
+Catalog composition is explicit and deterministic. `addon_languages(...)` and `addon_themes(...)` retain built-ins first, then append contributions in package order. `analyze_catalog_request(...)` and `theme_catalog_wire(...)` accept those composed immutable catalogs.
+
 ## Language contract
 
-`language(...)` and the catalog helper `make_language(...)` accept:
+`language(...)` and its compact convenience constructor `make_language(...)` accept:
 
 - a stable lowercase `id` and human-readable `name`;
 - fenced-code `aliases`;
@@ -39,8 +45,8 @@ Inference requires a total score above one. Give unique syntax weight 3, charact
 - Keep inference conservative; a false negative is preferable to recoloring unrelated content.
 - Run `vp run verify` and retain the 32 KiB combined Brotli budget.
 
-The built-in contract suite lives in `src/catalog_wbtest.mbt`; scanner edge cases live beside the scanner in `src/scanner_wbtest.mbt`.
+The add-on contract suite lives in `src/addon_wbtest.mbt`; built-in cases live in `src/catalog_wbtest.mbt`; scanner edge cases live beside the scanner in `src/scanner_wbtest.mbt`.
 
 ## Distribution boundary
 
-To distribute a third-party add-on today, import its MoonBit source into the analyzer package and produce a reviewed extension build. A future data import format may compile to the same immutable model, but it must not introduce remote executable code, `eval`, regex callbacks, or page-data uploads.
+To distribute a third-party add-on, publish or vendor its MoonBit package, import that package from the analyzer entrypoint, and produce a reviewed extension build. A future data import format may compile to the same immutable model, but it must not introduce remote executable code, `eval`, regex callbacks, or page-data uploads.

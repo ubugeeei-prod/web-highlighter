@@ -71,29 +71,36 @@ Load `dist/chromium`, `dist/firefox/manifest.json`, or convert `dist/safari` wit
 
 ## A declarative language add-on
 
-An add-on is ordinary MoonBit data in the analyzer package. It describes facts; it does not supply a tokenizer callback:
+An add-on is ordinary MoonBit data exported from a normal package. It describes facts; it does not supply a tokenizer callback:
 
 ```moonbit
-let my_language = make_language(
-  "my-lang",
-  "My Language",
-  ["myl"],
-  ["myl"],
-  [],
-  [signature("effect ", 2), signature("module my.lang", 3)],
-  "effect else fn if let match module return type",
-  "Bool Int List Result String",
-  "true false none",
-  [("fn", FunctionSymbol), ("type", TypeSymbol)],
-  ["//"],
-  [delimiter("/*", "*/")],
-  [quoted("\"")],
-  "+-*/=<>!&|",
-  "$",
-)
+pub fn contribution() -> @web.Addon {
+  @web.addon(
+    languages=[
+      @web.make_language(
+        "my-lang",
+        "My Language",
+        ["myl"],
+        ["myl"],
+        [],
+        [@web.signature("effect ", 2), @web.signature("module my.lang", 3)],
+        "effect else fn if let match module return type",
+        "Bool Int List Result String",
+        "true false none",
+        [("fn", @web.FunctionSymbol), ("type", @web.TypeSymbol)],
+        ["//"],
+        [@web.delimiter("/*", "*/")],
+        [@web.quoted("\"")],
+        "+-*/=<>!&|",
+        "$",
+      ),
+    ],
+    themes=[],
+  )
+}
 ```
 
-Add the value to `builtin_languages()` and include representative cases in `src/catalog_wbtest.mbt`. A theme uses the equally declarative `theme(...)` constructor and the stable semantic roles. See [Writing add-ons](docs/plugins.md).
+The package imports the core as `@web`; the thin analyzer entrypoint imports selected add-on packages and lists their contributions in `configured_addons`. A theme uses the equally declarative `theme(...)` constructor and stable semantic roles. See [Writing add-ons](docs/plugins.md).
 
 ## Architecture
 
