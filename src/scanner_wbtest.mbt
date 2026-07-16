@@ -15,7 +15,7 @@ fn test_language() -> Language {
     block_comments=[{ open: "/*", close: "*/", escape: false }],
     strings=[{ open: "\"", close: "\"", escape: true }],
     operator_chars="+-=*/<>!|&",
-    identifier_extra="$",
+    identifier_extra="$𐐀",
   )
 }
 
@@ -72,6 +72,22 @@ test "declarations and references share a symbol name" {
       #|]
     ),
   )
+}
+
+///|
+test "spans stay in UTF-16 code units after supplementary characters" {
+  let result = analyze(test_language(), "🙂 fn greet() {}\ngreet()")
+  assert_true(result.tokens[0].span == { start: 3, end_: 5 })
+  assert_true(result.definitions[0].span == { start: 6, end_: 11 })
+  assert_true(result.references[0].span == { start: 17, end_: 22 })
+}
+
+///|
+test "declarative identifier extras accept supplementary code points" {
+  let result = analyze(test_language(), "let 𐐀 = 1\n𐐀")
+  assert_true(result.definitions[0].span == { start: 4, end_: 6 })
+  assert_eq(result.definitions[0].name, "𐐀")
+  assert_true(result.references[0].span == { start: 11, end_: 13 })
 }
 
 ///|
