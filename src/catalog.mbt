@@ -94,7 +94,7 @@ pub fn builtin_languages() -> Array[Language] {
       "idris",
       "Idris 2",
       ["idris2", "idr"],
-      ["idr", "lidr"],
+      ["idr", "lidr", "ipkg"],
       [],
       [
         signature("%default total", 3),

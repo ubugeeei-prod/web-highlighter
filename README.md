@@ -25,7 +25,7 @@ The product is deliberately opinionated:
 
 The requested languages ship in the Wasm catalog:
 
-- Idris 2 (`idris`, `idris2`, `.idr`)
+- Idris 2 (`idris`, `idris2`, `.idr`, `.lidr`, `.ipkg`)
 - MoonBit and MoonBit Executable (`moonbit`, `mbt`, `mbtx`, `.mbt`, `.mbtx`)
 - [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `.vibe`)
 - [ubugeeei-prod/tnix](https://github.com/ubugeeei-prod/tnix) (`tnix`, `.tnix`)
