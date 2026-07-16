@@ -94,7 +94,7 @@ try {
       .evaluate((element) => element.style.getPropertyValue("--wh-keyword")),
     "#9c1c1c",
   );
-  console.log("Chromium injected tNix tokens and applied the packaged Paper theme.");
+  console.log("Chromium highlighted tNix and applied the packaged Paper theme.");
 } finally {
   await context?.close();
   server.closeAllConnections();
