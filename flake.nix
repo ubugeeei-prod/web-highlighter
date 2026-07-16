@@ -47,22 +47,42 @@
             url = "https://cli.moonbitlang.com/cores/core-latest.tar.gz";
             hash = "sha256-A61VuZ8+Qx88uBtOK7KLuYFzME5KGxiokeoCfKu6XRw=";
           };
-          moonbit = pkgs.runCommand "moonbit-0.1.20260713" { nativeBuildInputs = [ pkgs.gnutar ]; } ''
-            mkdir -p "$out/lib"
-            tar -xzf ${moonArchive} -C "$out"
-            tar -xzf ${moonCore} -C "$out/lib"
-            find "$out/bin" -type f -exec chmod +x {} +
-            (cd "$out/lib/core" && MOON_HOME="$out" "$out/bin/moon" bundle --target wasm-gc --release)
-          '';
+          moonbit =
+            pkgs.runCommand "moonbit-0.1.20260713"
+              {
+                nativeBuildInputs = [
+                  pkgs.gnutar
+                ]
+                ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook ];
+                buildInputs = pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.stdenv.cc.cc.lib ];
+              }
+              ''
+                mkdir -p "$out/lib"
+                tar -xzf ${moonArchive} -C "$out"
+                tar -xzf ${moonCore} -C "$out/lib"
+                find "$out/bin" -type f -exec chmod +x {} +
+                ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''autoPatchelf "$out"''}
+                (cd "$out/lib/core" && MOON_HOME="$out" "$out/bin/moon" bundle --target wasm-gc --release)
+              '';
           vitePlusArchive = pkgs.fetchurl {
             url = "https://github.com/voidzero-dev/vite-plus/releases/download/v0.2.4/vp-${vpPlatform.name}.tar.gz";
             inherit (vpPlatform) hash;
           };
-          vitePlus = pkgs.runCommand "vite-plus-0.2.4" { nativeBuildInputs = [ pkgs.gnutar ]; } ''
-            mkdir -p "$out/bin"
-            tar -xzf ${vitePlusArchive} -C "$out/bin"
-            chmod +x "$out/bin/vp"
-          '';
+          vitePlus =
+            pkgs.runCommand "vite-plus-0.2.4"
+              {
+                nativeBuildInputs = [
+                  pkgs.gnutar
+                ]
+                ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.autoPatchelfHook ];
+                buildInputs = pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.stdenv.cc.cc.lib ];
+              }
+              ''
+                mkdir -p "$out/bin"
+                tar -xzf ${vitePlusArchive} -C "$out/bin"
+                chmod +x "$out/bin/vp"
+                ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''autoPatchelf "$out"''}
+              '';
         in
         {
           inherit moonbit vitePlus;
