@@ -22,8 +22,9 @@ async function main(): Promise<void> {
     if (!response?.ok || typeof response.wire !== "string")
       throw new Error(typeof response?.error === "string" ? response.error : "engine failed");
     for (const line of response.wire.split("\n")) {
-      const [tag, id, name] = line.split("\t");
-      if (tag === "T" && id && name) theme.add(new Option(name, id));
+      const [tag, encodedId, encodedName] = line.split("\t");
+      if (tag === "T" && encodedId && encodedName)
+        theme.add(new Option(decodeURIComponent(encodedName), decodeURIComponent(encodedId)));
     }
   } catch {
     status.textContent = "Theme catalog is temporarily unavailable.";
