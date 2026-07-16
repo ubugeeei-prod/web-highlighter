@@ -1,0 +1,7 @@
+/_build/
+/dist/
+/node_modules/
+/coverage/
+*.zip
+*.xpi
+.DS_Store

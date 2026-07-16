@@ -1,0 +1,15 @@
+supported_targets = "js"
+
+options(
+  "is-main": true,
+  link: {
+    "js": {
+      "exports": [
+        "analyze_wire",
+        "compile_language_wire",
+        "analyze_handle_wire",
+      ],
+      "format": "esm",
+    },
+  },
+)
