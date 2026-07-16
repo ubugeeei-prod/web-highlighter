@@ -47,6 +47,7 @@ fn example_addon() -> Addon {
 ///|
 test "add-ons compose language and theme catalogs without callbacks" {
   let contribution = example_addon()
+  assert_eq(validate_addons([contribution]), [])
   let languages = addon_languages([contribution])
   let themes = addon_themes([contribution])
   assert_eq(languages.length(), builtin_languages().length() + 1)
@@ -57,6 +58,13 @@ test "add-ons compose language and theme catalogs without callbacks" {
     ),
   )
   assert_true(theme_catalog_wire(themes, "paper", false).has_prefix("M\tpaper\n"))
+}
+
+///|
+test "add-on validation reports shadowed language and theme identities" {
+  let errors = validate_addons([example_addon(), example_addon()])
+  assert_true(errors.contains("duplicate language id: quill"))
+  assert_true(errors.contains("duplicate theme id: paper"))
 }
 
 ///|

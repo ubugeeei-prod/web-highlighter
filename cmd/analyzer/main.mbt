@@ -1,5 +1,5 @@
 ///|
-let configured_addons : Array[@core.Addon] = []
+let configured_addons : Array[@core.Addon] = [@ush.contribution()]
 
 ///|
 let language_catalog : Array[@core.Language] =
