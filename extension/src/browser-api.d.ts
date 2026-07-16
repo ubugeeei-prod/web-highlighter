@@ -14,7 +14,10 @@ interface WebHighlighterBrowserApi {
     };
   };
   tabs?: {
-    query(query: { active: boolean; currentWindow: boolean }): Promise<Array<{ id?: number; url?: string }>>;
+    query(query: {
+      active: boolean;
+      currentWindow: boolean;
+    }): Promise<Array<{ id?: number; url?: string }>>;
   };
   permissions?: {
     request(permissions: { origins: string[] }): Promise<boolean>;

@@ -1,18 +1,18 @@
 # Service adapters
 
-All adapters produce the same `CodeSurface`: source, language hint, optional filename, and one or more DOM segments.
+The browser host produces the same internal surface shape for every service: source, language hint, optional filename, and one or more DOM segments. Language decisions remain in MoonBit.
 
-| Service | Discovery | Language signal | Rendering constraint |
-|---|---|---|---|
-| GitHub | current blob line cells plus ordinary fenced blocks | filename first | preserve each `#LC…` line cell and line anchor |
-| Discord | `pre > code` | `language-*` class, then signatures | preserve message controls outside the code node |
-| Slack | `pre > code` and language metadata | data attributes, then signatures | preserve message and thread containers |
-| ChatGPT | `pre > code` and language metadata | language class/data attribute, then signatures | preserve copy buttons and code-block chrome |
-| Generic site | code-shaped `pre` nodes only | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords |
+| Service      | Discovery                                           | Language signal                                          | Rendering constraint                            |
+| ------------ | --------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
+| GitHub       | current blob line cells plus ordinary fenced blocks | filename first                                           | preserve each `#LC…` line cell and line anchor  |
+| Discord      | `pre > code`                                        | `language-*` class, then signatures                      | preserve message controls outside the code node |
+| Slack        | `pre > code` and language metadata                  | data attributes, then signatures                         | preserve message and thread containers          |
+| ChatGPT      | `pre > code` and language metadata                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome     |
+| Generic site | code-shaped `pre` nodes only                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords  |
 
 ## SPA updates
 
-The engine observes subtree changes, coalesces them into an idle callback, and then performs idempotent discovery. The renderer stores the original source on the code element. A fingerprint prevents the spans inserted by Web Highlighter from recursively triggering another render.
+The host observes subtree changes, coalesces them into an idle callback, and then performs idempotent discovery. It stores the original source on each code element. A fingerprint prevents injected spans from recursively triggering another render.
 
 ## GitHub navigation
 

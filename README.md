@@ -1,34 +1,29 @@
 # Web Highlighter
 
-The tiny browser extension for languages the web forgot.
+**Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, Discord, Slack, ChatGPT, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
 
-Web Highlighter restores syntax highlighting on GitHub, Discord, Slack, ChatGPT, and arbitrary websites. It is built for experimental, personal, and newly released languages that cannot wait for every hosted service to add first-class support.
+When a service renders an `mbtx`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
 
-The analysis engine is written in MoonBit and compiled to a dependency-free JavaScript module. Language and theme add-ons are declarative TypeScript values validated at build time—no TextMate grammar, no runtime regex callbacks, no remote code, and no page data leaving the browser.
+The product is deliberately opinionated:
 
-## What works today
+- language detection, declarative grammars, tokenization, symbols, and themes live in MoonBit;
+- TypeScript is only the WebExtension and DOM boundary;
+- add-ons are immutable build-time data, never downloaded executable code;
+- unknown, ambiguous, oversized, or unsupported input is left untouched;
+- no source code leaves the browser.
 
-- Manifest V3 distributions for Chrome, Edge, Brave, Firefox, and Safari Web Extensions.
-- GitHub files and diffs, including same-file jump-to-definition and hover cards.
-- Discord, Slack, ChatGPT, and ordinary fenced code blocks.
-- Build-time language and theme add-ons through a typed declarative API.
-- A single MoonBit scan that emits semantic tokens, definitions, and references.
-- SPA-safe, idempotent DOM updates with the original source retained verbatim.
-- Hard CI budgets for compressed size, cold start, and scanner throughput.
+## What works
 
-Current measured release bundle on Apple silicon:
+- Manifest V3 builds for Chromium browsers, Firefox, and Safari Web Extensions.
+- GitHub blob lines with their native `LC…` nodes preserved, plus lexical hover and same-file jump-to-definition.
+- Discord, Slack, ChatGPT, and ordinary `pre > code` blocks, including fenced aliases.
+- Explicit aliases, filename extensions, special filenames, and conservative weighted inference when a service discards language metadata.
+- Declarative MoonBit language and theme add-ons without TextMate/tmLanguage repositories, regex callbacks, `eval`, or remote code.
+- Idempotent SPA updates with strict per-pass and per-surface limits.
 
-| Signal | Result | CI budget |
-|---|---:|---:|
-| Content runtime, Brotli | about 12 KiB | at most 32 KiB |
-| Cold analyzer start | about 1 ms | at most 100 ms |
-| 512 KiB repeated scan | about 6 MiB/s | at least 2 MiB/s on hosted CI |
+## Built-in injected support
 
-Run `npm run bench` for measurements on your machine. These are deliberately checked as budgets rather than presented as universal hardware-independent claims.
-
-## Built-in languages
-
-The requested project languages are all included:
+The requested languages ship in the Wasm catalog:
 
 - Idris 2 (`idris`, `idris2`, `.idr`)
 - MoonBit and MoonBit Executable (`moonbit`, `mbt`, `mbtx`, `.mbt`, `.mbtx`)
@@ -37,95 +32,97 @@ The requested project languages are all included:
 - [ubugeeei-prod/ush](https://github.com/ubugeeei-prod/ush) (`ush`, `.ush`)
 - [ubugeeei-prod/vapor-moon](https://github.com/ubugeeei-prod/vapor-moon) (`mbtv`, `.mbtv`)
 
-The first research pass also found recurring gaps across general-purpose highlighters and hosted services, so Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are built in. See [the research notes](docs/research.md) for selection evidence and limitations.
+Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are also built in. The selection is a curated response to recurring hosted-service gaps, not a popularity ranking; see [the research snapshot](docs/research.md).
 
-## Install an unpacked build
+## Size and speed
 
-Requirements: Node.js 24+, MoonBit, and npm.
+The release engine is a dependency-free Wasm-GC module. A local Apple-silicon run in the pinned Nix environment measured:
+
+| Signal                          |   Measured |        CI budget |
+| ------------------------------- | ---------: | ---------------: |
+| Content host + analyzer, Brotli |   14.7 KiB |   at most 32 KiB |
+| Wasm instantiate + first scan   |     1.6 ms |   at most 100 ms |
+| Repeated 512 KiB MoonBit scan   | 17.1 MiB/s | at least 2 MiB/s |
+
+These are reproducible budget signals, not universal hardware claims. Run `vp run bench` for the current machine.
+
+## Development
+
+The Nix flake pins MoonBit CLI `0.1.20260713` with compiler `0.10.4`, Vite+ `0.2.4`, pnpm `11.9.0`, and Node.js `24.16.0`.
 
 ```sh
-npm ci
-npm run verify
+nix develop
+vp install --frozen-lockfile
+vp run verify
 ```
 
-Then load the appropriate directory:
+All project operations are exposed through `vp`:
 
-- Chrome, Edge, or Brave: load `dist/chromium` as an unpacked extension.
-- Firefox: use “Load Temporary Add-on” and select `dist/firefox/manifest.json`.
-- Safari: run `xcrun safari-web-extension-converter dist/safari`, then build the generated Xcode project.
+```sh
+vp check         # Oxfmt, Oxlint, and strict TypeScript checking
+vp test --run    # DOM and distribution tests
+vp build         # MoonBit Wasm-GC + all unpacked WebExtensions
+vp run bench     # measured runtime budgets
+vp run package   # verified browser ZIP archives and SHA256SUMS
+vp run verify    # MoonBit checks/tests + all checks above
+```
 
-GitHub, Discord, Slack, and ChatGPT receive automatic access. On another site, click the toolbar button and grant access only to that origin. The extension never requests access to every site at installation time.
+Load `dist/chromium`, `dist/firefox/manifest.json`, or convert `dist/safari` with `xcrun safari-web-extension-converter`. The four supported services receive automatic access. Any other origin is requested explicitly from the popup.
 
 ## A declarative language add-on
 
-Language modules declare facts; they do not run a tokenizer callback:
+An add-on is ordinary MoonBit data in the analyzer package. It describes facts; it does not supply a tokenizer callback:
 
-```ts
-import { defineLanguage, words } from "./extension/src/plugin-api.ts";
-
-export default defineLanguage({
-  id: "my-lang",
-  name: "My Language",
-  aliases: ["myl"],
-  extensions: ["myl"],
-  signatures: [
-    { text: "module my.lang", weight: 3 },
-    { text: "effect ", weight: 2 },
-  ],
-  grammar: {
-    keywords: words("effect else fn if let match module return type"),
-    types: words("Bool Int List Result String"),
-    constants: words("true false none"),
-    declarations: {
-      fn: "function",
-      let: "variable",
-      module: "module",
-      type: "type",
-    },
-    lineComments: ["//"],
-    blockComments: [{ open: "/*", close: "*/" }],
-    strings: [{ open: "\"", close: "\"" }],
-  },
-});
+```moonbit
+let my_language = make_language(
+  "my-lang",
+  "My Language",
+  ["myl"],
+  ["myl"],
+  [],
+  [signature("effect ", 2), signature("module my.lang", 3)],
+  "effect else fn if let match module return type",
+  "Bool Int List Result String",
+  "true false none",
+  [("fn", FunctionSymbol), ("type", TypeSymbol)],
+  ["//"],
+  [delimiter("/*", "*/")],
+  [quoted("\"")],
+  "+-*/=<>!&|",
+  "$",
+)
 ```
 
-The compiler validates and freezes the definition, sorts lookup tables, and compiles them once into a MoonBit scanner handle. Add the module to `plugins/builtin/catalog.ts` to ship it. The API intentionally has no arbitrary regular expressions or executable matcher callbacks, which keeps performance predictable and Manifest V3 review straightforward.
-
-Read [Writing language and theme add-ons](docs/plugins.md) for the full contract.
+Add the value to `builtin_languages()` and include representative cases in `src/catalog_wbtest.mbt`. A theme uses the equally declarative `theme(...)` constructor and the stable semantic roles. See [Writing add-ons](docs/plugins.md).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  P["Declarative language and theme add-ons"] --> V["Validated immutable tables"]
-  V --> M["MoonBit linear scanner"]
-  M --> A["Tokens + definitions + references"]
-  A --> R["Lossless DOM renderer"]
-  S["GitHub / Discord / Slack / ChatGPT adapters"] --> R
-  R --> N["Highlight + hover + jump"]
+  D["MoonBit declarative add-ons"] --> W["tiny Wasm-GC engine"]
+  W --> A["language + tokens + symbols + theme plan"]
+  S["thin service DOM discovery"] --> H["TypeScript browser host"]
+  A --> H
+  H --> P["lossless injected spans, hover, jump"]
 ```
 
-The scanner does not know the DOM. Service adapters do not know language syntax. Themes do not trigger reparsing. Navigation is derived from the same spans as highlighting. This boundary is the main reason the runtime stays small and service-specific breakage remains local.
+The Wasm engine never sees a DOM. The browser host never contains language vocabulary or theme policy. Service discovery never parses source. This separation keeps syntax growth out of the extension shell and confines service DOM breakage to one small boundary.
 
-See [Architecture](docs/architecture.md) and [Service adapters](docs/services.md) for invariants and failure behavior.
+Read [Architecture](docs/architecture.md) and [Service adapters](docs/services.md) for invariants and failure behavior.
 
-## Accuracy boundary
+## Honest navigation boundary
 
-Web Highlighter is intentionally a fast lexical and same-file structural layer, not an LSP running inside every chat message. It recognizes declared names and their same-file references. It does not claim type-aware overload resolution, cross-repository references, macro expansion, or compiler-equivalent parsing.
+This is not an LSP hidden in every chat message. Declaration introducers such as `fn`, `type`, and `let` produce lexical symbols; references jump to the first same-surface definition. There is no claim of type-aware overload resolution, macro expansion, scope-perfect shadowing, or cross-repository navigation.
 
-For experimental languages, a small predictable result that never blocks the page is preferable to silently pretending to offer full semantic navigation. A future parser-derived layer can implement the same immutable `Analysis` contract without changing service adapters or rendering.
+## Releases
 
-## Development
+From a clean, synchronized `main`:
 
 ```sh
-npm run check   # MoonBit release build + deny-warn check + TypeScript strict check
-npm test        # MoonBit, DOM, integration, manifest, and coverage tests
-npm run build   # Chromium, Firefox, and Safari WebExtension directories
-npm run bench   # measured size, startup, and throughput budgets
-npm run verify  # all of the above
+vp run release minor
 ```
 
-The test suite covers malformed regions, escaped strings, symbol navigation, all built-in languages, detection precedence, GitHub line preservation, Discord/ChatGPT fences, idempotent rendering, manifest contents, remote-code absence, and size budgets.
+The task bumps `package.json` and `moon.mod`, runs the complete verification suite, creates a conventional release commit and annotated tag, then atomically pushes `main` and the tag. The tag workflow rebuilds in Nix, packages all browsers, emits GitHub OIDC build-provenance attestations, and creates a GitHub Release. No long-lived publishing token is stored.
 
 ## License
 

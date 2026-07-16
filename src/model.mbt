@@ -78,12 +78,25 @@ pub struct Delimiter {
 } derive(Eq, Debug)
 
 ///|
+/// A literal language fingerprint used when a service discards fence metadata.
+pub struct Signature {
+  text : String
+  weight : Int
+} derive(Eq, Debug)
+
+///|
 /// A declarative language definition consumed by the scanner.
 ///
 /// Plugins describe vocabulary and lexical regions only. They never receive
 /// callbacks and cannot run code while a page is being highlighted. This makes
 /// plugin cost predictable and keeps the extension compatible with Manifest V3.
 pub struct Language {
+  id : String
+  name : String
+  aliases : Array[String]
+  extensions : Array[String]
+  filenames : Array[String]
+  signatures : Array[Signature]
   keywords : Array[String]
   types : Array[String]
   constants : Array[String]
@@ -111,6 +124,12 @@ fn sorted_strings(values : Array[String]) -> Array[String] {
 /// Arrays preserve source order. For prefix-like delimiters, plugins should put
 /// the longest delimiter first so matching stays deterministic.
 pub fn language(
+  id~ : String,
+  name~ : String,
+  aliases~ : Array[String],
+  extensions~ : Array[String],
+  filenames~ : Array[String],
+  signatures~ : Array[Signature],
   keywords~ : Array[String],
   types~ : Array[String],
   constants~ : Array[String],
@@ -122,6 +141,12 @@ pub fn language(
   identifier_extra~ : String,
 ) -> Language {
   {
+    id,
+    name,
+    aliases,
+    extensions,
+    filenames,
+    signatures,
     keywords: sorted_strings(keywords),
     types: sorted_strings(types),
     constants: sorted_strings(constants),
