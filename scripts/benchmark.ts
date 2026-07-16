@@ -16,7 +16,7 @@ const budgets = JSON.parse(
   await readFile(new URL("../bench/budgets.json", import.meta.url), "utf8"),
 ) as Budgets;
 const wasm = await readFile(
-  new URL("../_build/wasm-gc/release/build/src/src.wasm", import.meta.url),
+  new URL("../_build/wasm-gc/release/build/cmd/analyzer/analyzer.wasm", import.meta.url),
 );
 const coldStart = performance.now();
 const { instance } = await WebAssembly.instantiate(

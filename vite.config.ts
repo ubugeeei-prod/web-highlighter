@@ -7,7 +7,7 @@ import { defineConfig } from "vite-plus";
 const root = import.meta.dirname;
 const staging = resolve(root, ".vite-build");
 const dist = resolve(root, "dist");
-const wasm = resolve(root, "_build/wasm-gc/release/build/src/src.wasm");
+const wasm = resolve(root, "_build/wasm-gc/release/build/cmd/analyzer/analyzer.wasm");
 const targets = ["chromium", "firefox", "safari"] as const;
 const automaticHosts = [
   "https://github.com/*",
