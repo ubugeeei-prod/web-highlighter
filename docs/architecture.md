@@ -10,7 +10,8 @@ Web Highlighter is an injected-language-support product, not an embeddable highl
 4. `src/scanner.mbt` performs one bounded lexical and symbol pass without constructing an AST.
 5. `src/theme.mbt` selects a declarative theme and emits semantic-role colors.
 6. `src/wire.mbt` exposes two Wasm-GC functions over a compact tab-delimited protocol.
-7. `extension/src/host.ts` discovers service DOM, instantiates Wasm, renders spans, and implements hover/jump.
+7. `extension/src/engine.ts` owns the Wasm instance in the extension origin.
+8. `extension/src/host.ts` discovers service DOM, renders spans, and implements hover/jump.
 
 The only runtime calls crossing the Wasm boundary are:
 
@@ -36,7 +37,7 @@ theme_wire(requested_theme, prefers_dark)        -> semantic CSS variables
 
 The extension should remain MoonBit-first as its language catalog grows. Wasm-GC with JavaScript string built-ins keeps the boundary direct: JavaScript passes source strings and receives a compact string plan, while vocabulary lookup, detection, scanning, definitions, references, and theme selection remain compiled MoonBit.
 
-The release analyzer is about 33 KiB raw and 14 KiB Brotli. The minified browser host is about 6 KiB raw. Shipping one immutable analyzer is both smaller and safer than carrying a general parser framework plus separately executable grammar packages.
+The release analyzer is about 33 KiB raw and 14 KiB Brotli. The browser host and background bridge together remain only a few KiB compressed. Shipping one immutable analyzer is both smaller and safer than carrying a general parser framework plus separately executable grammar packages.
 
 ## Declarative rather than TextMate-shaped
 
@@ -49,7 +50,7 @@ This narrower model gives predictable runtime cost, testable conflict rules, and
 - Unknown language: preserve upstream rendering.
 - Ambiguous unlabelled block: require weighted evidence above one.
 - Unterminated comment or string: consume safely to the end.
-- Wasm load or instantiate failure: remove the boot marker and preserve the page.
+- Wasm load or instantiate failure: report a bounded background error, remove the boot marker, and preserve the page.
 - Oversized surface: skip it.
 - Mutation storm: coalesce work through one idle callback.
 - Changed service DOM: repair only discovery and its DOM contract tests.

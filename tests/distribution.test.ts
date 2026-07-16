@@ -12,7 +12,7 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       content_scripts: Array<{ matches: string[] }>;
       optional_host_permissions: string[];
       content_security_policy: { extension_pages: string };
-      web_accessible_resources: Array<{ resources: string[] }>;
+      background: { service_worker?: string; scripts?: string[] };
     };
     assert.equal(manifest.manifest_version, 3);
     assert(manifest.content_scripts[0]?.matches.includes("https://github.com/*"));
@@ -21,16 +21,26 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
     assert(manifest.content_scripts[0]?.matches.includes("https://chatgpt.com/*"));
     assert.deepEqual(manifest.optional_host_permissions, ["https://*/*", "http://*/*"]);
     assert(manifest.content_security_policy.extension_pages.includes("wasm-unsafe-eval"));
-    assert(manifest.web_accessible_resources[0]?.resources.includes("analyzer.wasm"));
+    assert(
+      manifest.background.service_worker === "engine.js" ||
+        manifest.background.scripts?.includes("engine.js"),
+    );
     assert((await stat(new URL(`../dist/${target}/popup.html`, import.meta.url))).size > 0);
+    assert((await stat(new URL(`../dist/${target}/engine.js`, import.meta.url))).size > 0);
     assert((await stat(new URL(`../dist/${target}/analyzer.wasm`, import.meta.url))).size > 0);
   });
 }
 
 test("the runtime stays below its hard compressed-size budget", async () => {
   const content = await readFile(new URL("../dist/chromium/content.js", import.meta.url));
+  const engine = await readFile(new URL("../dist/chromium/engine.js", import.meta.url));
   const wasm = await readFile(new URL("../dist/chromium/analyzer.wasm", import.meta.url));
-  assert(brotliCompressSync(content).length + brotliCompressSync(wasm).length <= 32_768);
+  assert(
+    brotliCompressSync(content).length +
+      brotliCompressSync(engine).length +
+      brotliCompressSync(wasm).length <=
+      32_768,
+  );
   const text = content.toString("utf8");
   assert(!text.includes("eval("));
   assert(!text.includes("new Function"));

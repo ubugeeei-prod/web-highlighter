@@ -95,6 +95,12 @@ jobs:
       - name: Test DOM integration and distributions
         run: nix develop --command vp test --run
 
+      - name: Install pinned Chromium
+        run: nix develop --command vp exec playwright install --with-deps --no-shell chromium
+
+      - name: Smoke test the packaged extension
+        run: nix develop --command vp run browser-smoke
+
       - name: Upload unpacked extensions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

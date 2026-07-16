@@ -41,9 +41,10 @@ function manifest(target: (typeof targets)[number]) {
         run_at: "document_idle",
       },
     ],
-    web_accessible_resources: [
-      { resources: ["analyzer.wasm"], matches: ["https://*/*", "http://*/*"] },
-    ],
+    background:
+      target === "firefox"
+        ? { scripts: ["engine.js"] }
+        : { service_worker: "engine.js", type: "module" },
     ...(target === "chromium" ? { minimum_chrome_version: "119" } : {}),
     ...(target === "firefox"
       ? {
@@ -64,6 +65,7 @@ export default defineConfig({
     rolldownOptions: {
       input: {
         content: resolve(root, "extension/src/content.ts"),
+        engine: resolve(root, "extension/src/engine.ts"),
         popup: resolve(root, "extension/src/popup.ts"),
       },
       output: { entryFileNames: "[name].js", chunkFileNames: "chunks/[name]-[hash].js" },
@@ -108,6 +110,10 @@ export default defineConfig({
       "moon-check": "moon check --target wasm-gc --deny-warn",
       "moon-test": "moon test --target wasm-gc --deny-warn",
       bench: "node scripts/benchmark.ts",
+      "browser-smoke": {
+        command: "node --experimental-strip-types scripts/browser-smoke.ts",
+        cache: false,
+      },
       verify: [
         "vp run moon-check",
         "vp run moon-test",

@@ -6,6 +6,7 @@
   "devDependencies": {
     "@types/node": "26.1.1",
     "happy-dom": "20.10.6",
+    "playwright": "1.61.1",
     "vite-plus": "0.2.4"
   },
   "engines": {

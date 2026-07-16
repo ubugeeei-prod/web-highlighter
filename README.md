@@ -101,12 +101,13 @@ Add the value to `builtin_languages()` and include representative cases in `src/
 flowchart LR
   D["MoonBit declarative add-ons"] --> W["tiny Wasm-GC engine"]
   W --> A["language + tokens + symbols + theme plan"]
+  A --> B["minimal extension background bridge"]
   S["thin service DOM discovery"] --> H["TypeScript browser host"]
-  A --> H
+  B --> H
   H --> P["lossless injected spans, hover, jump"]
 ```
 
-The Wasm engine never sees a DOM. The browser host never contains language vocabulary or theme policy. Service discovery never parses source. This separation keeps syntax growth out of the extension shell and confines service DOM breakage to one small boundary.
+The Wasm engine never sees a DOM. It runs in the extension origin because that is the reliable Manifest V3 context for packaged Wasm-GC; the content host reaches it through a minimal message bridge. The browser host never contains language vocabulary or theme policy. Service discovery never parses source. This separation keeps syntax growth out of the extension shell and confines service DOM breakage to one small boundary.
 
 Read [Architecture](docs/architecture.md) and [Service adapters](docs/services.md) for invariants and failure behavior.
 

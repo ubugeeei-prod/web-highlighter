@@ -6,6 +6,16 @@ interface WebHighlighterStorageArea {
 interface WebHighlighterBrowserApi {
   runtime: {
     getURL(path: string): string;
+    sendMessage(message: unknown): Promise<unknown>;
+    onMessage: {
+      addListener(
+        listener: (
+          message: unknown,
+          sender: unknown,
+          respond: (response: unknown) => void,
+        ) => boolean,
+      ): void;
+    };
   };
   storage?: {
     sync?: WebHighlighterStorageArea;
