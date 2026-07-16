@@ -14,16 +14,11 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  policy:
+    name: Pull request policy
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 2
     steps:
-      - name: Check out repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          persist-credentials: false
-
       - name: Enforce conventional pull request title
         if: github.event_name == 'pull_request'
         env:
@@ -34,6 +29,16 @@ jobs:
             exit 1
           fi
 
+  quality:
+    name: Static quality
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
@@ -43,8 +48,52 @@ jobs:
       - name: Install pnpm dependencies through Vite+
         run: nix develop --command vp install --frozen-lockfile
 
-      - name: Verify source, tests, distributions, and budgets
-        run: nix develop --command vp run verify
+      - name: Check MoonBit source
+        run: nix develop --command vp run moon-check
+
+      - name: Check formatting, lint, and types
+        run: nix develop --command vp check
+
+  moonbit-tests:
+    name: MoonBit tests
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Run MoonBit tests
+        run: nix develop --command vp run moon-test
+
+  browser-tests:
+    name: Browser distributions
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Build unpacked extensions
+        run: nix develop --command vp build
+
+      - name: Test DOM integration and distributions
+        run: nix develop --command vp test --run
 
       - name: Upload unpacked extensions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -53,3 +102,46 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 14
+
+  budgets:
+    name: Runtime budgets
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Build release runtime
+        run: nix develop --command vp build
+
+      - name: Enforce size, startup, and throughput budgets
+        run: nix develop --command vp run bench
+
+  verify:
+    name: Verify
+    if: always()
+    needs: [policy, quality, moonbit-tests, browser-tests, budgets]
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 2
+    steps:
+      - name: Require every CI partition
+        env:
+          POLICY: ${{ needs.policy.result }}
+          QUALITY: ${{ needs.quality.result }}
+          MOONBIT_TESTS: ${{ needs.moonbit-tests.result }}
+          BROWSER_TESTS: ${{ needs.browser-tests.result }}
+          BUDGETS: ${{ needs.budgets.result }}
+        run: |
+          test "$POLICY" = success
+          test "$QUALITY" = success
+          test "$MOONBIT_TESTS" = success
+          test "$BROWSER_TESTS" = success
+          test "$BUDGETS" = success
