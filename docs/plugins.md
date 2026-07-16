@@ -8,7 +8,7 @@ An add-on is a normal MoonBit package that imports `ubugeeei-prod/web_highlighte
 
 Catalog composition is explicit and deterministic. `addon_languages(...)` and `addon_themes(...)` retain built-ins first, then append contributions in package order. `analyze_catalog_request(...)` and `theme_catalog_wire(...)` accept those composed immutable catalogs.
 
-The bundled `addons/ush` package is the executable contract example: it imports only the public core API, owns the complete ush declaration and its tests, and is selected by the thin analyzer entrypoint. Removing its import and one `configured_addons` entry removes the language without changing the scanner.
+The bundled `addons/ush` and `addons/paper` packages are the executable contract examples. They import only the public core API, own their declarations and tests, and are selected by the thin analyzer entrypoint. Removing an import and its `configured_addons` entry removes that language or theme without changing the scanner or browser shell.
 
 ## Language contract
 

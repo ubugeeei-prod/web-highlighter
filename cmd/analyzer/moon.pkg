@@ -1,5 +1,6 @@
 import {
   "ubugeeei-prod/web_highlighter/src" @core,
+  "ubugeeei-prod/web_highlighter/addons/paper" @paper,
   "ubugeeei-prod/web_highlighter/addons/ush" @ush,
 }
 

@@ -1,0 +1,5 @@
+import {
+  "ubugeeei-prod/web_highlighter/src" @web,
+}
+
+supported_targets = "wasm-gc"
