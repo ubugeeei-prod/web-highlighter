@@ -15,24 +15,24 @@ The goal was not to maximize a language count. It was to identify languages that
 
 ## Built-in selection
 
-| Language | Reason for inclusion |
-|---|---|
-| Idris 2 | explicitly requested; absent from GitHub native navigation; inconsistent web bundles |
-| MoonBit / mbtx | explicitly requested; young language; executable-script alias is frequently lost |
-| Vibe | explicitly requested experimental language with `.vibe` sources |
-| tNix | explicitly requested custom typed Nix language |
-| ush | explicitly requested custom shell language |
-| mbtv | explicitly requested custom MoonBit SFC format |
-| Mojo | visible developer interest, but absent from the checked default/common highlighter paths |
-| Gleam | growing ecosystem; support often depends on an optional package rather than default bundles |
-| Roc | experimental functional language with recurring unsupported fences |
-| Typst | widely shared in technical chat, but absent from the checked default/common bundles |
-| Nushell | popular modern shell whose `nu` blocks are commonly treated as plain text |
-| Lean 4 | theorem-proving snippets are common in research discussion; no GitHub native navigation |
-| Koka | effect language with sparse hosted-service support |
-| Nickel | configuration language often misidentified as Nix or plain text |
-| Pkl | configuration language; support varies and is not universal across services |
-| Uiua | active Linguist add-language request at the snapshot date |
+| Language       | Reason for inclusion                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| Idris 2        | explicitly requested; absent from GitHub native navigation; inconsistent web bundles        |
+| MoonBit / mbtx | explicitly requested; young language; executable-script alias is frequently lost            |
+| Vibe           | explicitly requested experimental language with `.vibe` sources                             |
+| tNix           | explicitly requested custom typed Nix language                                              |
+| ush            | explicitly requested custom shell language                                                  |
+| mbtv           | explicitly requested custom MoonBit SFC format                                              |
+| Mojo           | visible developer interest, but absent from the checked default/common highlighter paths    |
+| Gleam          | growing ecosystem; support often depends on an optional package rather than default bundles |
+| Roc            | experimental functional language with recurring unsupported fences                          |
+| Typst          | widely shared in technical chat, but absent from the checked default/common bundles         |
+| Nushell        | popular modern shell whose `nu` blocks are commonly treated as plain text                   |
+| Lean 4         | theorem-proving snippets are common in research discussion; no GitHub native navigation     |
+| Koka           | effect language with sparse hosted-service support                                          |
+| Nickel         | configuration language often misidentified as Nix or plain text                             |
+| Pkl            | configuration language; support varies and is not universal across services                 |
+| Uiua           | active Linguist add-language request at the snapshot date                                   |
 
 ## Important limitation
 
