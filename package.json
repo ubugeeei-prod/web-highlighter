@@ -3,21 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "happy-dom": "20.10.6",
+    "vite-plus": "0.2.4"
+  },
   "engines": {
     "node": ">=24.0.0"
   },
-  "scripts": {
-    "build": "node scripts/build.mjs",
-    "check": "moon build --target js --release && moon check --target js --deny-warn && tsc --noEmit",
-    "test": "npm run build && moon test --target js --deny-warn && node --test --experimental-test-coverage 'tests/**/*.test.ts'",
-    "test:moon": "moon test --target js --deny-warn",
-    "test:ts": "node --test 'tests/**/*.test.ts'",
-    "bench": "node scripts/benchmark.ts",
-    "verify": "npm run check && npm test && npm run bench"
-  },
-  "devDependencies": {
-    "esbuild": "0.28.1",
-    "happy-dom": "20.10.6",
-    "typescript": "7.0.2"
-  }
+  "packageManager": "pnpm@11.9.0"
 }

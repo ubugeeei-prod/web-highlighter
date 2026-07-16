@@ -10,12 +10,8 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node"]
   },
-  "include": [
-    "extension/**/*.ts",
-    "plugins/**/*.ts",
-    "scripts/**/*.ts",
-    "tests/**/*.ts"
-  ]
+  "include": ["extension/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
 }

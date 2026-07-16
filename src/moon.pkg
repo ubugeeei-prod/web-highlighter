@@ -1,7 +1,8 @@
 supported_targets = "wasm-gc"
 
+pkgtype(kind: "executable")
+
 options(
-  "is-main": true,
   link: {
     "wasm-gc": {
       "exports": [ "analyze_request", "theme_wire" ],
