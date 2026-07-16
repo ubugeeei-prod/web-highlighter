@@ -67,6 +67,9 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
       - name: Run MoonBit tests
         run: nix develop --command vp run moon-test
 
