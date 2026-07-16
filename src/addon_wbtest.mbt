@@ -71,3 +71,34 @@ test "add-on validation reports shadowed language and theme identities" {
 test "an empty explicit theme catalog falls back safely" {
   assert_true(theme_catalog_wire([], "missing", true).has_prefix("M\tadaptive\n"))
 }
+
+///|
+test "add-on validation rejects unreachable and ambiguous declarations" {
+  let malformed = make_language(
+    "Bad",
+    "",
+    ["", "MixedCase"],
+    [".BAD", ""],
+    [""],
+    [signature("", 0)],
+    "fn",
+    "",
+    "",
+    [("missing", FunctionSymbol)],
+    ["/", "//", ""],
+    [delimiter("", "*/")],
+    [delimiter("\"", "")],
+    "",
+    "",
+  )
+  let errors = validate_addons([addon(languages=[malformed], themes=[])])
+  assert_true(errors.contains("language Bad id must be lowercase"))
+  assert_true(errors.contains("language Bad name must not be empty"))
+  assert_true(errors.contains("language Bad has an empty alias"))
+  assert_true(errors.contains("language Bad extension must be lowercase without a dot: .BAD"))
+  assert_true(errors.contains("language Bad signatures require non-empty text and positive weight"))
+  assert_true(errors.contains("language Bad declaration is not a keyword: missing"))
+  assert_true(errors.contains("language Bad line comments must put longer prefixes first"))
+  assert_true(errors.contains("language Bad has an empty block comment delimiter"))
+  assert_true(errors.contains("language Bad has an empty string delimiter"))
+}

@@ -45,6 +45,7 @@ Inference requires a total score above one. Give unique syntax weight 3, charact
 - Put longer overlapping delimiters before shorter ones.
 - Test explicit hints, filename fallback, representative source, strings, comments, and at least one declaration/reference pair.
 - Assert that `validate_addons(...)` is empty so IDs and aliases cannot shadow another package.
+- Keep identifiers lowercase, inference weights positive, delimiters non-empty, and longer overlapping prefixes first; `validate_addons(...)` rejects unreachable shapes.
 - Keep inference conservative; a false negative is preferable to recoloring unrelated content.
 - Run `vp run verify` and retain the 32 KiB combined Brotli budget.
 
