@@ -46,6 +46,16 @@ test "Idris support" {
 }
 
 ///|
+test "Idris package support" {
+  assert_builtin(
+    "idris",
+    "idris2",
+    "demo.ipkg",
+    "package demo\nsourcedir = src\nmodules = Main\ndepends = contrib",
+  )
+}
+
+///|
 test "MoonBit and mbtx support" {
   assert_builtin(
     "moonbit", "mbtx", "tool.mbtx", "///|\npub fn main { println(\"ok\") }",
