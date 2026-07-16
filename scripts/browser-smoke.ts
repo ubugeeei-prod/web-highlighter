@@ -95,6 +95,7 @@ try {
     "tnix",
   );
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
+  assert.equal(await page.locator("#LC2 .wh-keyword").first().textContent(), "in");
   assert.equal(await page.locator("#L2").count(), 1);
 
   await page
