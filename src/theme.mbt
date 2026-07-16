@@ -144,9 +144,14 @@ fn select_theme(
 }
 
 ///|
-/// Returns a compact CSS-variable plan selected entirely inside MoonBit.
-pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
-  let selected = select_theme(builtin_themes(), requested, prefers_dark)
+/// Returns a compact CSS-variable plan selected from an explicit catalog.
+pub fn theme_catalog_wire(
+  catalog : Array[Theme],
+  requested : String,
+  prefers_dark : Bool,
+) -> String {
+  let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
+  let selected = select_theme(available, requested, prefers_dark)
   let output = StringBuilder::new()
   output..write_string("M\t")..write_string(selected.id).write_char('\n')
   theme_color(output, "foreground", selected.foreground)
@@ -164,4 +169,10 @@ pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
   theme_color(output, "property", selected.property)
   theme_color(output, "punctuation", selected.punctuation)
   output.to_string()
+}
+
+///|
+/// Returns a compact CSS-variable plan selected from built-in themes.
+pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
+  theme_catalog_wire(builtin_themes(), requested, prefers_dark)
 }

@@ -1,17 +1,27 @@
 ///|
+let configured_addons : Array[@core.Addon] = []
+
+///|
+let language_catalog : Array[@core.Language] =
+  @core.addon_languages(configured_addons)
+
+///|
+let theme_catalog : Array[@core.Theme] = @core.addon_themes(configured_addons)
+
+///|
 /// Exposes the core analysis plan through the browser's Wasm boundary.
 pub fn analyze_request(
   source : String,
   hint : String,
   filename : String,
 ) -> String {
-  @core.analyze_request(source, hint, filename)
+  @core.analyze_catalog_request(language_catalog, source, hint, filename)
 }
 
 ///|
 /// Exposes declarative theme selection through the browser's Wasm boundary.
 pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
-  @core.theme_wire(requested, prefers_dark)
+  @core.theme_catalog_wire(theme_catalog, requested, prefers_dark)
 }
 
 ///|

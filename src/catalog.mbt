@@ -1,6 +1,6 @@
 ///|
 /// Splits a readable space-delimited vocabulary into exact words.
-fn words(source : String) -> Array[String] {
+pub fn words(source : String) -> Array[String] {
   let result : Array[String] = []
   for view in source.split(" ") {
     let word = view.to_owned()
@@ -12,17 +12,20 @@ fn words(source : String) -> Array[String] {
 }
 
 ///|
-fn signature(text : String, weight : Int) -> Signature {
+/// Declares one weighted literal used for conservative language inference.
+pub fn signature(text : String, weight : Int) -> Signature {
   { text, weight }
 }
 
 ///|
-fn delimiter(open_ : String, close : String) -> Delimiter {
+/// Declares one non-escaping paired lexical region.
+pub fn delimiter(open_ : String, close : String) -> Delimiter {
   { open: open_, close, escape: false }
 }
 
 ///|
-fn quoted(marker : String) -> Delimiter {
+/// Declares a same-marker quoted region with backslash escaping.
+pub fn quoted(marker : String) -> Delimiter {
   { open: marker, close: marker, escape: true }
 }
 
@@ -36,7 +39,8 @@ fn language_aliases(id : String, aliases : Array[String]) -> Array[String] {
 }
 
 ///|
-fn make_language(
+/// Constructs a language add-on from compact readable vocabularies.
+pub fn make_language(
   id : String,
   name : String,
   aliases : Array[String],
