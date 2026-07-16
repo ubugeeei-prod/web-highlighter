@@ -172,6 +172,10 @@ pub fn theme_catalog_wire(
 }
 
 ///|
+/// Percent-encodes delimiters reserved by the theme catalog wire protocol.
+///
+/// Percent itself is encoded first conceptually, so the browser can recover
+/// the exact add-on value with one `decodeURIComponent` call.
 fn encode_theme_field(value : String) -> String {
   let output = StringBuilder::new()
   let mut start = 0
