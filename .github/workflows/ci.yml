@@ -92,6 +92,9 @@ jobs:
       - name: Build unpacked extensions
         run: nix develop --command vp build
 
+      - name: Validate Firefox submission
+        run: nix develop --command vp run firefox-lint
+
       - name: Test DOM integration and distributions
         run: nix develop --command vp test --run
 
