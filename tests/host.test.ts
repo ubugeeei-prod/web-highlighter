@@ -59,6 +59,23 @@ test("GitHub lines remain intact while hover and jump metadata is injected", asy
   assert.equal(await host.highlight(), 0);
 });
 
+test("GitHub hydration cannot permanently remove injected tokens", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  window.document.body.innerHTML =
+    '<table><tbody><tr><td data-testid="code-cell" id="LC1">fn greet() {}</td></tr></tbody></table>';
+  const line = window.document.querySelector<HTMLElement>("#LC1")!;
+  const host = new BrowserHost(window.document, analyzer);
+
+  assert.equal(await host.highlight(), 1);
+  assert.equal(line.querySelector(".wh-keyword")?.textContent, "fn");
+
+  line.replaceChildren(window.document.createTextNode("fn greet() {}"));
+  assert.equal(line.querySelector(".wh-token"), null);
+
+  assert.equal(await host.highlight(), 1);
+  assert.equal(line.querySelector(".wh-keyword")?.textContent, "fn");
+});
+
 test("GitLab visible lines are injected without touching its source overlay", async () => {
   const window = testWindow("https://gitlab.com/group/project/-/blob/main/demo.ipkg");
   window.document.body.innerHTML = `

@@ -79,7 +79,7 @@ function makeSurface(elements: HTMLElement[], filename = ""): Surface | undefine
   const segments: Segment[] = [];
   let source = "";
   for (const [index, element] of elements.entries()) {
-    const text = element.dataset.whSource ?? element.textContent ?? "";
+    const text = element.textContent ?? "";
     const start = source.length;
     source += text;
     segments.push({ element, text, start, end: source.length });
@@ -218,7 +218,11 @@ export class BrowserHost {
       );
       if (!analysis) continue;
       const fingerprint = hash(surface.source, analysis.language);
-      if (this.#fingerprints.get(surface.key) === fingerprint) continue;
+      if (
+        this.#fingerprints.get(surface.key) === fingerprint &&
+        this.#renderedSurfaceIsIntact(surface, analysis)
+      )
+        continue;
       this.#render(surface, analysis);
       this.#fingerprints.set(surface.key, fingerprint);
       count += 1;
@@ -290,6 +294,17 @@ export class BrowserHost {
       this.#entries.set(segment.element, { surface, analysis });
     }
     surface.key.dataset.whLanguage = analysis.language;
+  }
+
+  /** Detects framework hydration that replaced our spans without changing the source text. */
+  #renderedSurfaceIsIntact(surface: Surface, analysis: Analysis): boolean {
+    return surface.segments.every((segment) => {
+      if (segment.element.dataset.whSurface !== "true") return false;
+      const expected = analysis.tokens.filter(
+        (token) => token.end > segment.start && token.start < segment.end,
+      ).length;
+      return segment.element.querySelectorAll(":scope > .wh-token").length === expected;
+    });
   }
 
   #entry(target: HTMLElement) {
