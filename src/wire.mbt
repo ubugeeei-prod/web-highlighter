@@ -158,6 +158,12 @@ pub fn analyze_wire(
   identifier_extra : String,
 ) -> String {
   let definition = language(
+    id="wire",
+    name="Wire language",
+    aliases=[],
+    extensions=[],
+    filenames=[],
+    signatures=[],
     keywords=split_words(keywords),
     types=split_words(types),
     constants=split_words(constants),
@@ -175,6 +181,29 @@ pub fn analyze_wire(
 let language_registry : Array[Language] = []
 
 ///|
+let builtin_catalog : Array[Language] = builtin_languages()
+
+///|
+/// Detects a built-in language and returns its complete injected-support plan.
+///
+/// The first line identifies the selected language. Remaining lines contain
+/// semantic tokens, definitions, and references for the browser host to apply.
+pub fn analyze_request(
+  source : String,
+  hint : String,
+  filename : String,
+) -> String {
+  match detect_language(builtin_catalog, source, hint, filename) {
+    None => ""
+    Some(definition) =>
+      "L\t" +
+      definition.id +
+      "\n" +
+      encode_analysis(analyze(definition, source))
+  }
+}
+
+///|
 /// Compiles declarative wire tables once and returns a stable scanner handle.
 pub fn compile_language_wire(
   keywords : String,
@@ -189,6 +218,12 @@ pub fn compile_language_wire(
 ) -> Int {
   language_registry.push(
     language(
+      id="wire",
+      name="Wire language",
+      aliases=[],
+      extensions=[],
+      filenames=[],
+      signatures=[],
       keywords=split_words(keywords),
       types=split_words(types),
       constants=split_words(constants),
@@ -214,5 +249,5 @@ pub fn analyze_handle_wire(source : String, handle : Int) -> String {
 
 ///|
 fn main {
-  // The package is linked as an ES module; browser consumers call analyze_wire.
+  // Browser consumers call the exported Wasm-GC functions.
 }

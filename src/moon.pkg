@@ -1,15 +1,11 @@
-supported_targets = "js"
+supported_targets = "wasm-gc"
 
 options(
   "is-main": true,
   link: {
-    "js": {
-      "exports": [
-        "analyze_wire",
-        "compile_language_wire",
-        "analyze_handle_wire",
-      ],
-      "format": "esm",
+    "wasm-gc": {
+      "exports": [ "analyze_request", "theme_wire" ],
+      "use-js-builtin-string": true,
     },
   },
 )

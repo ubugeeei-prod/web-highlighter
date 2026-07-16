@@ -1,6 +1,12 @@
 ///|
 fn test_language() -> Language {
   language(
+    id="test",
+    name="Test",
+    aliases=["test"],
+    extensions=["test"],
+    filenames=[],
+    signatures=[],
     keywords=["fn", "let", "true"],
     types=["Int", "String"],
     constants=["None"],
