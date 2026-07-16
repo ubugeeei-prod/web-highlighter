@@ -1,7 +1,7 @@
 /** The deliberately small browser boundary around the MoonBit/Wasm engine. */
 export interface Analyzer {
-  analyze_request(source: string, hint: string, filename: string): string;
-  theme_wire(theme: string, dark: boolean): string;
+  analyze_request(source: string, hint: string, filename: string): Promise<string> | string;
+  theme_wire(theme: string, dark: boolean): Promise<string> | string;
 }
 
 interface Segment {
@@ -44,28 +44,6 @@ interface Analysis {
 const MAX_SOURCE = 2_000_000;
 const MAX_SURFACES = 48;
 const languageClass = /(?:^|\s)(?:language|lang)-([\w+.#-]+)/iu;
-
-/** Instantiates the immutable Wasm-GC analyzer shipped inside the extension. */
-export async function loadAnalyzer(url: string): Promise<Analyzer> {
-  const bytes = await fetch(url).then((response) => {
-    if (!response.ok) throw new Error(`analyzer load failed: ${response.status}`);
-    return response.arrayBuffer();
-  });
-  const instantiate = WebAssembly.instantiate as unknown as (
-    bytes: BufferSource,
-    imports: WebAssembly.Imports,
-    options: { builtins: string[]; importedStringConstants: string },
-  ) => Promise<WebAssembly.WebAssemblyInstantiatedSource>;
-  const { instance } = await instantiate(
-    bytes,
-    {},
-    {
-      builtins: ["js-string"],
-      importedStringConstants: "_",
-    },
-  );
-  return instance.exports as unknown as Analyzer;
-}
 
 function hintOf(element: HTMLElement): string {
   const direct =
@@ -182,6 +160,8 @@ export class BrowserHost {
   readonly #entries = new WeakMap<HTMLElement, { surface: Surface; analysis: Analysis }>();
   #observer: MutationObserver | undefined;
   #scheduled = false;
+  #highlighting: Promise<number> | undefined;
+  #rerun = false;
 
   constructor(
     readonly document: Document,
@@ -190,8 +170,8 @@ export class BrowserHost {
     this.#installNavigation();
   }
 
-  applyTheme(theme: string, dark: boolean): void {
-    for (const line of this.analyzer.theme_wire(theme, dark).split("\n")) {
+  async applyTheme(theme: string, dark: boolean): Promise<void> {
+    for (const line of (await this.analyzer.theme_wire(theme, dark)).split("\n")) {
       const [tag, name, color] = line.split("\t");
       if (tag === "M" && name) this.document.documentElement.dataset.whTheme = name;
       if (tag === "C" && name && color)
@@ -199,12 +179,31 @@ export class BrowserHost {
     }
   }
 
-  highlight(): number {
+  highlight(): Promise<number> {
+    if (this.#highlighting) {
+      this.#rerun = true;
+      return this.#highlighting;
+    }
+    const run = async () => {
+      let count = 0;
+      do {
+        this.#rerun = false;
+        count += await this.#highlightOnce();
+      } while (this.#rerun);
+      return count;
+    };
+    this.#highlighting = run().finally(() => {
+      this.#highlighting = undefined;
+    });
+    return this.#highlighting;
+  }
+
+  async #highlightOnce(): Promise<number> {
     let count = 0;
     for (const surface of discoverSurfaces(this.document).slice(0, MAX_SURFACES)) {
       if (surface.source.length > MAX_SOURCE) continue;
       const analysis = decodeAnalysis(
-        this.analyzer.analyze_request(surface.source, surface.hint, surface.filename),
+        await this.analyzer.analyze_request(surface.source, surface.hint, surface.filename),
         surface.source,
       );
       if (!analysis) continue;
@@ -217,15 +216,20 @@ export class BrowserHost {
     return count;
   }
 
-  start(): void {
+  async start(): Promise<void> {
     if (this.#observer) return;
-    this.highlight();
     this.#observer = new MutationObserver(() => this.#schedule());
     this.#observer.observe(this.document.documentElement, {
       childList: true,
       characterData: true,
       subtree: true,
     });
+    try {
+      await this.highlight();
+    } catch (error) {
+      this.stop();
+      throw error;
+    }
   }
 
   stop(): void {
@@ -347,7 +351,7 @@ export class BrowserHost {
     this.#scheduled = true;
     const run = () => {
       this.#scheduled = false;
-      this.highlight();
+      void this.highlight().catch(() => undefined);
     };
     if ("requestIdleCallback" in globalThis) requestIdleCallback(run, { timeout: 120 });
     else setTimeout(run, 16);

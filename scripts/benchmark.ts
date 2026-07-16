@@ -1,7 +1,10 @@
 import { performance } from "node:perf_hooks";
 import { readFile } from "node:fs/promises";
 import { brotliCompressSync } from "node:zlib";
-import type { Analyzer } from "../extension/src/host.ts";
+
+interface Analyzer {
+  analyze_request(source: string, hint: string, filename: string): string;
+}
 
 interface Budgets {
   runtimeBrotliBytes: number;
@@ -39,9 +42,11 @@ const elapsedSeconds = (performance.now() - start) / 1000;
 const mibPerSecond = (source.length * runs) / 1024 / 1024 / elapsedSeconds;
 
 const content = await readFile(new URL("../dist/chromium/content.js", import.meta.url));
+const engine = await readFile(new URL("../dist/chromium/engine.js", import.meta.url));
 const contentBrotliBytes = brotliCompressSync(content).length;
+const engineBrotliBytes = brotliCompressSync(engine).length;
 const analyzerBrotliBytes = brotliCompressSync(wasm).length;
-const runtimeBrotliBytes = contentBrotliBytes + analyzerBrotliBytes;
+const runtimeBrotliBytes = contentBrotliBytes + engineBrotliBytes + analyzerBrotliBytes;
 console.log(
   JSON.stringify(
     {
@@ -50,6 +55,7 @@ console.log(
       scannerMiBPerSecond: Number(mibPerSecond.toFixed(2)),
       coldStartMilliseconds: Number(coldStartMilliseconds.toFixed(2)),
       contentBytes: content.length,
+      engineBytes: engine.length,
       wasmBytes: wasm.length,
       runtimeBrotliBytes,
     },

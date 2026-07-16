@@ -20,9 +20,9 @@ const analyzer: Analyzer = {
   },
 };
 
-test("the wire protocol preserves definitions and references", () => {
+test("the wire protocol preserves definitions and references", async () => {
   const source = "fn greet() {}\ngreet()";
-  const result = decodeAnalysis(analyzer.analyze_request(source, "ush", ""), source)!;
+  const result = decodeAnalysis(await analyzer.analyze_request(source, "ush", ""), source)!;
   assert.equal(result.language, "ush");
   assert.deepEqual(result.definitions[0], {
     start: 3,
@@ -34,7 +34,7 @@ test("the wire protocol preserves definitions and references", () => {
   assert.equal(result.references[0]?.name, "greet");
 });
 
-test("GitHub lines remain intact while hover and jump metadata is injected", () => {
+test("GitHub lines remain intact while hover and jump metadata is injected", async () => {
   const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
   window.document.body.innerHTML = `
     <table><tbody>
@@ -46,7 +46,7 @@ test("GitHub lines remain intact while hover and jump metadata is injected", () 
   assert.equal(surface?.segments.length, 2);
 
   const host = new BrowserHost(window.document, analyzer);
-  assert.equal(host.highlight(), 1);
+  assert.equal(await host.highlight(), 1);
   assert.equal(window.document.querySelector("#LC1")?.textContent, "fn greet() {}");
   assert(window.document.querySelector("#L2"));
   const reference = window.document.querySelector<HTMLElement>('[data-wh-reference="true"]')!;
@@ -55,16 +55,16 @@ test("GitHub lines remain intact while hover and jump metadata is injected", () 
     window.document.querySelector<HTMLElement>('[data-wh-definition="true"]')?.dataset.scrolled,
     "true",
   );
-  assert.equal(host.highlight(), 0);
+  assert.equal(await host.highlight(), 0);
 });
 
-test("Discord fences and theme changes use the same host", () => {
+test("Discord fences and theme changes use the same host", async () => {
   const window = testWindow("https://discord.com/channels/1/2");
   window.document.body.innerHTML =
     '<pre><code class="language-ush">fn greet() {}\ngreet()</code></pre>';
   const host = new BrowserHost(window.document, analyzer);
-  assert.equal(host.highlight(), 1);
-  host.applyTheme("auto", true);
+  assert.equal(await host.highlight(), 1);
+  await host.applyTheme("auto", true);
   assert.equal(window.document.documentElement.dataset.whTheme, "midnight");
   assert.equal(window.document.documentElement.style.getPropertyValue("--wh-keyword"), "#ff7b72");
 });

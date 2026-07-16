@@ -1,4 +1,4 @@
-import { BrowserHost, loadAnalyzer } from "./host.ts";
+import { BrowserHost, type Analyzer } from "./host.ts";
 
 function api(): WebHighlighterBrowserApi | undefined {
   const host = globalThis as typeof globalThis & {
@@ -14,19 +14,33 @@ async function boot(): Promise<void> {
   const browserApi = api();
   if (!browserApi) return;
   try {
-    const analyzer = await loadAnalyzer(browserApi.runtime.getURL("analyzer.wasm"));
+    const request = async (message: unknown): Promise<string> => {
+      const response = (await browserApi.runtime.sendMessage(message)) as {
+        ok?: boolean;
+        wire?: unknown;
+        error?: unknown;
+      };
+      if (!response?.ok || typeof response.wire !== "string")
+        throw new Error(typeof response?.error === "string" ? response.error : "engine failed");
+      return response.wire;
+    };
+    const analyzer: Analyzer = {
+      analyze_request: (source, hint, filename) =>
+        request({ kind: "analyze", source, hint, filename }),
+      theme_wire: (theme, dark) => request({ kind: "theme", theme, dark }),
+    };
     const host = new BrowserHost(document, analyzer);
     const readTheme = async () => {
       const stored = await browserApi.storage?.sync
         ?.get({ theme: "auto" })
         .catch(() => ({ theme: "auto" }));
-      host.applyTheme(
+      await host.applyTheme(
         typeof stored?.theme === "string" ? stored.theme : "auto",
         matchMedia("(prefers-color-scheme: dark)").matches,
       );
     };
     await readTheme();
-    host.start();
+    await host.start();
     browserApi.storage?.onChanged?.addListener(() => void readTheme());
   } catch (error) {
     document.documentElement.removeAttribute("data-wh-booted");
