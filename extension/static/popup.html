@@ -1,22 +1,54 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Web Highlighter</title>
     <style>
-      :root { color-scheme: light dark; font: 13px/1.45 system-ui, sans-serif; }
-      body { width: 260px; margin: 0; padding: 16px; }
-      h1 { margin: 0 0 12px; font-size: 16px; }
-      label { display: grid; gap: 5px; margin-bottom: 12px; }
-      select, button { min-height: 32px; border: 1px solid ButtonBorder; border-radius: 6px; font: inherit; }
-      button { width: 100%; cursor: pointer; }
-      p { min-height: 1.5em; margin: 8px 0 0; color: GrayText; }
+      :root {
+        color-scheme: light dark;
+        font:
+          13px/1.45 system-ui,
+          sans-serif;
+      }
+      body {
+        width: 260px;
+        margin: 0;
+        padding: 16px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+      label {
+        display: grid;
+        gap: 5px;
+        margin-bottom: 12px;
+      }
+      select,
+      button {
+        min-height: 32px;
+        border: 1px solid ButtonBorder;
+        border-radius: 6px;
+        font: inherit;
+      }
+      button {
+        width: 100%;
+        cursor: pointer;
+      }
+      p {
+        min-height: 1.5em;
+        margin: 8px 0 0;
+        color: GrayText;
+      }
     </style>
   </head>
   <body>
     <h1>Web Highlighter</h1>
-    <label>Theme <select id="theme"></select></label>
+    <label
+      >Theme
+      <select id="theme"></select
+    ></label>
     <button id="enable" type="button">Enable on this site</button>
     <p id="status" aria-live="polite"></p>
     <script src="popup.js"></script>
