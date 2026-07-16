@@ -84,6 +84,20 @@ test("GitLab visible lines are injected without touching its source overlay", as
   assert(window.document.querySelector("#L2"));
 });
 
+test("GitLab waits for visible lines instead of treating its source overlay as code", async () => {
+  const window = testWindow("https://gitlab.com/group/project/-/blob/main/demo.ipkg");
+  window.document.body.innerHTML = `
+    <pre class="code highlight gl-relative">
+      <code data-testid="content" class="line">package demo</code>
+    </pre>`;
+  const overlay = window.document.querySelector<HTMLElement>('[data-testid="content"]')!;
+
+  assert.deepEqual(discoverSurfaces(window.document), []);
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 0);
+  assert.equal(overlay.textContent, "package demo");
+  assert.equal(overlay.childElementCount, 0);
+});
+
 test("Discord fences and theme changes use the same host", async () => {
   const window = testWindow("https://discord.com/channels/1/2");
   window.document.body.innerHTML =

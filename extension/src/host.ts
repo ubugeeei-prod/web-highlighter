@@ -113,6 +113,7 @@ export function discoverSurfaces(document: Document): Surface[] {
     ];
     const surface = makeSurface(lines, filenameOf(document));
     if (surface) return [surface];
+    return [];
   }
   return genericSurfaces(document);
 }

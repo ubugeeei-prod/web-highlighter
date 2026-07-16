@@ -67,7 +67,7 @@ vp run package   # verified browser ZIP archives and SHA256SUMS
 vp run verify    # MoonBit checks/tests + all checks above
 ```
 
-Load `dist/chromium`, `dist/firefox/manifest.json`, or convert `dist/safari` with `xcrun safari-web-extension-converter`. The four supported services receive automatic access. Any other origin is requested explicitly from the popup.
+Load `dist/chromium`, `dist/firefox/manifest.json`, or convert `dist/safari` with `xcrun safari-web-extension-converter`. The listed services receive automatic access. Any other origin is requested explicitly from the popup.
 
 ## A declarative language add-on
 
