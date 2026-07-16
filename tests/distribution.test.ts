@@ -13,6 +13,13 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       optional_host_permissions: string[];
       content_security_policy: { extension_pages: string };
       background: { service_worker?: string; scripts?: string[] };
+      browser_specific_settings?: {
+        gecko?: {
+          strict_min_version?: string;
+          data_collection_permissions?: { required?: string[] };
+        };
+        gecko_android?: { strict_min_version?: string };
+      };
     };
     assert.equal(manifest.manifest_version, 3);
     assert(manifest.content_scripts[0]?.matches.includes("https://github.com/*"));
@@ -26,6 +33,14 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       manifest.background.service_worker === "engine.js" ||
         manifest.background.scripts?.includes("engine.js"),
     );
+    if (target === "firefox") {
+      assert.equal(manifest.browser_specific_settings?.gecko?.strict_min_version, "140.0");
+      assert.equal(manifest.browser_specific_settings?.gecko_android?.strict_min_version, "142.0");
+      assert.deepEqual(
+        manifest.browser_specific_settings?.gecko?.data_collection_permissions?.required,
+        ["none"],
+      );
+    }
     assert((await stat(new URL(`../dist/${target}/popup.html`, import.meta.url))).size > 0);
     assert((await stat(new URL(`../dist/${target}/engine.js`, import.meta.url))).size > 0);
     assert((await stat(new URL(`../dist/${target}/analyzer.wasm`, import.meta.url))).size > 0);

@@ -5,6 +5,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "26.1.1",
+    "addons-linter": "10.9.0",
     "happy-dom": "20.10.6",
     "playwright": "1.61.1",
     "vite-plus": "0.2.4"

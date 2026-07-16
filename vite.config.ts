@@ -50,7 +50,12 @@ function manifest(target: (typeof targets)[number]) {
     ...(target === "firefox"
       ? {
           browser_specific_settings: {
-            gecko: { id: "web-highlighter@ubugeeei-prod", strict_min_version: "120.0" },
+            gecko: {
+              id: "web-highlighter@ubugeeei-prod",
+              strict_min_version: "140.0",
+              data_collection_permissions: { required: ["none"] },
+            },
+            gecko_android: { strict_min_version: "142.0" },
           },
         }
       : {}),
@@ -115,11 +120,13 @@ export default defineConfig({
         command: "node --experimental-strip-types scripts/browser-smoke.ts",
         cache: false,
       },
+      "firefox-lint": "vp exec addons-linter dist/firefox --warnings-as-errors",
       verify: [
         "vp run moon-check",
         "vp run moon-test",
         "vp check",
         "vp build",
+        "vp run firefox-lint",
         "vp test",
         "vp run bench",
       ],
