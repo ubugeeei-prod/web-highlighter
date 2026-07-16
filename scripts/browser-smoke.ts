@@ -84,8 +84,17 @@ try {
     "Follow system",
     "Adaptive",
     "Midnight",
+    "Paper",
   ]);
-  console.log("Chromium injected tNix tokens and loaded the MoonBit theme catalog.");
+  await popup.locator("#theme").selectOption("paper");
+  await page.waitForFunction(() => document.documentElement.dataset.whTheme === "paper");
+  assert.equal(
+    await page
+      .locator("html")
+      .evaluate((element) => element.style.getPropertyValue("--wh-keyword")),
+    "#9c1c1c",
+  );
+  console.log("Chromium injected tNix tokens and applied the packaged Paper theme.");
 } finally {
   await context?.close();
   server.closeAllConnections();
