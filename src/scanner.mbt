@@ -332,6 +332,7 @@ pub fn analyze(language : Language, source : String) -> Analysis {
       token(tokens, start, cursor, Operator)
       continue
     }
+    let next_cursor = advance_codepoint(source, cursor)
     if current == '('.to_int() ||
       current == ')'.to_int() ||
       current == '['.to_int() ||
@@ -341,12 +342,12 @@ pub fn analyze(language : Language, source : String) -> Analysis {
       current == ','.to_int() ||
       current == ';'.to_int() ||
       current == ':'.to_int() {
-      token(tokens, cursor, advance_codepoint(source, cursor), Punctuation)
+      token(tokens, cursor, next_cursor, Punctuation)
     }
     if current == '\n'.to_int() {
       line += 1
     }
-    cursor = advance_codepoint(source, cursor)
+    cursor = next_cursor
   }
   let references : Array[Reference] = []
   let reference_tokens : Array[Token] = []
