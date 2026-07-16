@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { join, resolve } from "node:path";
 import { chromium, type BrowserContext } from "playwright";
 
-const fixture = `<!doctype html>
+const gitlabFixture = `<!doctype html>
 <html><body>
 <a id="L1" data-line-number="1"></a><a id="L2" data-line-number="2"></a>
 <pre class="code highlight gl-relative">
@@ -15,9 +15,15 @@ const fixture = `<!doctype html>
   </code>
 </pre></body></html>`;
 
+const githubFixture = `<!doctype html>
+<html><body><table><tbody>
+  <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">let enabled = true;</td></tr>
+  <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">in if enabled then { status = "enabled"; }</td></tr>
+</tbody></table></body></html>`;
+
 const server = createServer((_request, response) => {
   response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-  response.end(fixture);
+  response.end(gitlabFixture);
 });
 const temporary = await mkdtemp(resolve(".browser-smoke-"));
 let context: BrowserContext | undefined;
@@ -37,8 +43,8 @@ try {
     host_permissions: string[];
     content_scripts: Array<{ matches: string[] }>;
   };
-  manifest.host_permissions = ["http://127.0.0.1/*"];
-  manifest.content_scripts[0]!.matches = ["http://127.0.0.1/*"];
+  manifest.host_permissions = ["http://127.0.0.1/*", "https://github.com/*"];
+  manifest.content_scripts[0]!.matches = ["http://127.0.0.1/*", "https://github.com/*"];
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   context = await chromium.launchPersistentContext(join(temporary, "profile"), {
@@ -77,6 +83,26 @@ try {
   assert.equal(await page.locator("#L2").count(), 1);
   assert.equal(startupErrors.length, 0, startupErrors.join("\n"));
 
+  await page.route("https://github.com/**", (route) =>
+    route.fulfill({ contentType: "text/html; charset=utf-8", body: githubFixture }),
+  );
+  await page.goto(
+    "https://github.com/ubugeeei-prod/tnix/blob/main/examples/basics/conditionals.tnix",
+  );
+  await page.locator("#LC1 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "tnix",
+  );
+  assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
+  assert.equal(await page.locator("#L2").count(), 1);
+
+  await page
+    .locator("#LC1")
+    .evaluate((line) => line.replaceChildren(document.createTextNode("let enabled = true;")));
+  await page.locator("#LC1 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
+
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
@@ -94,7 +120,7 @@ try {
       .evaluate((element) => element.style.getPropertyValue("--wh-keyword")),
     "#9c1c1c",
   );
-  console.log("Chromium highlighted tNix and applied the packaged Paper theme.");
+  console.log("Chromium covered GitHub hydration, GitLab injection, and the Paper theme.");
 } finally {
   await context?.close();
   server.closeAllConnections();
