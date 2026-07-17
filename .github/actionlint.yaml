@@ -1,5 +1,6 @@
 self-hosted-runner:
   labels:
     - blacksmith-32vcpu-ubuntu-2404
+    - blacksmith-12vcpu-macos-26
 
 config-variables: null

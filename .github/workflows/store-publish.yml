@@ -1,0 +1,254 @@
+name: Store publish
+run-name: Store ${{ inputs.store }} · ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing non-prerelease GitHub Release tag (for example, v0.1.0)
+        required: true
+        type: string
+      store:
+        description: Store to submit to
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - chrome
+          - firefox
+          - edge
+          - safari
+
+concurrency:
+  group: store-publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 2
+    steps:
+      - name: Require a final semantic-version release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          metadata="$(gh release view "$TAG" --json tagName,isDraft,isPrerelease)"
+          test "$(jq -r .tagName <<<"$metadata")" = "$TAG"
+          test "$(jq -r .isDraft <<<"$metadata")" = false
+          test "$(jq -r .isPrerelease <<<"$metadata")" = false
+
+  chrome:
+    name: Submit Chrome Web Store
+    if: inputs.store == 'all' || inputs.store == 'chrome'
+    needs: validate
+    environment: store-publish
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Download and verify Chrome archive
+        env:
+          ARCHIVE: web-highlighter-${{ inputs.tag }}-chrome-web-store.zip
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir release
+          gh release download "$TAG" --dir release --pattern "$ARCHIVE"
+          gh release download "$TAG" --dir release --pattern SHA256SUMS
+          (cd release && grep -F "  $ARCHIVE" SHA256SUMS | sha256sum --check --strict)
+
+      - name: Exchange GitHub OIDC for a short-lived Google token
+        id: google-auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.CWS_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_lifetime: 900s
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+          create_credentials_file: false
+          export_environment_variables: false
+
+      - name: Upload and submit Chrome release
+        env:
+          ARCHIVE: web-highlighter-${{ inputs.tag }}-chrome-web-store.zip
+          CHROME_ACCESS_TOKEN: ${{ steps.google-auth.outputs.access_token }}
+          CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+        run: nix develop --command vp run store-publish chrome "release/$ARCHIVE"
+
+  firefox:
+    name: Submit Firefox Add-ons
+    if: inputs.store == 'all' || inputs.store == 'firefox'
+    needs: validate
+    environment: store-publish
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 15
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Download and verify Firefox archives
+        env:
+          ARCHIVE: web-highlighter-${{ inputs.tag }}-firefox-amo.zip
+          GH_TOKEN: ${{ github.token }}
+          SOURCE: web-highlighter-${{ inputs.tag }}-firefox-source.zip
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir release
+          gh release download "$TAG" --dir release --pattern "$ARCHIVE"
+          gh release download "$TAG" --dir release --pattern "$SOURCE"
+          gh release download "$TAG" --dir release --pattern SHA256SUMS
+          (cd release && grep -F "  $ARCHIVE" SHA256SUMS | sha256sum --check --strict)
+          (cd release && grep -F "  $SOURCE" SHA256SUMS | sha256sum --check --strict)
+          mkdir -p .publish/firefox .publish/signed
+          unzip -q "release/$ARCHIVE" -d .publish/firefox
+
+      - name: Upload source and submit listed Firefox release
+        env:
+          WEB_EXT_AMO_METADATA: store/amo-metadata.json
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          WEB_EXT_APPROVAL_TIMEOUT: "0"
+          WEB_EXT_ARTIFACTS_DIR: .publish/signed
+          WEB_EXT_CHANNEL: listed
+          WEB_EXT_NO_INPUT: "true"
+          WEB_EXT_SOURCE_DIR: .publish/firefox
+          WEB_EXT_UPLOAD_SOURCE_CODE: release/web-highlighter-${{ inputs.tag }}-firefox-source.zip
+        run: nix develop --command vp exec web-ext sign
+
+  edge:
+    name: Submit Microsoft Edge Add-ons
+    if: inputs.store == 'all' || inputs.store == 'edge'
+    needs: validate
+    environment: store-publish
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Download and verify Edge archive
+        env:
+          ARCHIVE: web-highlighter-${{ inputs.tag }}-edge-addons.zip
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir release
+          gh release download "$TAG" --dir release --pattern "$ARCHIVE"
+          gh release download "$TAG" --dir release --pattern SHA256SUMS
+          (cd release && grep -F "  $ARCHIVE" SHA256SUMS | sha256sum --check --strict)
+
+      - name: Upload and submit Edge release
+        env:
+          ARCHIVE: web-highlighter-${{ inputs.tag }}-edge-addons.zip
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+          EDGE_CERTIFICATION_NOTES: Web Highlighter ${{ inputs.tag }}; reproducible source and reviewer instructions are linked from the store listing.
+          EDGE_CLIENT_ID: ${{ vars.EDGE_CLIENT_ID }}
+          EDGE_PRODUCT_ID: ${{ vars.EDGE_PRODUCT_ID }}
+        run: nix develop --command vp run store-publish edge "release/$ARCHIVE"
+
+  safari:
+    name: Prepare Safari App Store submission
+    if: inputs.store == 'all' || inputs.store == 'safari'
+    needs: validate
+    environment: store-publish
+    runs-on: blacksmith-12vcpu-macos-26
+    timeout-minutes: 15
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Download and verify Safari archive
+        env:
+          ARCHIVE: web-highlighter-${{ inputs.tag }}-safari-web-extension.zip
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir release
+          gh release download "$TAG" --dir release --pattern "$ARCHIVE"
+          gh release download "$TAG" --dir release --pattern SHA256SUMS
+          expected="$(awk -v name="$ARCHIVE" '$2 == name { print $1 }' release/SHA256SUMS)"
+          actual="$(shasum -a 256 "release/$ARCHIVE" | awk '{ print $1 }')"
+          test -n "$expected"
+          test "$actual" = "$expected"
+          mkdir -p .publish/safari .publish/project
+          unzip -q "release/$ARCHIVE" -d .publish/safari
+
+      - name: Validate with Apple's Safari Web Extension Packager
+        env:
+          SAFARI_BUNDLE_ID: ${{ vars.SAFARI_BUNDLE_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$SAFARI_BUNDLE_ID"
+          nix develop --command vp run safari-package .publish/safari \
+            --project-location .publish/project \
+            --app-name "Web Highlighter" \
+            --bundle-identifier "$SAFARI_BUNDLE_ID" \
+            --swift --copy-resources --no-open --no-prompt --force
+
+      - name: Upload Safari submission files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: safari-app-store-${{ inputs.tag }}
+          path: |
+            release/web-highlighter-${{ inputs.tag }}-safari-web-extension.zip
+            .publish/project/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Record the manual App Store Connect boundary
+        run: echo 'Upload the verified ZIP in App Store Connect, select the packaged build, and submit it for review.' >> "$GITHUB_STEP_SUMMARY"
