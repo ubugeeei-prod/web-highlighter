@@ -64,7 +64,7 @@ vp test --run    # DOM and distribution tests
 vp build         # MoonBit Wasm-GC + all unpacked WebExtensions
 vp run firefox-lint # Mozilla submission validation
 vp run bench     # measured runtime budgets
-vp run package   # verified browser ZIP archives and SHA256SUMS
+vp run package   # reproducible store/source ZIP archives and SHA256SUMS
 vp run verify    # MoonBit checks/tests + all checks above
 ```
 

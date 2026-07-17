@@ -147,13 +147,16 @@ export default defineConfig({
         "vp run moon-check",
         "vp run moon-test",
         "vp check",
-        "vp build",
+        "vp run package",
         "vp run firefox-lint",
         "vp test",
         "vp run bench",
       ],
       release: { command: "node scripts/release.mjs", cache: false },
-      package: { command: ["vp build", "node scripts/package.mjs"], cache: false },
+      package: {
+        command: ["vp build", "node scripts/package.mjs", "node --test scripts/package.test.mjs"],
+        cache: false,
+      },
     },
   },
 });
