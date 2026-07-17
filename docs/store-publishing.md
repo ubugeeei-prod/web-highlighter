@@ -108,7 +108,7 @@ From a clean, synchronized `main`, create the release:
 vp run release minor
 ```
 
-The atomic tag push starts `.github/workflows/release.yml`. Wait until **Verify and package** and **Attest and publish** pass and the GitHub Release contains every ZIP plus `SHA256SUMS`.
+The atomic tag push starts `.github/workflows/release.yml`. After **Verify and package** passes, review the tag and approve the protected `release` environment; it accepts only `v*` tags and gates the job's write and attestation permissions. Wait until **Attest and publish** passes and the GitHub Release contains every ZIP plus `SHA256SUMS`.
 
 Then open **Actions → Store publish → Run workflow** on `main`:
 
