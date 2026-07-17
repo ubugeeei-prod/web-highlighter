@@ -133,6 +133,8 @@ vp run release minor
 
 The task bumps `package.json` and `moon.mod`, runs the complete verification suite, creates a conventional release commit and annotated tag, then atomically pushes `main` and the tag. The tag workflow rebuilds in Nix, packages all browsers, emits GitHub OIDC build-provenance attestations, and creates a GitHub Release. No long-lived publishing token is stored.
 
+Store submissions use the canonical [listing copy](store/listing.md), [reviewer notes](store/reviewer-notes.md), and [privacy policy](PRIVACY.md).
+
 ## License
 
 MIT
