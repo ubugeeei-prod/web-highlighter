@@ -68,7 +68,7 @@
             url = "https://github.com/voidzero-dev/vite-plus/releases/download/v0.2.4/vp-${vpPlatform.name}.tar.gz";
             inherit (vpPlatform) hash;
           };
-          vitePlus =
+          vitePlusBinary =
             pkgs.runCommand "vite-plus-0.2.4"
               {
                 nativeBuildInputs = [
@@ -83,6 +83,17 @@
                 chmod +x "$out/bin/vp"
                 ${pkgs.lib.optionalString pkgs.stdenv.isLinux ''autoPatchelf "$out"''}
               '';
+          vitePlus = pkgs.writeShellApplication {
+            name = "vp";
+            text = ''
+              # The Darwin launcher delegates to the project-local package. Keep the
+              # first dependency install bootstrappable through the same `vp` command.
+              if [[ "$#" -gt 0 && "$1" == "install" && ! -f node_modules/vite-plus/dist/bin.js ]]; then
+                exec ${pkgs.pnpm}/bin/pnpm "$@"
+              fi
+              exec ${vitePlusBinary}/bin/vp "$@"
+            '';
+          };
         in
         {
           inherit moonbit vitePlus;
