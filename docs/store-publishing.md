@@ -43,13 +43,23 @@ Configure Google Cloud without creating a service-account key:
    assertion.repository=='ubugeeei-prod/web-highlighter' && assertion.ref=='refs/heads/main'
    ```
 
-7. Grant `roles/iam.workloadIdentityUser` on the service account to this exact external subject, using the numeric Google Cloud project number:
+7. Read this repository's authoritative immutable subject prefix and confirm that it matches the value below:
 
-   ```text
-   principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/subject/repo:ubugeeei-prod/web-highlighter:environment:store-publish
+   ```sh
+   gh api repos/ubugeeei-prod/web-highlighter/actions/oidc/customization/sub --jq .sub_claim_prefix
    ```
 
-8. Add the four Chrome environment variables from the table above.
+   ```text
+   repo:ubugeeei-prod@288813381/web-highlighter@1302664546
+   ```
+
+8. Grant `roles/iam.workloadIdentityUser` on the service account to this exact environment subject, using the numeric Google Cloud project number:
+
+   ```text
+   principal://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/subject/repo:ubugeeei-prod@288813381/web-highlighter@1302664546:environment:store-publish
+   ```
+
+9. Add the four Chrome environment variables from the table above.
 
 At runtime, GitHub issues an OIDC token only to the Chrome job. Google exchanges it for a 15-minute access token scoped to `https://www.googleapis.com/auth/chromewebstore`; the workflow neither receives nor stores a renewable Google secret.
 
