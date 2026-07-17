@@ -7,7 +7,7 @@ Web Highlighter has one purpose: add local language support where a code host or
 ## Manual verification
 
 1. Install the submitted extension package.
-2. Open `https://github.com/ubugeeei-prod/ush/blob/main/examples/control_flow.ush`.
+2. Open `https://github.com/ubugeeei-prod/ush/blob/16690ef8e20d64836024505971d4f45384c93207/examples/control_flow.ush`.
 3. Confirm that the `.ush` source receives semantic colors after the page settles.
 4. Hover a recognized declaration and confirm that a local symbol tooltip appears.
 5. Activate a reference to a same-file symbol and confirm that the corresponding definition is focused.

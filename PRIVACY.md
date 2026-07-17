@@ -20,7 +20,7 @@ The extension does not sell, share, or use personal data for advertising, profil
 
 ## Retention and deletion
 
-Code and page metadata are kept only in extension memory for the time needed to analyze and decorate the current page. They are not retained by the developer. You can delete the stored theme preference and permission grants by removing the extension or clearing its extension data in your browser.
+Code and page metadata are kept only in extension memory for the time needed to analyze and decorate the current page. They are not retained by the developer. You can delete the stored theme preference by clearing the extension's data or uninstalling it. Host permissions are managed separately by the browser: revoke them through the browser's extension or site-permission controls, or uninstall the extension. Clearing extension data alone may not revoke host access.
 
 ## Permissions
 
@@ -31,4 +31,4 @@ Code and page metadata are kept only in extension memory for the time needed to 
 
 ## Changes and contact
 
-Material changes to this policy will be committed to this repository with a new effective date. Questions and privacy requests can be filed through [GitHub Issues](https://github.com/ubugeeei-prod/web-highlighter/issues).
+Material changes to this policy will be committed to this repository with a new effective date. Privacy questions that do not contain personal or confidential information can be filed through [GitHub Issues](https://github.com/ubugeeei-prod/web-highlighter/issues). Issues are public: do not include personal information, private code, browsing data, credentials, or other confidential material. Because the developer collects no user data, there is no developer-held personal dataset to access or delete.
