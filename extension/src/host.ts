@@ -52,13 +52,12 @@ function hintOf(element: HTMLElement): string {
   const container = element.closest<HTMLElement>(
     "[data-language], [data-code-language], [data-lang]",
   );
-  return (
-    element.className.match(languageClass)?.[1] ??
-    container?.dataset.language ??
-    container?.dataset.codeLanguage ??
-    container?.getAttribute("data-lang") ??
-    ""
-  );
+  const containerHint =
+    container?.dataset.language ||
+    container?.dataset.codeLanguage ||
+    container?.getAttribute("data-lang") ||
+    "";
+  return element.className.match(languageClass)?.[1] ?? containerHint;
 }
 
 function filenameOf(document: Document): string {

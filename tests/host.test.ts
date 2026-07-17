@@ -155,3 +155,18 @@ test("ChatGPT language metadata is applied without replacing code-block chrome",
   assert.equal(window.document.querySelector("#copy"), copy);
   assert.equal(copy?.textContent, "Copy code");
 });
+
+test("ancestor data-lang remains reachable past an empty language attribute", async () => {
+  const window = testWindow("https://example.com/thread/1");
+  window.document.body.innerHTML = `
+    <section data-language="" data-lang="ush">
+      <button id="control">Code actions</button>
+      <pre><code>fn greet() {}\ngreet()</code></pre>
+    </section>`;
+  const control = window.document.querySelector("#control");
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#control"), control);
+  assert.equal(control?.textContent, "Code actions");
+});
