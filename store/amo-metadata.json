@@ -1,0 +1,14 @@
+{
+  "summary": {
+    "en-US": "Inject lightweight language support into code hosts and chats that do not support your language.",
+    "ja": "未対応言語のハイライト・hover・同一ファイル内ジャンプを、コードホストやチャットへ軽量に注入します。"
+  },
+  "categories": ["other"],
+  "homepage": {
+    "en-US": "https://github.com/ubugeeei-prod/web-highlighter",
+    "ja": "https://github.com/ubugeeei-prod/web-highlighter"
+  },
+  "version": {
+    "license": "MIT"
+  }
+}
