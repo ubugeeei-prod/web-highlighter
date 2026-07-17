@@ -144,6 +144,8 @@ export default defineConfig({
       },
       "firefox-lint": "vp exec addons-linter dist/firefox --warnings-as-errors",
       "actions-lint": "actionlint",
+      "safari-package": { command: "xcrun safari-web-extension-packager", cache: false },
+      "store-publish": { command: "node scripts/store-publish.mjs", cache: false },
       "store-publish-test": "node --test scripts/store-publish.test.mjs",
       verify: [
         "vp run moon-check",
