@@ -125,3 +125,48 @@ test("Discord fences and theme changes use the same host", async () => {
   assert.equal(window.document.documentElement.dataset.whTheme, "midnight");
   assert.equal(window.document.documentElement.style.getPropertyValue("--wh-keyword"), "#ff7b72");
 });
+
+test("Slack parent metadata is read without replacing message controls", async () => {
+  const window = testWindow("https://workspace.slack.com/archives/C1");
+  window.document.body.innerHTML = `
+    <article data-message-id="1">
+      <button id="thread">Reply in thread</button>
+      <pre data-code-language="ush"><code>fn greet() {}\ngreet()</code></pre>
+    </article>`;
+  const thread = window.document.querySelector("#thread");
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#thread"), thread);
+  assert.equal(thread?.textContent, "Reply in thread");
+});
+
+test("ChatGPT language metadata is applied without replacing code-block chrome", async () => {
+  const window = testWindow("https://chatgpt.com/c/example");
+  window.document.body.innerHTML = `
+    <section>
+      <div class="code-block-header"><button id="copy">Copy code</button></div>
+      <pre><code data-language="ush">fn greet() {}\ngreet()</code></pre>
+    </section>`;
+  const copy = window.document.querySelector("#copy");
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#copy"), copy);
+  assert.equal(copy?.textContent, "Copy code");
+});
+
+test("ancestor data-lang remains reachable past an empty language attribute", async () => {
+  const window = testWindow("https://example.com/thread/1");
+  window.document.body.innerHTML = `
+    <section data-language="" data-lang="ush">
+      <button id="control">Code actions</button>
+      <pre><code>fn greet() {}\ngreet()</code></pre>
+    </section>`;
+  const control = window.document.querySelector("#control");
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#control"), control);
+  assert.equal(control?.textContent, "Code actions");
+});
