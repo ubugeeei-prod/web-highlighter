@@ -24,13 +24,29 @@ function manifest(target: (typeof targets)[number]) {
   };
   return {
     manifest_version: 3,
-    name: "Web Highlighter",
+    name: "__MSG_extensionName__",
+    short_name: "__MSG_extensionShortName__",
+    default_locale: "en",
     version,
-    description: "Inject language support that code hosts and chat services do not provide.",
+    description: "__MSG_extensionDescription__",
+    homepage_url: "https://github.com/ubugeeei-prod/web-highlighter",
+    icons: {
+      16: "icons/icon-16.png",
+      32: "icons/icon-32.png",
+      48: "icons/icon-48.png",
+      128: "icons/icon-128.png",
+    },
     permissions: ["activeTab", "scripting", "storage"],
     host_permissions: automaticHosts,
     optional_host_permissions: ["https://*/*", "http://*/*"],
-    action: { default_popup: "popup.html", default_title: "Web Highlighter" },
+    action: {
+      default_icon: {
+        16: "icons/icon-16.png",
+        32: "icons/icon-32.png",
+      },
+      default_popup: "popup.html",
+      default_title: "Web Highlighter",
+    },
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
     },
@@ -95,6 +111,12 @@ export default defineConfig({
           cpSync(staging, out, { recursive: true });
           cpSync(resolve(root, "extension/src/content.css"), resolve(out, "content.css"));
           cpSync(resolve(root, "extension/static/popup.html"), resolve(out, "popup.html"));
+          cpSync(resolve(root, "extension/static/icons"), resolve(out, "icons"), {
+            recursive: true,
+          });
+          cpSync(resolve(root, "extension/static/_locales"), resolve(out, "_locales"), {
+            recursive: true,
+          });
           cpSync(wasm, resolve(out, "analyzer.wasm"));
           writeFileSync(
             resolve(out, "manifest.json"),

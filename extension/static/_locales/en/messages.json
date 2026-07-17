@@ -1,0 +1,14 @@
+{
+  "extensionName": {
+    "message": "Web Highlighter",
+    "description": "The extension name shown by the browser and stores."
+  },
+  "extensionShortName": {
+    "message": "Highlighter",
+    "description": "A compact extension name for constrained browser UI."
+  },
+  "extensionDescription": {
+    "message": "Inject lightweight language support into code hosts and chat services that do not provide it.",
+    "description": "The extension description shown by the browser and stores."
+  }
+}

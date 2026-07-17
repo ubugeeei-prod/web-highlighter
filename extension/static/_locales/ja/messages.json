@@ -1,0 +1,14 @@
+{
+  "extensionName": {
+    "message": "Web Highlighter",
+    "description": "ブラウザとストアに表示する拡張機能名。"
+  },
+  "extensionShortName": {
+    "message": "言語注入",
+    "description": "狭いブラウザ UI に表示する短い名前。"
+  },
+  "extensionDescription": {
+    "message": "コードホストやチャットサービスが対応しない言語の軽量な言語サポートを、ブラウザ内へ注入します。",
+    "description": "ブラウザとストアに表示する拡張機能の説明。"
+  }
+}

@@ -9,6 +9,10 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       await readFile(new URL(`../dist/${target}/manifest.json`, import.meta.url), "utf8"),
     ) as {
       manifest_version: number;
+      name: string;
+      description: string;
+      default_locale: string;
+      icons: Record<string, string>;
       content_scripts: Array<{ matches: string[] }>;
       optional_host_permissions: string[];
       content_security_policy: { extension_pages: string };
@@ -22,6 +26,10 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       };
     };
     assert.equal(manifest.manifest_version, 3);
+    assert.equal(manifest.name, "__MSG_extensionName__");
+    assert.equal(manifest.description, "__MSG_extensionDescription__");
+    assert.equal(manifest.default_locale, "en");
+    assert.equal(manifest.icons["128"], "icons/icon-128.png");
     assert(manifest.content_scripts[0]?.matches.includes("https://github.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://gitlab.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://discord.com/*"));
@@ -42,6 +50,15 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       );
     }
     assert((await stat(new URL(`../dist/${target}/popup.html`, import.meta.url))).size > 0);
+    assert((await stat(new URL(`../dist/${target}/icons/icon-128.png`, import.meta.url))).size > 0);
+    assert(
+      (await stat(new URL(`../dist/${target}/_locales/en/messages.json`, import.meta.url))).size >
+        0,
+    );
+    assert(
+      (await stat(new URL(`../dist/${target}/_locales/ja/messages.json`, import.meta.url))).size >
+        0,
+    );
     assert((await stat(new URL(`../dist/${target}/engine.js`, import.meta.url))).size > 0);
     assert((await stat(new URL(`../dist/${target}/analyzer.wasm`, import.meta.url))).size > 0);
   });
