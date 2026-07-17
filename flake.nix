@@ -118,6 +118,7 @@
               pkgs.pnpm
               pkgs.git
               pkgs.gh
+              pkgs.actionlint
               pkgs.zip
               pkgs.unzip
             ];

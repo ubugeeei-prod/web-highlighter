@@ -143,11 +143,13 @@ export default defineConfig({
         cache: false,
       },
       "firefox-lint": "vp exec addons-linter dist/firefox --warnings-as-errors",
+      "actions-lint": "actionlint",
       "store-publish-test": "node --test scripts/store-publish.test.mjs",
       verify: [
         "vp run moon-check",
         "vp run moon-test",
         "vp check",
+        "vp run actions-lint",
         "vp run package",
         "vp run firefox-lint",
         "vp run store-publish-test",
