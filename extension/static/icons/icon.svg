@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Web Highlighter</title>
+  <rect x="16" y="16" width="96" height="96" rx="24" fill="#0d1117"/>
+  <rect x="16.75" y="16.75" width="94.5" height="94.5" rx="23.25" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="1.5"/>
+  <path d="M50 40 31 64l19 24" fill="none" stroke="#58a6ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/>
+  <path d="m78 40 19 24-19 24" fill="none" stroke="#d2a8ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/>
+  <rect x="51" y="58" width="26" height="12" rx="6" fill="#ff7b72"/>
+</svg>

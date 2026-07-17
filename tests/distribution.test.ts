@@ -9,6 +9,11 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       await readFile(new URL(`../dist/${target}/manifest.json`, import.meta.url), "utf8"),
     ) as {
       manifest_version: number;
+      name: string;
+      description: string;
+      default_locale: string;
+      icons: Record<string, string>;
+      action: { default_icon: Record<string, string>; default_title: string };
       content_scripts: Array<{ matches: string[] }>;
       optional_host_permissions: string[];
       content_security_policy: { extension_pages: string };
@@ -22,6 +27,19 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       };
     };
     assert.equal(manifest.manifest_version, 3);
+    assert.equal(manifest.name, "__MSG_extensionName__");
+    assert.equal(manifest.description, "__MSG_extensionDescription__");
+    assert.equal(manifest.default_locale, "en");
+    assert.equal(manifest.action.default_title, "__MSG_extensionShortName__");
+    for (const size of [16, 32, 48, 128]) {
+      const path = `icons/icon-${size}.png`;
+      assert.equal(manifest.icons[String(size)], path);
+      const icon = await readFile(new URL(`../dist/${target}/${path}`, import.meta.url));
+      assert.equal(icon.readUInt32BE(16), size);
+      assert.equal(icon.readUInt32BE(20), size);
+    }
+    assert.equal(manifest.action.default_icon["16"], "icons/icon-16.png");
+    assert.equal(manifest.action.default_icon["32"], "icons/icon-32.png");
     assert(manifest.content_scripts[0]?.matches.includes("https://github.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://gitlab.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://discord.com/*"));
@@ -42,6 +60,21 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
       );
     }
     assert((await stat(new URL(`../dist/${target}/popup.html`, import.meta.url))).size > 0);
+    for (const locale of ["en", "ja"]) {
+      const source = await readFile(
+        new URL(`../dist/${target}/_locales/${locale}/messages.json`, import.meta.url),
+        "utf8",
+      );
+      assert(source.length > 0);
+      const messages = JSON.parse(source) as Record<string, { message?: unknown }>;
+      assert.deepEqual(Object.keys(messages).sort(), [
+        "extensionDescription",
+        "extensionName",
+        "extensionShortName",
+      ]);
+      for (const value of Object.values(messages))
+        assert.equal(typeof value.message === "string" && value.message.length > 0, true);
+    }
     assert((await stat(new URL(`../dist/${target}/engine.js`, import.meta.url))).size > 0);
     assert((await stat(new URL(`../dist/${target}/analyzer.wasm`, import.meta.url))).size > 0);
   });
