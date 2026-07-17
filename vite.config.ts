@@ -45,7 +45,7 @@ function manifest(target: (typeof targets)[number]) {
         32: "icons/icon-32.png",
       },
       default_popup: "popup.html",
-      default_title: "Web Highlighter",
+      default_title: "__MSG_extensionShortName__",
     },
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
