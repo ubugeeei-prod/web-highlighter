@@ -134,10 +134,37 @@ jobs:
       - name: Enforce size, startup, and throughput budgets
         run: nix develop --command vp run bench
 
+  store-artifacts:
+    name: Store artifacts
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+
+      - name: Install pnpm dependencies through Vite+
+        run: nix develop --command vp install --frozen-lockfile
+
+      - name: Build and verify store archives
+        run: nix develop --command vp run package
+
+      - name: Upload store submission artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: store-submission-artifacts
+          path: release/
+          if-no-files-found: error
+          retention-days: 14
+
   verify:
     name: Verify
     if: always()
-    needs: [policy, quality, moonbit-tests, browser-tests, budgets]
+    needs: [policy, quality, moonbit-tests, browser-tests, budgets, store-artifacts]
     runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 2
     steps:
@@ -148,9 +175,11 @@ jobs:
           MOONBIT_TESTS: ${{ needs.moonbit-tests.result }}
           BROWSER_TESTS: ${{ needs.browser-tests.result }}
           BUDGETS: ${{ needs.budgets.result }}
+          STORE_ARTIFACTS: ${{ needs.store-artifacts.result }}
         run: |
           test "$POLICY" = success
           test "$QUALITY" = success
           test "$MOONBIT_TESTS" = success
           test "$BROWSER_TESTS" = success
           test "$BUDGETS" = success
+          test "$STORE_ARTIFACTS" = success

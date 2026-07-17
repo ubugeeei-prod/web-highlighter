@@ -119,6 +119,7 @@
               pkgs.git
               pkgs.gh
               pkgs.zip
+              pkgs.unzip
             ];
             shellHook = ''
               export MOON_HOME="${tools.moonbit}"
