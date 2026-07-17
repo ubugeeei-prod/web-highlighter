@@ -24,7 +24,7 @@ Open **Settings → Environments → store-publish**. Add the following values a
 | Edge    | Secret   | `EDGE_API_KEY`                   | Publish API v1.1 key; rotate it before the expiry date shown by Partner Center              |
 | Safari  | Variable | `SAFARI_BUNDLE_ID`               | Unique reverse-DNS bundle ID registered for the app, for example `dev.ubugeeei.highlighter` |
 
-There is deliberately no Google JSON key, OAuth client secret, Chrome refresh token, generic store token, or Apple credential in GitHub.
+`AMO_JWT_SECRET` and `EDGE_API_KEY` are the only long-lived publishing credentials in GitHub, and they are isolated as approval-gated environment secrets. There is deliberately no Google JSON key, OAuth client secret, Chrome refresh token, repository-wide store token, or Apple credential; build and GitHub Release jobs receive none of the two environment secrets.
 
 ## Chrome Web Store: tokenless OIDC
 
@@ -93,8 +93,8 @@ Reference: [Microsoft Edge Add-ons Update REST API](https://learn.microsoft.com/
 1. Enroll the publishing Apple Account in the Apple Developer Program.
 2. Register the bundle ID and create the app record in App Store Connect.
 3. Add `SAFARI_BUNDLE_ID` to the GitHub environment.
-4. Run the Safari job. The largest pinned Blacksmith macOS runner verifies the ZIP with Apple's current `safari-web-extension-packager` and uploads both the original ZIP and generated Xcode project as a seven-day workflow artifact.
-5. In App Store Connect, open **Xcode Cloud → Safari Web Extension Packager**, upload the full Safari ZIP, choose the packaged build, complete the product page, and submit it for review. TestFlight can be used first.
+4. Run the Safari job. The largest pinned Blacksmith macOS runner verifies the ZIP with Apple's current `safari-web-extension-packager` and uploads both the original ZIP and generated Xcode project as a seven-day workflow artifact. Download the generated project within seven days if it is needed locally; rerun **Store publish** with the same tag and `safari` selection to regenerate it after expiration. The original Safari ZIP remains durably attached to the GitHub Release.
+5. Within that handoff window, open **Xcode Cloud → Safari Web Extension Packager** in App Store Connect, upload the full Safari ZIP from the durable GitHub Release or workflow artifact, choose the packaged build, complete the product page, and submit it for review. TestFlight can be used first.
 
 App Store Connect packaging and review remain manual because Apple exposes that flow through the authenticated web interface, not the credential-free job used here.
 
