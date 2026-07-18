@@ -135,6 +135,8 @@ vp run release minor
 
 The local task bumps both version files, runs the complete verification suite, creates a conventional release commit and annotated tag, then atomically pushes `main` and the tag. Both entry points create the GitHub Release without reading store credentials. Firefox and Edge credentials are isolated in the separately approved `store-publish` environment; Chrome uses short-lived OIDC instead.
 
+To reconcile an existing release after an interrupted publication, run `gh workflow run release.yml --ref main -f tag=v0.1.0`. The workflow checks out that immutable tag, rebuilds and verifies every archive, and requires an exact byte-for-byte match with the published assets before succeeding.
+
 Store submissions use the canonical [listing copy](store/listing.md), [reviewer notes](store/reviewer-notes.md), and [privacy policy](PRIVACY.md). The [store publishing guide](docs/store-publishing.md) covers the protected workflow and each one-time account setup.
 
 ## License

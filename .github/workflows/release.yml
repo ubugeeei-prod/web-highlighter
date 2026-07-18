@@ -4,6 +4,11 @@ on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to reconcile; leave blank to release main
+        required: false
+        type: string
 
 concurrency:
   group: release
@@ -19,13 +24,14 @@ jobs:
     timeout-minutes: 15
     outputs:
       commit: ${{ steps.release.outputs.commit }}
+      published: ${{ steps.release.outputs.published }}
       tag: ${{ steps.release.outputs.tag }}
     steps:
       - name: Check out tagged source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && 'main' || github.ref }}
+          ref: ${{ inputs.tag || (github.event_name == 'workflow_dispatch' && 'main') || github.ref }}
           persist-credentials: false
 
       - name: Resolve and validate release identity
@@ -33,6 +39,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           GH_TOKEN: ${{ github.token }}
+          REQUESTED_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           version="$(node -p 'require("./package.json").version')"
@@ -43,23 +50,35 @@ jobs:
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           test "$moon_version" = "$version"
           if [[ "$EVENT_NAME" = workflow_dispatch ]]; then
-            test "$GITHUB_REF" = refs/heads/main
-            test "$commit" = "$(git rev-parse origin/main)"
+            if [[ -n "$REQUESTED_TAG" ]]; then
+              [[ "$REQUESTED_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+              test "$REQUESTED_TAG" = "$tag"
+              test "$commit" = "$(git rev-list -n 1 "$REQUESTED_TAG")"
+            else
+              test "$GITHUB_REF" = refs/heads/main
+              test "$commit" = "$(git rev-parse origin/main)"
+            fi
           else
             test "$GITHUB_REF_TYPE" = tag
             test "$GITHUB_REF_NAME" = "$tag"
           fi
 
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Release $tag already exists." >&2
-            exit 1
+          published=false
+          if metadata="$(gh release view "$tag" --json tagName,isDraft,isPrerelease 2>/dev/null)"; then
+            test "$(jq -r .tagName <<<"$metadata")" = "$tag"
+            test "$(jq -r .isDraft <<<"$metadata")" = false
+            test "$(jq -r .isPrerelease <<<"$metadata")" = false
+            published=true
           fi
           if git rev-parse --verify --quiet "refs/tags/$tag^{commit}" >/dev/null; then
             test "$(git rev-list -n 1 "$tag")" = "$commit"
           fi
 
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          {
+            echo "commit=$commit"
+            echo "published=$published"
+            echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
@@ -101,7 +120,7 @@ jobs:
           path: release
 
       - name: Create annotated tag for a CI-initiated release
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && needs.package.outputs.published != 'true'
         env:
           COMMIT: ${{ needs.package.outputs.commit }}
           GH_TOKEN: ${{ github.token }}
@@ -123,12 +142,38 @@ jobs:
               -f sha="$tag_object" >/dev/null
           fi
 
+      - name: Reconcile an existing GitHub Release
+        if: needs.package.outputs.published == 'true'
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.package.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir published
+          gh release download "$TAG" --dir published
+          diff --recursive --brief release published
+
       - name: Attest release archives with GitHub OIDC
+        if: needs.package.outputs.published != 'true'
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: release/*.zip
 
+      - name: Verify existing release attestations
+        if: needs.package.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for archive in release/*.zip; do
+            gh attestation verify "$archive" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml"
+          done
+
       - name: Publish GitHub Release
+        if: needs.package.outputs.published != 'true'
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
