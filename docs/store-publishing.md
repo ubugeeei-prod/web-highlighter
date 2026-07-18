@@ -112,6 +112,8 @@ vp run release minor
 
 The atomic tag push starts the same `.github/workflows/release.yml`. In either path, wait until **Verify and package** passes, approve **Attest and publish**, and confirm that the final GitHub Release contains every ZIP plus `SHA256SUMS`.
 
+If publication was interrupted after the tag or GitHub Release was created, rerun **Release** on `main` with the existing tag in the optional `tag` input. This recovery mode checks out the immutable tag and succeeds only when a fresh verified build matches every published asset byte-for-byte.
+
 Then open **Actions → Store publish → Run workflow** on `main`:
 
 1. Enter the exact final tag, such as `v0.2.0`.
