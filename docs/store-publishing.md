@@ -102,13 +102,15 @@ References: [Safari command-line packager](https://developer.apple.com/documenta
 
 ## Release and submit
 
-From a clean, synchronized `main`, create the release:
+For normal releases, change `package.json` and `moon.mod` to the same new semantic version in a conventional pull request. Merge only after CI passes. Then open **Actions → Release → Run workflow**, keep `main` selected, and start the workflow. The job rebuilds and verifies that exact `main` commit. Review the version and commit before approving the protected `release` environment; it accepts `main` for CI-initiated releases and `v*` tags for the local bootstrap path.
+
+For the first release only, a clean, synchronized local `main` can bump the version and start the tag-triggered path:
 
 ```sh
 vp run release minor
 ```
 
-The atomic tag push starts `.github/workflows/release.yml`. After **Verify and package** passes, review the tag and approve the protected `release` environment; it accepts only `v*` tags and gates the job's write and attestation permissions. Wait until **Attest and publish** passes and the GitHub Release contains every ZIP plus `SHA256SUMS`.
+The atomic tag push starts the same `.github/workflows/release.yml`. In either path, wait until **Verify and package** passes, approve **Attest and publish**, and confirm that the final GitHub Release contains every ZIP plus `SHA256SUMS`.
 
 Then open **Actions → Store publish → Run workflow** on `main`:
 

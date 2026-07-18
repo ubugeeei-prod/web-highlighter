@@ -125,13 +125,15 @@ This is not an LSP hidden in every chat message. Declaration introducers such as
 
 ## Releases
 
-From a clean, synchronized `main`:
+Change `package.json` and `moon.mod` to the same new semantic version in a conventional pull request. After that pull request passes CI and merges, run **Actions → Release → Run workflow** on `main` (or `gh workflow run release.yml --ref main`). The workflow re-verifies the exact `main` commit, waits for approval in the protected `release` environment, creates an annotated tag, emits GitHub OIDC build-provenance attestations, and publishes the browser archives in a GitHub Release.
+
+For the first release, a clean, synchronized local `main` can bootstrap the same tag-triggered workflow:
 
 ```sh
 vp run release minor
 ```
 
-The task bumps `package.json` and `moon.mod`, runs the complete verification suite, creates a conventional release commit and annotated tag, then atomically pushes `main` and the tag. The tag workflow rebuilds in Nix, packages all browsers, emits GitHub OIDC build-provenance attestations, and creates a GitHub Release without reading store credentials. Firefox and Edge credentials are isolated in the separately approved `store-publish` environment; Chrome uses short-lived OIDC instead.
+The local task bumps both version files, runs the complete verification suite, creates a conventional release commit and annotated tag, then atomically pushes `main` and the tag. Both entry points create the GitHub Release without reading store credentials. Firefox and Edge credentials are isolated in the separately approved `store-publish` environment; Chrome uses short-lived OIDC instead.
 
 Store submissions use the canonical [listing copy](store/listing.md), [reviewer notes](store/reviewer-notes.md), and [privacy policy](PRIVACY.md). The [store publishing guide](docs/store-publishing.md) covers the protected workflow and each one-time account setup.
 
