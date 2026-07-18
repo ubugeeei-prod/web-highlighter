@@ -130,6 +130,7 @@ jobs:
 
       - name: Publish GitHub Release
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.package.outputs.tag }}
         run: gh release create "$TAG" release/* --verify-tag --generate-notes --title "$TAG"
