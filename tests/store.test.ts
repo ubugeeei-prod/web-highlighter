@@ -64,7 +64,7 @@ test("store declarations stay aligned with the privacy policy", async () => {
   assert.deepEqual(permissionRows, {
     "`storage`": "Stores only the user's selected theme through the browser synchronization API.",
     "Supported-service host access":
-      "Finds and decorates code on GitHub, GitLab, Discord, Slack, and ChatGPT without requiring a click on every visit.",
+      "Finds and decorates code on GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, and Qiita without requiring a click on every visit.",
     "`activeTab`":
       "Reads the active tab only after the user opens the popup to enable another site.",
     "`scripting`":

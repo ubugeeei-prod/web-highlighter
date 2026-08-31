@@ -76,15 +76,39 @@ fn inference_margin() -> Int {
 }
 
 ///|
-/// Counts weighted literal fingerprints for one candidate language.
-fn signature_score(language : Language, source : String) -> Int {
-  let mut score = 0
-  for fingerprint in language.signatures {
-    if source.contains(fingerprint.text) && fingerprint.weight > 0 {
-      score += fingerprint.weight
+/// Scores every catalog language from one forward pass over the source.
+///
+/// Each signature counts once, exactly as a per-language substring search did,
+/// but the source is walked a single time and every position only tests the
+/// signatures indexed under its first code unit.
+fn signature_scores(catalog : CompiledCatalog, source : String) -> Array[Int] {
+  let scores = Array::make(catalog.languages.length(), 0)
+  let index = catalog.signatures
+  let seen = FixedArray::make(index.entries.length(), false)
+  let mut remaining = index.entries.length()
+  let mut cursor = 0
+  while cursor < source.length() && remaining > 0 {
+    let unit = source[cursor].to_int()
+    let bucket = if unit >= 0 && unit < 128 {
+      index.ascii[unit]
+    } else {
+      index.wide
     }
+    for id in bucket {
+      if !seen[id] {
+        let entry = index.entries[id]
+        if starts_with(source, cursor, entry.text) {
+          seen[id] = true
+          remaining -= 1
+          if entry.language >= 0 && entry.language < scores.length() {
+            scores[entry.language] = scores[entry.language] + entry.weight
+          }
+        }
+      }
+    }
+    cursor += 1
   }
-  score
+  scores
 }
 
 ///|
@@ -154,11 +178,12 @@ pub fn detect_compiled_plan(
       None => ()
     }
   }
+  let scores = signature_scores(catalog, source)
   let mut best_index = -1
   let mut best_score = 0
   let mut runner_up = 0
-  for index in 0..<catalog.languages.length() {
-    let score = signature_score(catalog.languages[index].language, source)
+  for index in 0..<scores.length() {
+    let score = scores[index]
     if score > best_score {
       runner_up = best_score
       best_score = score
