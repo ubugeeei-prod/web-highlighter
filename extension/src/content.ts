@@ -1,4 +1,5 @@
-import { BrowserHost, documentPrefersDark, type Analyzer } from "./host.ts";
+import { BrowserHost, type Analyzer } from "./host.ts";
+import { documentPrefersDark } from "./theme.ts";
 
 function api(): WebHighlighterBrowserApi | undefined {
   const host = globalThis as typeof globalThis & {
