@@ -1,0 +1,340 @@
+///|
+/// `index` is a valid cursor into a UTF-16 string of `length` code units.
+pub predicate in_bounds(index : Int, length : Int) {
+  (0 <= index) && (index < length)
+}
+
+///|
+/// `index` is a valid half-open UTF-16 boundary for a source of `length`.
+pub predicate bounded_cursor(index : Int, length : Int) {
+  (0 <= index) && (index <= length)
+}
+
+///|
+/// The scanner only advances by one BMP code unit or one surrogate pair.
+pub predicate utf16_width(width : Int) {
+  (width == 1) || (width == 2)
+}
+
+///|
+/// A cursor advance is allowed only when it stays inside the input.
+pub predicate safe_advance_input(
+  length : Int,
+  index : Int,
+  width : Int,
+) {
+  in_bounds(index, length) && utf16_width(width) && (index + width <= length)
+}
+
+///|
+/// A scanner cursor moves by exactly the decoded scalar width.
+pub predicate cursor_advanced_exact(
+  length : Int,
+  before : Int,
+  width : Int,
+  after : Int,
+) {
+  safe_advance_input(length, before, width) && (after == before + width)
+}
+
+///|
+/// A scanner cursor moves forward and remains a legal end offset.
+pub predicate cursor_advanced(
+  length : Int,
+  before : Int,
+  after : Int,
+) {
+  (before < after) && (after <= length)
+}
+
+///|
+/// A semantic span is inside `[0, length]` and may be empty only for internal
+/// sentinel checks, never for emitted tokens.
+pub predicate bounded_span(start : Int, end_ : Int, length : Int) {
+  (0 <= start) && (start <= end_) && (end_ <= length)
+}
+
+///|
+/// A scanner-emitted token/reference/definition span must be non-empty.
+pub predicate nonempty_span(start : Int, end_ : Int, length : Int) {
+  bounded_span(start, end_, length) && (start < end_)
+}
+
+///|
+/// A token span may be appended after the previous emitted token cursor.
+pub predicate ordered_span_after(
+  cursor : Int,
+  start : Int,
+  end_ : Int,
+  length : Int,
+) {
+  bounded_cursor(cursor, length) && nonempty_span(start, end_, length) &&
+  (cursor <= start)
+}
+
+///|
+/// Two emitted spans are non-overlapping and sorted by start offset.
+pub predicate ordered_pair(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  length : Int,
+) {
+  nonempty_span(left_start, left_end, length) &&
+  nonempty_span(right_start, right_end, length) &&
+  (left_end <= right_start)
+}
+
+///|
+/// A matched prefix produces a non-empty half-open span from its start.
+pub predicate prefix_span(
+  start : Int,
+  prefix_length : Int,
+  end_ : Int,
+  length : Int,
+) {
+  (0 <= start) && (0 < prefix_length) && (end_ == start + prefix_length) &&
+  nonempty_span(start, end_, length)
+}
+
+///|
+/// A region cursor remains inside the source while scanning after an opener.
+pub predicate region_cursor(
+  start : Int,
+  cursor : Int,
+  length : Int,
+) {
+  bounded_cursor(start, length) && bounded_cursor(cursor, length) &&
+  (start <= cursor)
+}
+
+///|
+/// A counted newline total is never negative.
+pub predicate nonnegative_count(count : Int) {
+  0 <= count
+}
+
+///|
+/// Width of an emitted span is positive and exactly `end - start`.
+pub predicate positive_span_width(
+  start : Int,
+  end_ : Int,
+  width : Int,
+) {
+  (width == end_ - start) && (0 < width)
+}
+
+///|
+/// Adding a line-count delta preserves non-negativity.
+pub predicate count_step(before : Int, delta : Int, after : Int) {
+  nonnegative_count(before) && nonnegative_count(delta) &&
+  (after == before + delta)
+}
+
+///|
+/// A source length is inside the analyzer's explicit runtime budget.
+pub predicate source_length_allowed(length : Int, limit : Int) {
+  (0 <= length) && (0 <= limit) && (length <= limit)
+}
+
+///|
+/// A bounded output counter cannot exceed its configured limit.
+pub predicate budget_count(count : Int, limit : Int) {
+  (0 <= count) && (0 <= limit) && (count <= limit)
+}
+
+///|
+/// The analyzer may append one item only while the counter is below the limit.
+pub predicate can_push_item(count : Int, limit : Int) {
+  budget_count(count, limit) && (count < limit)
+}
+
+///|
+/// Optional append accounting either increments below the limit or stays capped.
+pub predicate budget_push_step(before : Int, limit : Int, after : Int) {
+  (
+    budget_count(before, limit) &&
+    (before < limit) &&
+    (after == before + 1)
+  ) ||
+  (
+    budget_count(before, limit) &&
+    !(before < limit) &&
+    (after == before)
+  )
+}
+
+///|
+/// Weighted language evidence is strong enough and clearly separated.
+pub predicate dominant_score(
+  best : Int,
+  runner_up : Int,
+  threshold : Int,
+  margin : Int,
+) {
+  (0 <= runner_up) &&
+  (runner_up <= best) &&
+  (0 < threshold) &&
+  (0 < margin) &&
+  (threshold <= best) &&
+  (runner_up + margin <= best)
+}
+
+///|
+/// Exact advance carries the simpler monotonic cursor contract.
+lemma exact_advance_implies_advanced(
+  length : Int,
+  before : Int,
+  width : Int,
+  after : Int,
+) where {
+  proof_require: cursor_advanced_exact(length, before, width, after),
+  proof_ensure: cursor_advanced(length, before, after),
+} {}
+
+///|
+/// Every in-range cursor is also a legal half-open boundary.
+lemma in_bounds_implies_bounded_cursor(index : Int, length : Int) where {
+  proof_require: in_bounds(index, length),
+  proof_ensure: bounded_cursor(index, length),
+} {}
+
+///|
+/// Non-empty spans carry the weaker bounded-span contract.
+lemma nonempty_span_implies_bounded(
+  start : Int,
+  end_ : Int,
+  length : Int,
+) where {
+  proof_require: nonempty_span(start, end_, length),
+  proof_ensure: bounded_span(start, end_, length),
+} {}
+
+///|
+/// Ordered spans are safe token spans.
+lemma ordered_span_implies_nonempty(
+  cursor : Int,
+  start : Int,
+  end_ : Int,
+  length : Int,
+) where {
+  proof_require: ordered_span_after(cursor, start, end_, length),
+  proof_ensure: nonempty_span(start, end_, length),
+} {}
+
+///|
+/// Ordered adjacent pair implies a valid append step for the right span.
+lemma ordered_pair_implies_right_appendable(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  length : Int,
+) where {
+  proof_require: ordered_pair(
+    left_start,
+    left_end,
+    right_start,
+    right_end,
+    length,
+  ),
+  proof_ensure: ordered_span_after(left_end, right_start, right_end, length),
+} {}
+
+///|
+/// Ordered adjacent pair also proves the left span is appendable from start.
+lemma ordered_pair_implies_left_appendable(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  length : Int,
+) where {
+  proof_require: ordered_pair(
+    left_start,
+    left_end,
+    right_start,
+    right_end,
+    length,
+  ),
+  proof_ensure: ordered_span_after(left_start, left_start, left_end, length),
+} {}
+
+///|
+/// A prefix span is appendable from its own start boundary.
+lemma prefix_span_implies_ordered_from_start(
+  start : Int,
+  prefix_length : Int,
+  end_ : Int,
+  length : Int,
+) where {
+  proof_require: prefix_span(start, prefix_length, end_, length),
+  proof_ensure: ordered_span_after(start, start, end_, length),
+} {}
+
+///|
+/// A non-empty span always has a positive exact width.
+lemma nonempty_span_has_positive_width(
+  start : Int,
+  end_ : Int,
+  length : Int,
+) where {
+  proof_require: nonempty_span(start, end_, length),
+  proof_ensure: positive_span_width(start, end_, end_ - start),
+} {}
+
+///|
+/// A valid count step cannot produce a negative total.
+lemma count_step_implies_nonnegative(
+  before : Int,
+  delta : Int,
+  after : Int,
+) where {
+  proof_require: count_step(before, delta, after),
+  proof_ensure: nonnegative_count(after),
+} {}
+
+///|
+/// A region cursor is always an appendable empty boundary at its current end.
+lemma region_cursor_implies_bounded_end(
+  start : Int,
+  cursor : Int,
+  length : Int,
+) where {
+  proof_require: region_cursor(start, cursor, length),
+  proof_ensure: bounded_cursor(cursor, length),
+} {}
+
+///|
+/// An allowed source length is also a bounded budget counter.
+lemma source_length_allowed_implies_budget_count(
+  length : Int,
+  limit : Int,
+) where {
+  proof_require: source_length_allowed(length, limit),
+  proof_ensure: budget_count(length, limit),
+} {}
+
+///|
+/// A successful optional append preserves the output budget.
+lemma budget_push_step_preserves_count(
+  before : Int,
+  limit : Int,
+  after : Int,
+) where {
+  proof_require: budget_push_step(before, limit, after),
+  proof_ensure: budget_count(after, limit),
+} {}
+
+///|
+/// Dominant evidence is always above the configured inference threshold.
+lemma dominant_score_implies_threshold(
+  best : Int,
+  runner_up : Int,
+  threshold : Int,
+  margin : Int,
+) where {
+  proof_require: dominant_score(best, runner_up, threshold, margin),
+  proof_ensure: threshold <= best,
+} {}

@@ -85,7 +85,7 @@ fn split_pairs(source : String, escape : Bool) -> Array[Delimiter] {
       }
     }
     if separator < 0 {
-      delimiters.push({ open: entry, close: entry, escape })
+      delimiters.push({ open: entry, close: entry, escape, })
     } else {
       delimiters.push({
         open: String::unsafe_substring(entry, start=0, end=separator),
@@ -103,7 +103,7 @@ fn split_pairs(source : String, escape : Bool) -> Array[Delimiter] {
 
 ///|
 fn encode_analysis(analysis : Analysis) -> String {
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   for token_ in analysis.tokens {
     output
     ..write_string("T\t")
@@ -156,6 +156,8 @@ pub fn analyze_wire(
   strings : String,
   operator_chars : String,
   identifier_extra : String,
+  functions? : String = "",
+  properties? : String = "",
 ) -> String {
   let definition = language(
     id="wire",
@@ -167,6 +169,8 @@ pub fn analyze_wire(
     keywords=split_words(keywords),
     types=split_words(types),
     constants=split_words(constants),
+    functions=split_words(functions),
+    properties=split_words(properties),
     declarations=split_declarations(declarations),
     line_comments=split_words(line_comments),
     block_comments=split_pairs(block_comments, false),
@@ -178,30 +182,50 @@ pub fn analyze_wire(
 }
 
 ///|
-let language_registry : Array[Language] = []
+let language_registry : Array[CompiledLanguage] = []
 
 ///|
-let builtin_catalog : Array[Language] = builtin_languages()
+let builtin_catalog : CompiledCatalog = compile_catalog(builtin_languages())
 
 ///|
 /// Detects a language in an explicit catalog and returns its support plan.
 ///
 /// The first line identifies the selected language. Remaining lines contain
 /// semantic tokens, definitions, and references for the browser host to apply.
+pub fn analyze_compiled_catalog_request(
+  catalog : CompiledCatalog,
+  source : String,
+  hint : String,
+  filename : String,
+) -> String {
+  let budget = default_scanner_budget()
+  if !source_fits_budget(budget, source) {
+    return ""
+  }
+  match detect_compiled_language(catalog, source, hint, filename) {
+    None => ""
+    Some(definition) =>
+      "L\t" +
+      definition.language.id +
+      "\n" +
+      encode_analysis(analyze_compiled_with_budget(definition, source, budget))
+  }
+}
+
+///|
+/// Compatibility wrapper for tests and tools that pass declarative catalogs.
 pub fn analyze_catalog_request(
   catalog : Array[Language],
   source : String,
   hint : String,
   filename : String,
 ) -> String {
-  match detect_language(catalog, source, hint, filename) {
-    None => ""
-    Some(definition) =>
-      "L\t" +
-      definition.id +
-      "\n" +
-      encode_analysis(analyze(definition, source))
-  }
+  analyze_compiled_catalog_request(
+    compile_catalog(catalog),
+    source,
+    hint,
+    filename,
+  )
 }
 
 ///|
@@ -211,7 +235,7 @@ pub fn analyze_request(
   hint : String,
   filename : String,
 ) -> String {
-  analyze_catalog_request(builtin_catalog, source, hint, filename)
+  analyze_compiled_catalog_request(builtin_catalog, source, hint, filename)
 }
 
 ///|
@@ -226,24 +250,30 @@ pub fn compile_language_wire(
   strings : String,
   operator_chars : String,
   identifier_extra : String,
+  functions? : String = "",
+  properties? : String = "",
 ) -> Int {
   language_registry.push(
-    language(
-      id="wire",
-      name="Wire language",
-      aliases=[],
-      extensions=[],
-      filenames=[],
-      signatures=[],
-      keywords=split_words(keywords),
-      types=split_words(types),
-      constants=split_words(constants),
-      declarations=split_declarations(declarations),
-      line_comments=split_words(line_comments),
-      block_comments=split_pairs(block_comments, false),
-      strings=split_pairs(strings, true),
-      operator_chars~,
-      identifier_extra~,
+    compile_language(
+      language(
+        id="wire",
+        name="Wire language",
+        aliases=[],
+        extensions=[],
+        filenames=[],
+        signatures=[],
+        keywords=split_words(keywords),
+        types=split_words(types),
+        constants=split_words(constants),
+        functions=split_words(functions),
+        properties=split_words(properties),
+        declarations=split_declarations(declarations),
+        line_comments=split_words(line_comments),
+        block_comments=split_pairs(block_comments, false),
+        strings=split_pairs(strings, true),
+        operator_chars~,
+        identifier_extra~,
+      ),
     ),
   )
   language_registry.length() - 1
@@ -255,5 +285,5 @@ pub fn analyze_handle_wire(source : String, handle : Int) -> String {
   if handle < 0 || handle >= language_registry.length() {
     return ""
   }
-  encode_analysis(analyze(language_registry[handle], source))
+  encode_analysis(analyze_compiled(language_registry[handle], source))
 }

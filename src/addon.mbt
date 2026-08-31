@@ -10,11 +10,8 @@ pub struct Addon {
 
 ///|
 /// Constructs one declarative language-and-theme contribution.
-pub fn addon(
-  languages~ : Array[Language],
-  themes~ : Array[Theme],
-) -> Addon {
-  { languages, themes }
+pub fn addon(languages~ : Array[Language], themes~ : Array[Theme]) -> Addon {
+  { languages, themes, }
 }
 
 ///|
@@ -44,7 +41,11 @@ pub fn addon_themes(addons : Array[Addon]) -> Array[Theme] {
 ///|
 /// Produces a readable owner name even when the invalid field is the ID itself.
 fn language_label(language : Language) -> String {
-  if language.id == "" { "<empty>" } else { language.id }
+  if language.id == "" {
+    "<empty>"
+  } else {
+    language.id
+  }
 }
 
 ///|
@@ -63,6 +64,66 @@ fn validate_nonempty_strings(
       errors.push(owner + " has an empty " + field)
     }
   }
+}
+
+///|
+/// Rejects duplicate literal entries without changing the author's order.
+fn validate_unique_strings(
+  owner : String,
+  field : String,
+  values : Array[String],
+  errors : Array[String],
+) -> Unit {
+  let seen : Map[String, Bool] = Map([])
+  for value in values {
+    if value == "" {
+      errors.push(owner + " has an empty " + field)
+      continue
+    }
+    match seen.get(value) {
+      Some(_) => errors.push(owner + " has duplicate " + field + ": " + value)
+      None => seen[value] = true
+    }
+  }
+}
+
+///|
+/// Adds one vocabulary class and reports words claimed by two semantic scopes.
+fn register_vocabulary(
+  owner : String,
+  field : String,
+  words : Array[String],
+  seen : Map[String, String],
+  errors : Array[String],
+) -> Unit {
+  validate_unique_strings(owner, field, words, errors)
+  for word in words {
+    if word == "" {
+      continue
+    }
+    match seen.get(word) {
+      Some(previous) =>
+        errors.push(
+          owner + " word " + word + " is both " + previous + " and " + field,
+        )
+      None => seen[word] = field
+    }
+  }
+}
+
+///|
+/// Ensures exact-word semantic classes are unambiguous.
+fn validate_vocabulary(
+  language : Language,
+  owner : String,
+  errors : Array[String],
+) -> Unit {
+  let seen : Map[String, String] = Map([])
+  register_vocabulary(owner, "keyword", language.keywords, seen, errors)
+  register_vocabulary(owner, "type", language.types, seen, errors)
+  register_vocabulary(owner, "constant", language.constants, seen, errors)
+  register_vocabulary(owner, "function", language.functions, seen, errors)
+  register_vocabulary(owner, "property", language.properties, seen, errors)
 }
 
 ///|
@@ -137,35 +198,45 @@ fn validate_language_shape(language : Language, errors : Array[String]) -> Unit 
   }
   for extension in language.extensions {
     if extension.to_lower() != extension || extension.has_prefix(".") {
-      errors.push(owner + " extension must be lowercase without a dot: " + extension)
+      errors.push(
+        owner + " extension must be lowercase without a dot: " + extension,
+      )
     }
   }
   for fingerprint in language.signatures {
     if fingerprint.text == "" || fingerprint.weight <= 0 {
-      errors.push(owner + " signatures require non-empty text and positive weight")
+      errors.push(
+        owner + " signatures require non-empty text and positive weight",
+      )
     }
   }
+  let declarations : Map[String, Bool] = Map([])
   for declaration in language.declarations {
+    match declarations.get(declaration.0) {
+      Some(_) =>
+        errors.push(owner + " has duplicate declaration: " + declaration.0)
+      None => declarations[declaration.0] = true
+    }
     if !language.keywords.contains(declaration.0) {
       errors.push(owner + " declaration is not a keyword: " + declaration.0)
     }
   }
+  validate_vocabulary(language, owner, errors)
   validate_prefixes(owner, "line comments", language.line_comments, errors)
   validate_delimiters(owner, "block comment", language.block_comments, errors)
   validate_delimiters(owner, "string", language.strings, errors)
 }
 
 ///|
-/// Reports identity collisions across built-ins and configured add-ons.
+/// Validates a concrete language catalog without adding built-ins.
 ///
-/// A build should assert that this list is empty. Detection remains ordered and
-/// deterministic even for invalid catalogs, but silently shadowed aliases are
-/// almost always an authoring mistake.
-pub fn validate_addons(addons : Array[Addon]) -> Array[String] {
+/// This is useful for checking the built-in catalog itself and for tests that
+/// need exact control over which language IDs and aliases should be unique.
+pub fn validate_language_catalog(languages : Array[Language]) -> Array[String] {
   let errors : Array[String] = []
   let language_ids : Map[String, Bool] = Map([])
   let language_names : Map[String, String] = Map([])
-  for language in addon_languages(addons) {
+  for language in languages {
     validate_language_shape(language, errors)
     match language_ids.get(language.id) {
       Some(_) => errors.push("duplicate language id: " + language.id)
@@ -180,13 +251,29 @@ pub fn validate_addons(addons : Array[Addon]) -> Array[String] {
         Some(owner) =>
           if owner != language.id {
             errors.push(
-              "language name " + name + " is shared by " + owner + " and " + language.id,
+              "language name " +
+              name +
+              " is shared by " +
+              owner +
+              " and " +
+              language.id,
             )
           }
         None => language_names[name] = language.id
       }
     }
   }
+  errors
+}
+
+///|
+/// Reports identity collisions across built-ins and configured add-ons.
+///
+/// A build should assert that this list is empty. Detection remains ordered and
+/// deterministic even for invalid catalogs, but silently shadowed aliases are
+/// almost always an authoring mistake.
+pub fn validate_addons(addons : Array[Addon]) -> Array[String] {
+  let errors = validate_language_catalog(addon_languages(addons))
   let theme_ids : Map[String, Bool] = Map([])
   for theme_ in addon_themes(addons) {
     if theme_.id == "" {

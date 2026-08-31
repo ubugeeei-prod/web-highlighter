@@ -2,11 +2,11 @@
 
 **Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
 
-When a service renders an `mbtx`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
+When a service renders an `mbtx`, `mbti`, `mbtp`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
 
 The product is deliberately opinionated:
 
-- language detection, declarative grammars, tokenization, symbols, and themes live in MoonBit;
+- language detection, declarative grammars, compiled lexical indexes, tokenization, symbols, proof contracts, and themes live in MoonBit;
 - TypeScript is only the WebExtension and DOM boundary;
 - add-ons are immutable build-time data, never downloaded executable code;
 - unknown, ambiguous, oversized, or unsupported input is left untouched;
@@ -19,15 +19,18 @@ The product is deliberately opinionated:
 - Discord, Slack, ChatGPT, and ordinary `pre > code` blocks, including fenced aliases.
 - Explicit aliases, filename extensions, special filenames, and conservative weighted inference when a service discards language metadata.
 - Declarative MoonBit language and theme add-ons without TextMate/tmLanguage repositories, regex callbacks, `eval`, or remote code.
-- Idempotent SPA updates with strict per-pass and per-surface limits.
+- Exact-word function and property vocabularies for small languages whose standard helpers matter as much as reserved words, with validation rejecting empty, duplicated, or cross-scope vocabulary.
+- Idempotent SPA updates with strict per-pass browser limits plus MoonBit-owned
+  source and output budgets so oversized files remain untouched or partially
+  highlighted instead of stalling the page.
 
 ## Built-in injected support
 
 The requested languages ship in the Wasm catalog:
 
 - Idris 2 (`idris`, `idris2`, `.idr`, `.lidr`, `.ipkg`)
-- MoonBit and MoonBit Executable (`moonbit`, `mbt`, `mbtx`, `.mbt`, `.mbtx`)
-- [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `.vibe`)
+- MoonBit (`moonbit`, `mbt`, `mbtx`, `mbti`, `mbtp`, `.mbt`, `.mbtx`, `.mbti`, `.mbtp`)
+- [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `.vibe`, `.vibex`)
 - [ubugeeei-prod/tnix](https://github.com/ubugeeei-prod/tnix) (`tnix`, `.tnix`)
 - [ubugeeei-prod/ush](https://github.com/ubugeeei-prod/ush) (`ush`, `.ush`)
 - [ubugeeei-prod/vapor-moon](https://github.com/ubugeeei-prod/vapor-moon) (`mbtv`, `.mbtv`)
@@ -48,7 +51,7 @@ These are reproducible budget signals, not universal hardware claims. Run `vp ru
 
 ## Development
 
-The Nix flake pins MoonBit CLI `0.1.20260713` with compiler `0.10.4`, Vite+ `0.2.4`, pnpm `11.9.0`, and Node.js `24.16.0`.
+The Nix flake pins MoonBit CLI `0.1.20260827` with compiler `0.10.11`, Why3 `1.8.2`, Z3 `4.16.0`, Vite+ `0.2.4`, pnpm `11.9.0`, and Node.js `24.16.0`.
 
 ```sh
 nix develop
@@ -60,40 +63,71 @@ All project operations are exposed through `vp`:
 
 ```sh
 vp check         # Oxfmt, Oxlint, and strict TypeScript checking
+vp run moon-prove # Formal verification for the proof-enabled MoonBit package
 vp test --run    # DOM and distribution tests
 vp build         # MoonBit Wasm-GC + all unpacked WebExtensions
+vp run browser-smoke # launches the unpacked Chromium extension against fixtures
 vp run firefox-lint # Mozilla submission validation
 vp run bench     # measured runtime budgets
 vp run package   # reproducible store/source ZIP archives and SHA256SUMS
 vp run verify    # MoonBit checks/tests + all checks above
 ```
 
-Load `dist/chromium`, temporarily install `dist/firefox/manifest.json`, or package `dist/safari` with `xcrun safari-web-extension-packager`. The listed services receive automatic access. Any other origin is requested explicitly from the popup.
+### Documentation site
+
+Docs are built with `@ox-content/vite-plugin@3.0.0-beta.0` and deployed to
+Void. The production workflow uses GitHub OIDC, not a long-lived deploy token.
+
+```sh
+vp exec vite build --config docs/vite.config.mjs
+vp node scripts/deploy-docs-to-void.mjs
+```
+
+Read [Docs deployment](docs/deployment.md) for Void project variables and the
+OIDC workflow shape.
+
+### Chrome local install
+
+```sh
+nix develop
+vp install --frozen-lockfile
+vp build
+```
+
+Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**,
+and select `dist/chromium`. GitHub, GitLab, Discord, Slack, ChatGPT, and
+OpenAI Chat receive automatic host access from the generated Manifest V3
+extension. Any other origin is requested explicitly from the popup.
+
+Firefox can temporarily load `dist/firefox/manifest.json`; Safari uses
+`dist/safari` with `xcrun safari-web-extension-packager`.
 
 ## A declarative language add-on
 
 An add-on is ordinary MoonBit data exported from a normal package. It describes facts; it does not supply a tokenizer callback:
 
 ```moonbit
-pub fn contribution() -> @web.Addon {
-  @web.addon(
+pub fn contribution() -> @highlight.Addon {
+  @highlight.addon(
     languages=[
-      @web.make_language(
+      @highlight.make_language(
         "my-lang",
         "My Language",
         ["myl"],
         ["myl"],
         [],
-        [@web.signature("effect ", 2), @web.signature("module my.lang", 3)],
+        [@highlight.signature("effect ", 2), @highlight.signature("module my.lang", 3)],
         "effect else fn if let match module return type",
         "Bool Int List Result String",
         "true false none",
-        [("fn", @web.FunctionSymbol), ("type", @web.TypeSymbol)],
+        [("fn", @highlight.FunctionSymbol), ("type", @highlight.TypeSymbol)],
         ["//"],
-        [@web.delimiter("/*", "*/")],
-        [@web.quoted("\"")],
+        [@highlight.delimiter("/*", "*/")],
+        [@highlight.quoted("\"")],
         "+-*/=<>!&|",
         "$",
+        functions="print println",
+        properties="std",
       ),
     ],
     themes=[],
@@ -101,7 +135,12 @@ pub fn contribution() -> @web.Addon {
 }
 ```
 
-The package imports the core as `@web`; the thin analyzer entrypoint imports selected add-on packages and lists their contributions in `configured_addons`. A theme uses the equally declarative `theme(...)` constructor and stable semantic roles. See [Writing add-ons](docs/plugins.md).
+For a local language, create a package under `addons/<name>`, import it from
+`cmd/analyzer/moon.pkg`, add `@name.contribution()` to `configured_addons` in
+`cmd/analyzer/main.mbt`, then run `nix develop -c vp build` and reload
+`dist/chromium` from `chrome://extensions`.
+
+The package imports the core as `@highlight`; the thin analyzer entrypoint imports selected add-on packages and lists their contributions in `configured_addons`. A theme uses the equally declarative `theme(...)` constructor and stable semantic roles. See [Writing add-ons](docs/plugins.md).
 
 ## Architecture
 

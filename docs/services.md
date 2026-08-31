@@ -1,12 +1,15 @@
 # Service adapters
 
-The browser host produces the same internal surface shape for every service: source, language hint, optional filename, and one or more DOM segments. Language decisions remain in MoonBit.
+The browser host produces the same internal surface shape for every service:
+source, language hint, optional filename, and one or more DOM segments. Language
+decisions remain in MoonBit and use the evidence strategy documented in
+[Injection Strategy](./injection-strategy.md).
 
 | Service      | Discovery                                           | Language signal                                          | Rendering constraint                            |
 | ------------ | --------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
 | GitHub       | current blob line cells plus ordinary fenced blocks | filename first                                           | preserve each `#LC…` line cell and line anchor  |
 | GitLab       | visible blob lines beside its plain-source overlay  | filename first                                           | preserve `#LC…` lines and `#L…` anchors         |
-| Discord      | `pre > code`                                        | `language-*` class, then signatures                      | preserve message controls outside the code node |
+| Discord      | `pre > code`                                        | `language-*` class, then dominant signatures             | preserve message controls outside the code node |
 | Slack        | `pre > code` and language metadata                  | data attributes, then signatures                         | preserve message and thread containers          |
 | ChatGPT      | `pre > code` and language metadata                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome     |
 | Generic site | code-shaped `pre` nodes only                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords  |
@@ -24,6 +27,15 @@ The selector set also contains older blob table and React line variants. DOM con
 ## GitLab blobs
 
 GitLab renders a transparent plain-source `code[data-testid="content"]` overlay followed by the visible `#LC…` line nodes. The adapter only patches those visible line nodes, leaving the overlay and separate `#L…` anchors intact. The same DOM signature also works on self-managed GitLab instances after the user grants that origin from the popup.
+
+## Discord messages
+
+Discord exposes code blocks as message-owned `pre > code` nodes. The adapter
+patches only that code node, so reactions, copy affordances, message menus, and
+thread UI remain owned by Discord. When the class contains a supported alias
+such as `language-mbtp`, MoonBit treats it as explicit evidence. Without the
+class, weighted inference must be dominant or the block is left as Discord
+rendered it.
 
 ## Optional sites
 

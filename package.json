@@ -3,12 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "docs:dev": "vite --config docs/vite.config.mjs --host 127.0.0.1",
+    "docs:build": "vite build --config docs/vite.config.mjs",
+    "docs:preview": "vite preview --config docs/vite.config.mjs",
+    "docs:deploy": "node scripts/deploy-docs-to-void.mjs"
+  },
   "devDependencies": {
+    "@ox-content/vite-plugin": "3.0.0-beta.0",
     "@types/node": "26.1.1",
     "addons-linter": "10.9.0",
     "happy-dom": "20.10.6",
     "playwright": "1.61.1",
+    "vite": "8.2.2",
     "vite-plus": "0.2.4",
+    "void": "0.10.13",
     "web-ext": "10.5.0"
   },
   "engines": {

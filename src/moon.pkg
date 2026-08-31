@@ -1,1 +1,5 @@
+import {
+  "ubugeeei-prod/web_highlighter/src/proof",
+}
+
 supported_targets = "wasm-gc"

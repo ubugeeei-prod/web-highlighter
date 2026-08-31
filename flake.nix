@@ -19,11 +19,11 @@
             {
               aarch64-darwin = {
                 name = "darwin-aarch64";
-                hash = "sha256-n5SWgs+/Q4t6qcqT1E/kYt1sUi2JsLm9Ofh9q/jYZVE=";
+                hash = "sha256-n2F8mueLCOGTVOcKQgPCFX/1Nzx4w0CuvnIog0Qa5bU=";
               };
               x86_64-linux = {
                 name = "linux-x86_64";
-                hash = "sha256-Mbf8XMeGV5ZKbVRXkuzX+47tUbl8dDGhdFi1hzQwM4E=";
+                hash = "sha256-lXP031b/f+maogDd6rw3mRnoAgPDeYZkLY50rdGn574=";
               };
             }
             .${system};
@@ -45,10 +45,10 @@
           };
           moonCore = pkgs.fetchurl {
             url = "https://cli.moonbitlang.com/cores/core-latest.tar.gz";
-            hash = "sha256-A61VuZ8+Qx88uBtOK7KLuYFzME5KGxiokeoCfKu6XRw=";
+            hash = "sha256-ZhQl35u4/3yxSX3Tyyioc7Wkdvs7B8WHoiVFP/0KqbQ=";
           };
           moonbit =
-            pkgs.runCommand "moonbit-0.1.20260713"
+            pkgs.runCommand "moonbit-0.1.20260827"
               {
                 nativeBuildInputs = [
                   pkgs.gnutar
@@ -118,6 +118,8 @@
               pkgs.pnpm
               pkgs.git
               pkgs.gh
+              pkgs.why3
+              pkgs.z3
               pkgs.actionlint
               pkgs.zip
               pkgs.unzip

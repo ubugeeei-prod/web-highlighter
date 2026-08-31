@@ -136,6 +136,7 @@ export default defineConfig({
   run: {
     tasks: {
       "moon-check": "moon check --target wasm-gc --deny-warn",
+      "moon-prove": "moon prove --deny-warn src/proof",
       "moon-test": "moon test --target wasm-gc --deny-warn",
       bench: "node scripts/benchmark.ts",
       "browser-smoke": {
@@ -149,6 +150,7 @@ export default defineConfig({
       "store-publish-test": "node --test scripts/store-publish.test.mjs",
       verify: [
         "vp run moon-check",
+        "vp run moon-prove",
         "vp run moon-test",
         "vp check",
         "vp run actions-lint",

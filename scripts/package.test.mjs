@@ -49,7 +49,7 @@ function digests() {
   );
 }
 
-test("store archives are rootless and target-correct", () => {
+await test("store archives are rootless and target-correct", () => {
   assert.deepEqual(
     readdirSync(release).sort(compareText),
     ["SHA256SUMS", ...Object.values(names)].sort(compareText),
@@ -67,7 +67,7 @@ test("store archives are rootless and target-correct", () => {
   assert.deepEqual(digests()[names.chrome], digests()[names.edge]);
 });
 
-test("the Mozilla source bundle is complete and excludes generated or secret inputs", () => {
+await test("the Mozilla source bundle is complete and excludes generated or secret inputs", () => {
   const archived = entries(names.source);
   for (const required of [
     "LICENSE",
@@ -90,7 +90,7 @@ test("the Mozilla source bundle is complete and excludes generated or secret inp
   );
 });
 
-test("checksums cover every archive and a rebuild is byte-for-byte reproducible", () => {
+await test("checksums cover every archive and a rebuild is byte-for-byte reproducible", () => {
   const first = digests();
   const expectedChecksums = Object.entries(first)
     .map(([name, digest]) => `${digest}  ${name}`)

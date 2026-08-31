@@ -57,7 +57,41 @@ test "add-ons compose language and theme catalogs without callbacks" {
       "L\tquill\n",
     ),
   )
-  assert_true(theme_catalog_wire(themes, "paper", false).has_prefix("M\tpaper\n"))
+  assert_true(
+    theme_catalog_wire(themes, "paper", false).has_prefix("M\tpaper\n"),
+  )
+}
+
+///|
+test "make_language optional vocabularies compile into exact scopes" {
+  let language = make_language(
+    "mini",
+    "Mini",
+    ["mini"],
+    ["mini"],
+    [],
+    [],
+    "fn",
+    "Thing",
+    "None",
+    [("fn", FunctionSymbol)],
+    ["//"],
+    [],
+    [quoted("\"")],
+    "+-=",
+    "",
+    functions="trace",
+    properties="std",
+  )
+  assert_eq(validate_addons([addon(languages=[language], themes=[])]), [])
+  let source = "fn trace() -> Thing { std::trace(None) }"
+  let analysis = analyze(language, source)
+  assert_true(analysis_is_bounded(analysis, source.length()))
+  assert_eq(analysis.definitions.length(), 1)
+  assert_eq(analysis.definitions[0].name, "trace")
+  assert_true(
+    analysis.tokens.map(fn(token_) { token_.scope }).contains(Property),
+  )
 }
 
 ///|
@@ -69,7 +103,9 @@ test "add-on validation reports shadowed language and theme identities" {
 
 ///|
 test "an empty explicit theme catalog falls back safely" {
-  assert_true(theme_catalog_wire([], "missing", true).has_prefix("M\tadaptive\n"))
+  assert_true(
+    theme_catalog_wire([], "missing", true).has_prefix("M\tadaptive\n"),
+  )
 }
 
 ///|
@@ -92,23 +128,77 @@ test "add-on validation rejects unreachable and ambiguous declarations" {
     "",
   )
   let errors = validate_addons([addon(languages=[malformed], themes=[])])
-  assert_eq(
-    errors,
-    [
-      "language Bad id must be lowercase",
-      "language Bad name must not be empty",
-      "language Bad has an empty alias",
-      "language Bad has an empty extension",
-      "language Bad has an empty filename",
-      "language Bad alias must be lowercase: Bad",
-      "language Bad alias must be lowercase: MixedCase",
-      "language Bad extension must be lowercase without a dot: .BAD",
-      "language Bad signatures require non-empty text and positive weight",
-      "language Bad declaration is not a keyword: missing",
-      "language Bad has an empty line comments",
-      "language Bad line comments must put longer prefixes first",
-      "language Bad has an empty block comment delimiter",
-      "language Bad has an empty string delimiter",
-    ],
+  assert_eq(errors, [
+    "language Bad id must be lowercase", "language Bad name must not be empty", "language Bad has an empty alias",
+    "language Bad has an empty extension", "language Bad has an empty filename",
+    "language Bad alias must be lowercase: Bad", "language Bad alias must be lowercase: MixedCase",
+    "language Bad extension must be lowercase without a dot: .BAD", "language Bad signatures require non-empty text and positive weight",
+    "language Bad declaration is not a keyword: missing", "language Bad has an empty line comments",
+    "language Bad line comments must put longer prefixes first", "language Bad has an empty block comment delimiter",
+    "language Bad has an empty string delimiter",
+  ])
+}
+
+///|
+test "add-on validation rejects duplicate and overlapping vocabulary" {
+  let malformed = language(
+    id="overlap",
+    name="Overlap",
+    aliases=["overlap"],
+    extensions=[],
+    filenames=[],
+    signatures=[],
+    keywords=["fn", "fn", "Unit"],
+    types=["Unit", "value"],
+    constants=["value"],
+    functions=["print"],
+    properties=["print"],
+    declarations=[("fn", FunctionSymbol), ("fn", FunctionSymbol)],
+    line_comments=[],
+    block_comments=[],
+    strings=[],
+    operator_chars="",
+    identifier_extra="",
   )
+  let errors = validate_addons([addon(languages=[malformed], themes=[])])
+  assert_true(errors.contains("language overlap has duplicate keyword: fn"))
+  assert_true(
+    errors.contains("language overlap word Unit is both keyword and type"),
+  )
+  assert_true(
+    errors.contains("language overlap word value is both type and constant"),
+  )
+  assert_true(
+    errors.contains("language overlap word print is both function and property"),
+  )
+  assert_true(errors.contains("language overlap has duplicate declaration: fn"))
+}
+
+///|
+test "add-on validation rejects empty exact vocabulary entries" {
+  let malformed = language(
+    id="emptywords",
+    name="Empty Words",
+    aliases=["emptywords"],
+    extensions=[],
+    filenames=[],
+    signatures=[],
+    keywords=[""],
+    types=[""],
+    constants=[""],
+    functions=[""],
+    properties=[""],
+    declarations=[],
+    line_comments=[],
+    block_comments=[],
+    strings=[],
+    operator_chars="",
+    identifier_extra="",
+  )
+  let errors = validate_addons([addon(languages=[malformed], themes=[])])
+  assert_true(errors.contains("language emptywords has an empty keyword"))
+  assert_true(errors.contains("language emptywords has an empty type"))
+  assert_true(errors.contains("language emptywords has an empty constant"))
+  assert_true(errors.contains("language emptywords has an empty function"))
+  assert_true(errors.contains("language emptywords has an empty property"))
 }

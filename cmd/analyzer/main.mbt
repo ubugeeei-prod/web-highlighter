@@ -5,8 +5,9 @@ let configured_addons : Array[@core.Addon] = [
 ]
 
 ///|
-let language_catalog : Array[@core.Language] =
-  @core.addon_languages(configured_addons)
+let language_catalog : @core.CompiledCatalog = @core.compile_catalog(
+  @core.addon_languages(configured_addons),
+)
 
 ///|
 let theme_catalog : Array[@core.Theme] = @core.addon_themes(configured_addons)
@@ -18,7 +19,9 @@ pub fn analyze_request(
   hint : String,
   filename : String,
 ) -> String {
-  @core.analyze_catalog_request(language_catalog, source, hint, filename)
+  @core.analyze_compiled_catalog_request(
+    language_catalog, source, hint, filename,
+  )
 }
 
 ///|

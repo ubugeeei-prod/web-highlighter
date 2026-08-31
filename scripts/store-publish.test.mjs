@@ -11,7 +11,7 @@ function json(status, body, headers = {}) {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-test("Chrome polls an asynchronous upload and blocks publication warnings", async () => {
+await test("Chrome polls an asynchronous upload and blocks publication warnings", async () => {
   const requests = [];
   const responses = [
     json(200, { uploadState: "IN_PROGRESS" }),
@@ -49,7 +49,7 @@ test("Chrome polls an asynchronous upload and blocks publication warnings", asyn
   });
 });
 
-test("Chrome rejects a failed upload without publishing", async () => {
+await test("Chrome rejects a failed upload without publishing", async () => {
   let requests = 0;
   await assert.rejects(
     publishChrome({
@@ -67,7 +67,7 @@ test("Chrome rejects a failed upload without publishing", async () => {
   assert.equal(requests, 1);
 });
 
-test("Edge uploads, polls, and publishes an existing product", async () => {
+await test("Edge uploads, polls, and publishes an existing product", async () => {
   const requests = [];
   const responses = [
     new Response("", { status: 202, headers: { location: "upload-operation" } }),
@@ -113,7 +113,7 @@ test("Edge uploads, polls, and publishes an existing product", async () => {
   );
 });
 
-test("Edge rejects failed operations and untrusted operation locations", async () => {
+await test("Edge rejects failed operations and untrusted operation locations", async () => {
   assert.throws(
     () => edgeOperationUrl("https://attacker.example/steal", "/v1/products/p/submissions"),
     /outside the expected API endpoint/,
@@ -146,7 +146,7 @@ test("Edge rejects failed operations and untrusted operation locations", async (
   );
 });
 
-test("store clients reject empty archives before making requests", async () => {
+await test("store clients reject empty archives before making requests", async () => {
   const fetchImpl = () => assert.fail("network request should not start");
   await assert.rejects(
     publishChrome({

@@ -1,35 +1,4 @@
 ///|
-fn contains_word(words : Array[String], candidate : String) -> Bool {
-  let mut low = 0
-  let mut high = words.length()
-  while low < high {
-    let middle = low + (high - low) / 2
-    let word = words[middle]
-    if word == candidate {
-      return true
-    } else if word < candidate {
-      low = middle + 1
-    } else {
-      high = middle
-    }
-  }
-  false
-}
-
-///|
-fn declaration_kind(
-  declarations : Array[(String, SymbolKind)],
-  candidate : String,
-) -> SymbolKind? {
-  for declaration in declarations {
-    if declaration.0 == candidate {
-      return Some(declaration.1)
-    }
-  }
-  None
-}
-
-///|
 /// Checks a short declarative character set by Unicode scalar value.
 fn contains_codepoint(chars : String, candidate : Int) -> Bool {
   for char in chars {
@@ -58,15 +27,17 @@ fn codepoint_at(source : String, index : Int) -> Int {
 ///|
 /// Advances a UTF-16 cursor by one valid scalar or one unpaired code unit.
 fn advance_codepoint(source : String, index : Int) -> Int {
-  if index >= source.length() {
+  if index < 0 || index >= source.length() {
     return index
   }
-  if source[index].is_leading_surrogate() &&
+  let width = if source[index].is_leading_surrogate() &&
     index + 1 < source.length() &&
     source[index + 1].is_trailing_surrogate() {
-    return index + 2
+    2
+  } else {
+    1
   }
-  index + 1
+  @proof.advance_utf16_index(source.length(), index, width)
 }
 
 ///|
@@ -94,14 +65,14 @@ fn is_digit(codepoint : Int) -> Bool {
 }
 
 ///|
-fn is_identifier_start(language : Language, codepoint : Int) -> Bool {
+fn is_identifier_start(language : CompiledLanguage, codepoint : Int) -> Bool {
   is_ascii_letter(codepoint) ||
   codepoint == '_'.to_int() ||
-  contains_codepoint(language.identifier_extra, codepoint)
+  codepoint_set_contains(language.identifier_extra, codepoint)
 }
 
 ///|
-fn is_identifier_continue(language : Language, codepoint : Int) -> Bool {
+fn is_identifier_continue(language : CompiledLanguage, codepoint : Int) -> Bool {
   is_identifier_start(language, codepoint) ||
   is_digit(codepoint) ||
   codepoint == '\''.to_int()
@@ -110,18 +81,15 @@ fn is_identifier_continue(language : Language, codepoint : Int) -> Bool {
 ///|
 fn skip_to_line_end(source : String, start : Int) -> Int {
   let mut cursor = start
-  while cursor < source.length() && codepoint_at(source, cursor) != '\n'.to_int() {
+  while cursor < source.length() &&
+        codepoint_at(source, cursor) != '\n'.to_int() {
     cursor = advance_codepoint(source, cursor)
   }
   cursor
 }
 
 ///|
-fn skip_region(
-  source : String,
-  start : Int,
-  delimiter : Delimiter,
-) -> Int {
+fn skip_region(source : String, start : Int, delimiter : Delimiter) -> Int {
   let mut cursor = start + delimiter.open.length()
   while cursor < source.length() {
     if delimiter.escape && codepoint_at(source, cursor) == '\\'.to_int() {
@@ -166,8 +134,85 @@ fn matched_delimiter(
 }
 
 ///|
-fn token(tokens : Array[Token], start : Int, end_ : Int, scope : Scope) -> Unit {
-  tokens.push({ span: { start, end_ }, scope })
+fn token(
+  tokens : Array[Token],
+  start : Int,
+  end_ : Int,
+  scope : Scope,
+  source_length : Int,
+  budget : ScannerBudget,
+) -> Unit {
+  if @proof.span_is_nonempty(start, end_, source_length) &&
+    @proof.item_budget_allows(tokens.length(), budget.max_tokens) {
+    tokens.push({ span: { start, end_, }, scope, })
+  }
+}
+
+///|
+/// Records a reference token against the final merged token budget.
+fn reference_token(
+  tokens : Array[Token],
+  reference_tokens : Array[Token],
+  start : Int,
+  end_ : Int,
+  scope : Scope,
+  source_length : Int,
+  budget : ScannerBudget,
+) -> Unit {
+  let used = tokens.length() + reference_tokens.length()
+  if @proof.span_is_nonempty(start, end_, source_length) &&
+    @proof.item_budget_allows(used, budget.max_tokens) {
+    reference_tokens.push({ span: { start, end_, }, scope, })
+  }
+}
+
+///|
+/// Records a definition only while the symbol budget has room.
+fn record_definition(
+  definitions : Array[Definition],
+  definitions_by_name : Map[String, Definition],
+  item : Definition,
+  budget : ScannerBudget,
+) -> Unit {
+  if @proof.item_budget_allows(definitions.length(), budget.max_symbols) {
+    definitions.push(item)
+    if definitions_by_name.get(item.name) is None {
+      definitions_by_name[item.name] = item
+    }
+  }
+}
+
+///|
+/// Records a candidate identifier for the second reference pass.
+fn reference_candidate(
+  identifiers : Array[(String, Span, Bool)],
+  name : String,
+  span : Span,
+  needs_token : Bool,
+  budget : ScannerBudget,
+) -> Unit {
+  if @proof.item_budget_allows(
+      identifiers.length(),
+      budget.max_reference_candidates,
+    ) {
+    identifiers.push((name, span, needs_token))
+  }
+}
+
+///|
+/// Records a resolved reference only while the symbol budget has room.
+fn reference(
+  references : Array[Reference],
+  name : String,
+  span : Span,
+  budget : ScannerBudget,
+) -> Bool {
+  if @proof.item_budget_allows(references.length(), budget.max_symbols) {
+    references.push({ name, span, })
+    true
+  } else {
+    false
+  }
 }
 
 ///|
@@ -215,44 +260,76 @@ fn line_breaks(source : String, start : Int, end_ : Int) -> Int {
 ///|
 /// Scans source according to a declarative language definition.
 ///
-/// The scanner performs one linear pass for tokens and symbol declarations,
-/// followed by a compact reference pass over identifiers already encountered.
-/// It walks Unicode code points while retaining UTF-16 browser offsets and does
-/// not allocate a syntax tree, which keeps chat timelines responsive.
+/// This compatibility entry point compiles the language first. Browser and
+/// add-on hot paths should prefer `compile_language`/`analyze_compiled` so
+/// repeated SPA rescans reuse the same lexical indexes.
 pub fn analyze(language : Language, source : String) -> Analysis {
+  analyze_compiled(compile_language(language), source)
+}
+
+///|
+/// Scans source with a precompiled declarative grammar.
+///
+/// The scanner performs one linear lexical/symbol pass and one compact
+/// reference pass over identifiers already encountered. It walks Unicode scalar
+/// values while retaining UTF-16 browser offsets, emits no AST, and does one
+/// exact-word lookup per identifier.
+pub fn analyze_compiled(
+  language : CompiledLanguage,
+  source : String,
+) -> Analysis {
+  analyze_compiled_with_budget(language, source, default_scanner_budget())
+}
+
+///|
+/// Scans source with a precompiled grammar and explicit resource budget.
+///
+/// This is the core analyzer used by the browser-facing entrypoint. Oversized
+/// input returns `empty_analysis()` before scanning. Output caps are enforced at
+/// every append site, so adversarial code can at worst receive a partial
+/// highlight bounded by the declared budget.
+pub fn analyze_compiled_with_budget(
+  language : CompiledLanguage,
+  source : String,
+  budget : ScannerBudget,
+) -> Analysis {
+  if !source_fits_budget(budget, source) {
+    return empty_analysis()
+  }
+  let source_length = source.length()
   let tokens : Array[Token] = []
   let definitions : Array[Definition] = []
   let definitions_by_name : Map[String, Definition] = Map([])
-  let identifiers : Array[(String, Span)] = []
+  let identifiers : Array[(String, Span, Bool)] = []
   let mut pending_definition : SymbolKind? = None
   let mut cursor = 0
   let mut line = 1
   while cursor < source.length() {
-    match matched_prefix(language.line_comments, source, cursor) {
+    match matched_prefix(language.language.line_comments, source, cursor) {
       Some(prefix) => {
         let end_ = skip_to_line_end(source, cursor + prefix.length())
-        token(tokens, cursor, end_, Comment)
-        line += line_breaks(source, cursor, end_)
+        token(tokens, cursor, end_, Comment, source_length, budget)
+        line = @proof.add_line_count(line, line_breaks(source, cursor, end_))
         cursor = end_
         continue
       }
       None => ()
     }
-    match matched_delimiter(language.block_comments, source, cursor) {
+    match matched_delimiter(language.language.block_comments, source, cursor) {
       Some(delimiter) => {
         let end_ = skip_region(source, cursor, delimiter)
-        token(tokens, cursor, end_, Comment)
-        line += line_breaks(source, cursor, end_)
+        token(tokens, cursor, end_, Comment, source_length, budget)
+        line = @proof.add_line_count(line, line_breaks(source, cursor, end_))
         cursor = end_
         continue
       }
       None => ()
     }
-    match matched_delimiter(language.strings, source, cursor) {
+    match matched_delimiter(language.language.strings, source, cursor) {
       Some(delimiter) => {
         let end_ = skip_region(source, cursor, delimiter)
-        token(tokens, cursor, end_, String)
-        line += line_breaks(source, cursor, end_)
+        token(tokens, cursor, end_, String, source_length, budget)
+        line = @proof.add_line_count(line, line_breaks(source, cursor, end_))
         cursor = end_
         continue
       }
@@ -267,38 +344,76 @@ pub fn analyze(language : Language, source : String) -> Analysis {
         cursor = advance_codepoint(source, cursor)
       }
       let name = String::unsafe_substring(source, start~, end=cursor)
-      let span = { start, end_: cursor }
-      if contains_word(language.keywords, name) {
-        token(tokens, start, cursor, Keyword)
-        pending_definition = declaration_kind(language.declarations, name)
-      } else if contains_word(language.types, name) {
-        token(tokens, start, cursor, Type)
-        match pending_definition {
-          Some(kind) => {
-            let definition = { name, span, kind, line }
-            definitions.push(definition)
-            if definitions_by_name.get(name) is None {
-              definitions_by_name[name] = definition
+      let span = { start, end_: cursor, }
+      match lexeme_for(language, name) {
+        Some(entry) =>
+          match pending_definition {
+            Some(kind) =>
+              match entry.scope {
+                Keyword => {
+                  token(
+                    tokens,
+                    start,
+                    cursor,
+                    entry.scope,
+                    source_length,
+                    budget,
+                  )
+                  pending_definition = entry.declaration
+                }
+                Type
+                | Constant
+                | Function
+                | Variable
+                | Property
+                | String
+                | Number
+                | Comment
+                | Operator
+                | Punctuation => {
+                  token(
+                    tokens,
+                    start,
+                    cursor,
+                    symbol_scope(kind),
+                    source_length,
+                    budget,
+                  )
+                  let definition = { name, span, kind, line, }
+                  record_definition(
+                    definitions, definitions_by_name, definition, budget,
+                  )
+                  pending_definition = None
+                }
+              }
+            None => {
+              token(tokens, start, cursor, entry.scope, source_length, budget)
+              if entry.scope == Keyword {
+                pending_definition = entry.declaration
+              } else if definitions_by_name.get(name) is Some(_) {
+                reference_candidate(identifiers, name, span, false, budget)
+              }
             }
-            pending_definition = None
           }
-          None => ()
-        }
-      } else if contains_word(language.constants, name) {
-        token(tokens, start, cursor, Constant)
-      } else {
-        match pending_definition {
-          Some(kind) => {
-            token(tokens, start, cursor, symbol_scope(kind))
-            let definition = { name, span, kind, line }
-            definitions.push(definition)
-            if definitions_by_name.get(name) is None {
-              definitions_by_name[name] = definition
+        None =>
+          match pending_definition {
+            Some(kind) => {
+              token(
+                tokens,
+                start,
+                cursor,
+                symbol_scope(kind),
+                source_length,
+                budget,
+              )
+              let definition = { name, span, kind, line, }
+              record_definition(
+                definitions, definitions_by_name, definition, budget,
+              )
+              pending_definition = None
             }
-            pending_definition = None
+            None => reference_candidate(identifiers, name, span, true, budget)
           }
-          None => identifiers.push((name, span))
-        }
       }
       continue
     }
@@ -316,20 +431,20 @@ pub fn analyze(language : Language, source : String) -> Analysis {
           break
         }
       }
-      token(tokens, start, cursor, Number)
+      token(tokens, start, cursor, Number, source_length, budget)
       continue
     }
-    if contains_codepoint(language.operator_chars, current) {
+    if codepoint_set_contains(language.operators, current) {
       let start = cursor
       cursor = advance_codepoint(source, cursor)
       while cursor < source.length() &&
-            contains_codepoint(
-              language.operator_chars,
+            codepoint_set_contains(
+              language.operators,
               codepoint_at(source, cursor),
             ) {
         cursor = advance_codepoint(source, cursor)
       }
-      token(tokens, start, cursor, Operator)
+      token(tokens, start, cursor, Operator, source_length, budget)
       continue
     }
     let next_cursor = advance_codepoint(source, cursor)
@@ -342,10 +457,10 @@ pub fn analyze(language : Language, source : String) -> Analysis {
       current == ','.to_int() ||
       current == ';'.to_int() ||
       current == ':'.to_int() {
-      token(tokens, cursor, next_cursor, Punctuation)
+      token(tokens, cursor, next_cursor, Punctuation, source_length, budget)
     }
     if current == '\n'.to_int() {
-      line += 1
+      line = @proof.add_line_count(line, 1)
     }
     cursor = next_cursor
   }
@@ -353,17 +468,20 @@ pub fn analyze(language : Language, source : String) -> Analysis {
   let reference_tokens : Array[Token] = []
   for entry in identifiers {
     match definitions_by_name.get(entry.0) {
-      Some(definition) => {
-        references.push({ name: entry.0, span: entry.1 })
-        token(
-          reference_tokens,
-          entry.1.start,
-          entry.1.end_,
-          symbol_scope(definition.kind),
-        )
-      }
+      Some(definition) =>
+        if reference(references, entry.0, entry.1, budget) && entry.2 {
+          reference_token(
+            tokens,
+            reference_tokens,
+            entry.1.start,
+            entry.1.end_,
+            symbol_scope(definition.kind),
+            source_length,
+            budget,
+          )
+        }
       None => ()
     }
   }
-  { tokens: merge_tokens(tokens, reference_tokens), definitions, references }
+  { tokens: merge_tokens(tokens, reference_tokens), definitions, references, }
 }

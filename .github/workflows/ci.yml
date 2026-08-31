@@ -51,6 +51,9 @@ jobs:
       - name: Check MoonBit source
         run: nix develop --command vp run moon-check
 
+      - name: Prove MoonBit contracts
+        run: nix develop --command vp run moon-prove
+
       - name: Check formatting, lint, and types
         run: nix develop --command vp check
 

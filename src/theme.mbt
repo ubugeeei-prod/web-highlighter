@@ -152,7 +152,7 @@ pub fn theme_catalog_wire(
 ) -> String {
   let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
   let selected = select_theme(available, requested, prefers_dark)
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   output..write_string("M\t")..write_string(selected.id).write_char('\n')
   theme_color(output, "foreground", selected.foreground)
   theme_color(output, "background", selected.background)
@@ -177,7 +177,7 @@ pub fn theme_catalog_wire(
 /// Percent itself is encoded first conceptually, so the browser can recover
 /// the exact add-on value with one `decodeURIComponent` call.
 fn encode_theme_field(value : String) -> String {
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   let mut start = 0
   for index in 0..<value.length() {
     let encoded = match value[index] {
@@ -209,7 +209,7 @@ fn encode_theme_field(value : String) -> String {
 /// create extra records. The popup only renders these MoonBit-owned values.
 pub fn theme_catalog_list_wire(catalog : Array[Theme]) -> String {
   let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
-  let output = StringBuilder::new()
+  let output = StringBuilder()
   for theme_ in available {
     output
     ..write_string("T\t")

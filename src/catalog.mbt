@@ -14,19 +14,19 @@ pub fn words(source : String) -> Array[String] {
 ///|
 /// Declares one weighted literal used for conservative language inference.
 pub fn signature(text : String, weight : Int) -> Signature {
-  { text, weight }
+  { text, weight, }
 }
 
 ///|
 /// Declares one non-escaping paired lexical region.
 pub fn delimiter(open_ : String, close : String) -> Delimiter {
-  { open: open_, close, escape: false }
+  { open: open_, close, escape: false, }
 }
 
 ///|
 /// Declares a same-marker quoted region with backslash escaping.
 pub fn quoted(marker : String) -> Delimiter {
-  { open: marker, close: marker, escape: true }
+  { open: marker, close: marker, escape: true, }
 }
 
 ///|
@@ -40,6 +40,10 @@ fn language_aliases(id : String, aliases : Array[String]) -> Array[String] {
 
 ///|
 /// Constructs a language add-on from compact readable vocabularies.
+///
+/// The first three vocabularies describe syntax classes. Optional
+/// `functions` and `properties` are for language-owned helper names that should
+/// be highlighted without pretending they are declarations.
 pub fn make_language(
   id : String,
   name : String,
@@ -56,6 +60,8 @@ pub fn make_language(
   strings : Array[Delimiter],
   operator_chars : String,
   identifier_extra : String,
+  functions? : String = "",
+  properties? : String = "",
 ) -> Language {
   language(
     id~,
@@ -67,6 +73,8 @@ pub fn make_language(
     keywords=words(keywords),
     types=words(types),
     constants=words(constants),
+    functions=words(functions),
+    properties=words(properties),
     declarations~,
     line_comments~,
     block_comments~,
@@ -123,21 +131,24 @@ pub fn builtin_languages() -> Array[Language] {
     ),
     make_language(
       "moonbit",
-      "MoonBit / MoonBit Executable",
-      ["mbt", "mbtx", "moonbit-executable"],
-      ["mbt", "mbtx"],
+      "MoonBit",
+      ["mbt", "mbtx", "mbti", "mbtp", "moonbit-executable"],
+      ["mbt", "mbtx", "mbti", "mbtp"],
       ["moon.mod", "moon.pkg"],
       [
         signature("///|", 3),
+        signature("pub predicate ", 3),
         signature("fn main {", 2),
         signature("derive(Debug)", 2),
+        signature("proof_ensure", 2),
         signature("pub fn ", 1),
       ],
-      "as async break catch const continue derive else enum extern fn for guard if impl import in init let loop match mut pub raise return struct test throw trait try type while with",
+      "as async break catch const continue derive else enum extern fn for guard if impl import in init let loop match mut predicate proof_assert proof_decrease proof_ensure proof_external proof_import proof_invariant proof_pure proof_reasoning proof_require proof_yield pub raise return struct test throw trait try type while with",
       "Array Bool Byte Bytes Char Double Error FixedArray Int Int64 Map Option Result String StringBuilder UInt UInt64 Unit",
       "true false None Some Ok Err",
       [
         ("fn", FunctionSymbol),
+        ("predicate", FunctionSymbol),
         ("struct", TypeSymbol),
         ("enum", TypeSymbol),
         ("trait", TypeSymbol),
@@ -154,16 +165,18 @@ pub fn builtin_languages() -> Array[Language] {
       "vibe",
       "Vibe",
       ["vibe-lang"],
-      ["vibe"],
+      ["vibe", "vibex"],
       [],
       [
         signature("ArrayBuilder::", 3),
-        signature("bench \"", 2),
+        signature("with Exception[", 3),
+        signature("with Console", 3),
+        signature("handle {", 2),
         signature("let rec ", 2),
       ],
-      "as async await bench break catch class const continue effect else enum export extern false fn for from if import in interface let loop match module mut of rec return struct throw trait true try type while with",
-      "Array ArrayBuilder Bool Byte Char Double Effect Error Float Int Map Option Result Set String UInt Unit",
-      "true false None Some Ok Err",
+      "as async await bench break catch class const continue effect else enum export extern fn for from handle if import in interface let loop match module mut of rec return struct throw trait try type while with",
+      "Array ArrayBuilder Async Bool Byte Bytes Char Console Double Effect Error Exception Float Fs Int Map Option Result Send Set String TaskGroup UInt Unit",
+      "true false None Some Ok Err Throw",
       [
         ("fn", FunctionSymbol),
         ("class", TypeSymbol),
@@ -180,6 +193,7 @@ pub fn builtin_languages() -> Array[Language] {
       c_strings(),
       "+-*/%=<>!&|^~?.",
       "$",
+      functions="print println stdout_write stdout_writeln",
     ),
     make_language(
       "tnix",
@@ -190,10 +204,11 @@ pub fn builtin_languages() -> Array[Language] {
       [
         signature("forall ", 2),
         signature(" :: ", 2),
-        signature("declare builtin", 3),
+        signature("declare \"", 3),
+        signature("# @tnix-", 2),
       ],
-      "any assert declare dynamic else false forall if import in inherit let null or rec then true type unknown with",
-      "Any Bool Float Int List Path String Unknown",
+      "as assert declare else extends forall if import in infer inherit let or rec satisfies then type with",
+      "Any Bool Derivation Float Functor Int List Matrix Nat Number Path Range String Tensor Tuple Unit Vec any dynamic unknown",
       "true false null",
       [("let", VariableSymbol), ("type", TypeSymbol)],
       ["#"],
@@ -209,11 +224,14 @@ pub fn builtin_languages() -> Array[Language] {
       ["mbtv"],
       [],
       [
+        signature("<script extern>", 3),
         signature("<template>", 3),
+        signature("defineProps()", 3),
+        signature("v-model", 2),
         signature("<script>", 2),
         signature("{{ ", 2),
       ],
-      "as async break catch const continue derive else enum extern fn for guard if impl import in init let loop match mut pub raise return script struct style template test throw trait try type while with",
+      "as async break catch component const continue derive else enum extern fn for guard if impl import in init let loop match mut pub raise return script setup struct style template test throw trait try type while with",
       "Array Bool Byte Bytes Char Double Error FixedArray Int Int64 Map Option Result String StringBuilder UInt UInt64 Unit",
       "true false None Some Ok Err",
       [
@@ -229,6 +247,8 @@ pub fn builtin_languages() -> Array[Language] {
       c_strings(),
       "+-*/%=<>!&|^~?.@#",
       "$-",
+      functions="computed defineEmits defineExpose defineProps defineSlots inject provide signal use_id use_template_ref watch",
+      properties="class is lang scoped v-bind v-for v-if v-model v-on v-show",
     ),
     make_language(
       "mojo",
@@ -272,7 +292,7 @@ pub fn builtin_languages() -> Array[Language] {
         signature("todo as ", 2),
       ],
       "as assert case const echo else fn if import let opaque panic pub todo type use",
-      "BitArray Bool Dict Error Float Int List Nil Option Order Result String UtfCodepoint",
+      "BitArray Bool Dict Float Int List Option Order Result String UtfCodepoint",
       "True False Nil Ok Error Some None",
       [
         ("const", VariableSymbol),
@@ -319,8 +339,8 @@ pub fn builtin_languages() -> Array[Language] {
         signature("#show ", 2),
         signature("#let ", 2),
       ],
-      "as auto break case continue context else false for if import in include let none return set show true while",
-      "alignment array bool bytes color content datetime decimal dictionary duration float fraction function int label length module none regex relative selector str stroke symbol type version",
+      "as break case continue context else for if import in include let return set show while",
+      "alignment array bool bytes color content datetime decimal dictionary duration float fraction function int label length module regex relative selector str stroke symbol type version",
       "true false none auto",
       [("let", VariableSymbol)],
       ["//"],
@@ -340,7 +360,7 @@ pub fn builtin_languages() -> Array[Language] {
         signature("$env.", 2),
         signature("| where ", 2),
       ],
-      "alias break const continue def do else error export extern false for hide if in let loop match module mut overlay return source true try use while",
+      "alias break const continue def do else export extern for hide if in let loop match module mut overlay return source try use while",
       "any binary bool cell-path closure datetime duration error filesize float glob int list nothing number range record string table",
       "true false null",
       [
@@ -364,7 +384,7 @@ pub fn builtin_languages() -> Array[Language] {
       ["lean"],
       ["lakefile.lean"],
       [signature("theorem ", 2), signature("by\n  ", 2), signature("#eval ", 2)],
-      "abbrev axiom by class def deriving do else end example export extends false for from fun have if import in inductive instance let match namespace opaque open private protected return structure syntax theorem true universe variable where with",
+      "abbrev axiom by class def deriving do else end example export extends for from fun have if import in inductive instance let match namespace opaque open private protected return structure syntax theorem universe variable where with",
       "Array Bool Char Fin Float Int IO List Nat Option Prop Result String Type UInt Unit",
       "true false none some",
       [
@@ -429,7 +449,7 @@ pub fn builtin_languages() -> Array[Language] {
         signature("m%{", 3),
         signature("| default", 2),
       ],
-      "assume as break contract default doc else enum export false field force forall fun if import in let match merge null optional or priority rec serialize std true type typeof",
+      "assume as break contract default doc else enum export field force forall fun if import in let match merge optional or priority rec serialize std type typeof",
       "Array Bool Dyn Enum Foreign Number Record String Symbol",
       "true false null",
       [
@@ -455,7 +475,7 @@ pub fn builtin_languages() -> Array[Language] {
         signature("module ", 2),
         signature("hidden ", 1),
       ],
-      "abstract amends as class const else extends external false fixed for function hidden if import import* in is let local module new nothing open out outer read read? read* super this throw trace true typealias unknown when",
+      "abstract amends as class const else extends external fixed for function hidden if import import* in is let local module new open out outer read read? read* super this throw trace typealias when",
       "Any Boolean Class DataSize Duration Dynamic Function Int List Listing Map Mapping Module Nothing Number Pair Regex Set String TypeAlias UInt",
       "true false null nothing unknown",
       [
@@ -484,7 +504,7 @@ pub fn builtin_languages() -> Array[Language] {
         signature("←", 1),
       ],
       "Box Break Call Comptime Content Continue Do Dump Fill Fn Format Git Import Invert Module Quote Set Signature Spawn Switch Test Thread Trace Try Under Use WorkingFile",
-      "Array Box Char Complex Function Number",
+      "Array Char Complex Function Number",
       "eta infinity pi tau",
       [("Fn", FunctionSymbol), ("Module", ModuleSymbol)],
       ["#"],
