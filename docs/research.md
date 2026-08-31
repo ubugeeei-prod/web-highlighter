@@ -10,13 +10,13 @@ Support is a property of the highlighting engine, not of the site, so the gap
 analysis starts from the engines. All five were checked directly on the dates
 below rather than from documentation summaries.
 
-| Service | Engine                                              | List used                                                       |
-| ------- | --------------------------------------------------- | --------------------------------------------------------------- |
-| GitHub  | Linguist                                            | `lib/linguist/languages.yml`, 833 languages                      |
+| Service | Engine                                                   | List used                                                            |
+| ------- | -------------------------------------------------------- | -------------------------------------------------------------------- |
+| GitHub  | Linguist                                                 | `lib/linguist/languages.yml`, 833 languages                          |
 | GitLab  | highlight.js in the source viewer, Rouge on the back end | `SUPPORTED_LANGUAGES.md` bundled rows, 379 aliases; 234 Rouge lexers |
-| Discord | highlight.js                                        | same bundled highlight.js rows                                   |
-| Zenn    | Shiki, `bundledLanguages`                           | `packages/shiki/src/langs-bundle-full.ts`, 343 ids and aliases    |
-| Qiita   | Rouge                                               | `lib/rouge/lexers`, 234 lexers                                   |
+| Discord | highlight.js                                             | same bundled highlight.js rows                                       |
+| Zenn    | Shiki, `bundledLanguages`                                | `packages/shiki/src/langs-bundle-full.ts`, 343 ids and aliases       |
+| Qiita   | Rouge                                                    | `lib/rouge/lexers`, 234 lexers                                       |
 
 Two findings changed the previous snapshot:
 
@@ -41,7 +41,7 @@ Two findings changed the previous snapshot:
 
 ## Added in this snapshot
 
-| Language   | Stars  | Unsupported by                       |
+| Language   |  Stars | Unsupported by                       |
 | ---------- | -----: | ------------------------------------ |
 | Zig        | 43,311 | Discord, GitLab source viewer        |
 | V          | 37,806 | Qiita, GitLab diffs                  |
@@ -57,7 +57,7 @@ from memory: Zig `lib/std/zig/tokenizer.zig`, V `vlib/v/token/token.v`, Just
 `src/keyword.rs`, Carbon `toolchain/lex/token_kind.def`, Odin
 `core/odin/tokenizer/token.odin`, and the Slint VS Code TextMate grammar.
 
-`v` and `res` show why aliases stay conservative. GitHub reads a bare ```` ```v ````
+`v` and `res` show why aliases stay conservative. GitHub reads a bare ` ```v `
 fence as Verilog, so V is registered as `vlang` and claims only `.vsh`, `.vv`,
 and `v.mod`; a `.v` file is left to whichever language owns it upstream. V code
 in an unlabelled block is still detected by weighted evidence.
@@ -72,7 +72,7 @@ order of magnitude less widely known.
 ## Cost
 
 Eight languages and the new signature index together cost 9.0 KiB of raw Wasm
-and 2.9 KiB Brotli, which leaves the release runtime at 23.6 KiB against the
+and 2.7 KiB Brotli, which leaves the release runtime at 23.9 KiB against the
 32 KiB budget. The index itself is 0.3 KiB of that and makes detection
 independent of catalog size, so these entries do not slow unlabelled inference
 down: an unlabelled 256 KiB block went from 51.6 ms to 7.7 ms per pass.

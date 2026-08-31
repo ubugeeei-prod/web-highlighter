@@ -5,16 +5,16 @@ source, language hint, optional filename, and one or more DOM segments. Language
 decisions remain in MoonBit and use the evidence strategy documented in
 [Injection Strategy](./injection-strategy.md).
 
-| Service      | Discovery                                                           | Language signal                                          | Rendering constraint                            |
-| ------------ | ------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
-| GitHub       | blob line cells, PR diff files, and ordinary fenced blocks          | filename first                                           | preserve each `#LC…` line cell and line anchor  |
-| GitLab       | visible blob lines, MR diff files, and plain-source overlays        | filename first                                           | preserve `#LC…` lines and `#L…` anchors         |
-| Discord      | `pre code`, CSS-module code nodes, `.hljs`, and code text fallbacks | language class/data attribute, then dominant signatures  | preserve message controls outside the code node |
-| Slack        | `pre > code` and language metadata                                  | data attributes, then signatures                         | preserve message and thread containers          |
-| ChatGPT      | `pre > code` and language metadata                                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome     |
+| Service      | Discovery                                                           | Language signal                                          | Rendering constraint                                  |
+| ------------ | ------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------- |
+| GitHub       | blob line cells, PR diff files, and ordinary fenced blocks          | filename first                                           | preserve each `#LC…` line cell and line anchor        |
+| GitLab       | visible blob lines, MR diff files, and plain-source overlays        | filename first                                           | preserve `#LC…` lines and `#L…` anchors               |
+| Discord      | `pre code`, CSS-module code nodes, `.hljs`, and code text fallbacks | language class/data attribute, then dominant signatures  | preserve message controls outside the code node       |
+| Slack        | `pre > code` and language metadata                                  | data attributes, then signatures                         | preserve message and thread containers                |
+| ChatGPT      | `pre > code` and language metadata                                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome           |
 | Zenn         | `pre > code` inside Shiki code blocks                               | dominant signatures only; Shiki drops the fence language | preserve the code-block container and filename header |
-| Qiita        | `pre > code` inside `.code-frame`                                   | `data-lang` on the code frame, then signatures           | preserve the language label and copy affordances |
-| Generic site | code-shaped `pre` nodes only                                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords  |
+| Qiita        | `pre > code` inside `.code-frame`                                   | `data-lang` on the code frame, then signatures           | preserve the language label and copy affordances      |
+| Generic site | code-shaped `pre` nodes only                                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords        |
 
 ## Zenn and Qiita articles
 

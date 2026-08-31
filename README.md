@@ -39,16 +39,16 @@ Veryl, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are
 
 A second group targets languages that GitHub, GitLab, Discord, Zenn, or Qiita still render as plain text, ordered by how widely known each language is:
 
-| Language   | Aliases and files                | Still unsupported by                     |
-| ---------- | -------------------------------- | ---------------------------------------- |
-| Zig        | `zig`, `.zig`, `.zon`            | Discord, GitLab source view              |
-| V          | `vlang`, `.vsh`, `.vv`, `v.mod`  | Qiita, GitLab diffs                      |
-| Just       | `just`, `justfile`, `.just`      | Discord, GitLab source view, Qiita       |
-| Carbon     | `carbon`, `.carbon`              | Discord, GitLab, Zenn, Qiita             |
-| Slint      | `slint`, `.slint`                | Discord, GitLab, Zenn, Qiita             |
-| Odin       | `odin`, `.odin`                  | Qiita, GitLab diffs                      |
-| PureScript | `purescript`, `purs`, `.purs`    | Discord, GitLab source view, Qiita       |
-| ReScript   | `rescript`, `res`, `.res`, `.resi` | Discord, GitLab source view, Zenn      |
+| Language   | Aliases and files                  | Still unsupported by               |
+| ---------- | ---------------------------------- | ---------------------------------- |
+| Zig        | `zig`, `.zig`, `.zon`              | Discord, GitLab source view        |
+| V          | `vlang`, `.vsh`, `.vv`, `v.mod`    | Qiita, GitLab diffs                |
+| Just       | `just`, `justfile`, `.just`        | Discord, GitLab source view, Qiita |
+| Carbon     | `carbon`, `.carbon`                | Discord, GitLab, Zenn, Qiita       |
+| Slint      | `slint`, `.slint`                  | Discord, GitLab, Zenn, Qiita       |
+| Odin       | `odin`, `.odin`                    | Qiita, GitLab diffs                |
+| PureScript | `purescript`, `purs`, `.purs`      | Discord, GitLab source view, Qiita |
+| ReScript   | `rescript`, `res`, `.res`, `.resi` | Discord, GitLab source view, Zenn  |
 
 The order is notability, the selection is availability: every entry is missing from at least one of the five services checked. See [the research snapshot](docs/research.md) for the engine behind each service and how the gaps were measured.
 
@@ -58,7 +58,7 @@ The release engine is a dependency-free Wasm-GC module. A local Apple-silicon ru
 
 | Signal                             |   Measured |        CI budget |
 | ---------------------------------- | ---------: | ---------------: |
-| Content host + analyzer, Brotli    |   23.6 KiB |   at most 32 KiB |
+| Content host + analyzer, Brotli    |   23.9 KiB |   at most 32 KiB |
 | Wasm instantiate + first scan      |     4.9 ms |   at most 100 ms |
 | Repeated 512 KiB MoonBit scan      | 10.5 MiB/s | at least 2 MiB/s |
 | Unlabelled 256 KiB detection sweep | 32.6 MiB/s |                — |

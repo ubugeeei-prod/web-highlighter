@@ -44,13 +44,13 @@ Idris 2 と `.ipkg`、MoonBit Executable (`mbtx`)、vibe-lang、tnix、ush、mbt
 
 ## Permission justifications
 
-| Permission                                          | Store justification                                                                                               |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `storage`                                           | Stores only the user's selected theme through the browser synchronization API.                                    |
+| Permission                                          | Store justification                                                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `storage`                                           | Stores only the user's selected theme through the browser synchronization API.                                                 |
 | Supported-service host access                       | Finds and decorates code on GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, and Qiita without requiring a click on every visit. |
-| `activeTab`                                         | Reads the active tab only after the user opens the popup to enable another site.                                  |
-| `scripting`                                         | Injects the packaged content script and stylesheet after the user grants access to another site.                  |
-| Optional `http://*/*` and `https://*/*` host access | Lets the user opt in one additional origin at a time; no optional origin is granted automatically.                |
+| `activeTab`                                         | Reads the active tab only after the user opens the popup to enable another site.                                               |
+| `scripting`                                         | Injects the packaged content script and stylesheet after the user grants access to another site.                               |
+| Optional `http://*/*` and `https://*/*` host access | Lets the user opt in one additional origin at a time; no optional origin is granted automatically.                             |
 
 ## Data and code declarations
 
