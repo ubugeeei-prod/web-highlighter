@@ -78,6 +78,11 @@ MoonBit proof mode covers the arithmetic behind the strategy:
 
 - UTF-16 cursor advances remain bounded;
 - emitted spans are non-empty, ordered, and in range;
+- a token skipped or stopped at by the renderer sweep cannot cover the segment,
+  and the same holds for every token before or after it, so one forward pass
+  sees exactly what a full scan would;
+- clipping a covering token to a segment stays inside the source, and stays
+  non-empty for every non-empty segment;
 - line-count and budget counters remain non-negative;
 - optional output appends preserve configured limits;
 - weighted evidence must be dominant before unlabelled inference can inject.
