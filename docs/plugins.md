@@ -18,7 +18,7 @@ needed for a private language.
 
 ## Language contract
 
-`language(...)` and its compact convenience constructor `make_language(...)` accept:
+`language(...)` and its compact convenience constructor `make_language(...)` take every parameter as a labeled argument, so an add-on reads as a table rather than as fifteen positional values. Both accept:
 
 - a stable lowercase `id` and human-readable `name`;
 - fenced-code `aliases`;
