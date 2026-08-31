@@ -11,9 +11,9 @@ surfaces and applies the token plan returned by Wasm.
 ## Supported surfaces
 
 - GitHub repository blobs and pull request code views
-- GitLab repository blobs
+- GitLab repository blobs and merge request diffs
 - Discord, Slack, ChatGPT, and ordinary `pre > code` blocks
-- Local Chrome extension installs through `dist/chromium`
+- Local and GitHub Release Chrome extension installs
 - Build-time add-ons for private or self-authored languages
 
 ## Built-in language targets
@@ -43,4 +43,5 @@ surfaces and applies the token plan returned by Wasm.
 - [Injection strategy](./injection-strategy.md)
 - [Writing add-ons](./plugins.md)
 - [Service adapters](./services.md)
+- [Install from GitHub](./github-install.md)
 - [Docs deployment](./deployment.md)

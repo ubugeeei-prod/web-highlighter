@@ -4,6 +4,7 @@ import {
   BrowserHost,
   decodeAnalysis,
   discoverSurfaces,
+  documentPrefersDark,
   type Analyzer,
 } from "../extension/src/host.ts";
 import { testWindow } from "./dom.ts";
@@ -76,6 +77,37 @@ test("GitHub hydration cannot permanently remove injected tokens", async () => {
   assert.equal(line.querySelector(".wh-keyword")?.textContent, "fn");
 });
 
+test("GitHub pull request diff files are grouped by filename", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/pull/1/files");
+  window.document.body.innerHTML = `
+    <div data-file-path="src/example.ush">
+      <table><tbody>
+        <tr>
+          <td class="blob-code blob-code-hunk">@@ -1 +1 @@</td>
+        </tr>
+        <tr>
+          <td class="blob-code blob-code-addition js-file-line">
+            <span class="blob-code-inner">fn greet() {}</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="blob-code blob-code-context js-file-line">
+            <span class="blob-code-inner">greet()</span>
+          </td>
+        </tr>
+      </tbody></table>
+    </div>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.filename, "src/example.ush");
+  assert.equal(surface?.segments.length, 2);
+  assert.equal(surface?.source, "fn greet() {}\ngreet()");
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".blob-code-hunk")?.textContent, "@@ -1 +1 @@");
+  assert.equal(window.document.querySelector(".blob-code-inner .wh-keyword")?.textContent, "fn");
+});
+
 test("GitLab visible lines are injected without touching its source overlay", async () => {
   const window = testWindow("https://gitlab.com/group/project/-/blob/main/demo.ipkg");
   window.document.body.innerHTML = `
@@ -115,6 +147,22 @@ test("GitLab waits for visible lines instead of treating its source overlay as c
   assert.equal(overlay.childElementCount, 0);
 });
 
+test("GitLab merge request diff files are grouped by filename", async () => {
+  const window = testWindow("https://gitlab.com/group/project/-/merge_requests/1/diffs");
+  window.document.body.innerHTML = `
+    <div class="diff-file" data-new-path="pkg/demo.ipkg">
+      <div class="line_content">package demo</div>
+      <div class="line_content">sourcedir = src</div>
+    </div>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.filename, "pkg/demo.ipkg");
+  assert.equal(surface?.segments.length, 2);
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".line_content .wh-keyword")?.textContent, "package");
+});
+
 test("Discord fences and theme changes use the same host", async () => {
   const window = testWindow("https://discord.com/channels/1/2");
   window.document.body.innerHTML =
@@ -124,6 +172,85 @@ test("Discord fences and theme changes use the same host", async () => {
   await host.applyTheme("auto", true);
   assert.equal(window.document.documentElement.dataset.whTheme, "midnight");
   assert.equal(window.document.documentElement.style.getPropertyValue("--wh-keyword"), "#ff7b72");
+});
+
+test("Discord CSS-module code blocks preserve controls and accept bare language classes", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <article>
+      <button id="copy">Copy</button>
+      <div class="codeContainer_ab12">
+        <pre><code class="hljs ush"><span>fn greet() {}</span><span>greet()</span></code></pre>
+      </div>
+    </article>`;
+  const copy = window.document.querySelector("#copy");
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "ush");
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".hljs .wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#copy"), copy);
+  assert.equal(copy?.textContent, "Copy");
+});
+
+test("Discord wrapper metadata is enough when code has no language class", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <div class="markup_cd34">
+      <div class="codeBlock_ef56" data-code-lang="ush">
+        <code>fn greet() {}
+greet()</code>
+      </div>
+    </div>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "ush");
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".codeBlock_ef56 .wh-keyword")?.textContent, "fn");
+});
+
+test("Discord click-triggered re-render is highlighted again", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <article>
+      <div class="codeContainer_ab12">
+        <pre><code class="hljs ush">fn greet() {}
+greet()</code></pre>
+      </div>
+    </article>`;
+  const code = window.document.querySelector<HTMLElement>("code")!;
+  const host = new BrowserHost(window.document, analyzer);
+
+  await host.start();
+  assert.equal(code.querySelector(".wh-keyword")?.textContent, "fn");
+
+  code.addEventListener("click", () => {
+    code.replaceChildren(window.document.createTextNode("fn greet() {}\ngreet()"));
+  });
+  const click = window.document.createEvent("Event");
+  click.initEvent("click", true, false);
+  code.dispatchEvent(click);
+
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  assert.equal(code.querySelector(".wh-keyword")?.textContent, "fn");
+  host.stop();
+});
+
+test("Discord codeBlockText fallback covers code nodes recreated without code tags", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <div class="codeContainer_ab12" data-code-lang="ush">
+      <button id="copy">Copy</button>
+      <div class="codeBlockText_cd34">fn greet() {}
+greet()</div>
+    </div>`;
+  const copy = window.document.querySelector("#copy");
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "ush");
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".codeBlockText_cd34 .wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#copy"), copy);
 });
 
 test("Slack parent metadata is read without replacing message controls", async () => {
@@ -169,4 +296,16 @@ test("ancestor data-lang remains reachable past an empty language attribute", as
   assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
   assert.equal(window.document.querySelector("#control"), control);
   assert.equal(control?.textContent, "Code actions");
+});
+
+test("automatic theme mode follows page background before OS preference", () => {
+  const light = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  light.document.body.style.backgroundColor = "rgb(255, 255, 255)";
+  light.document.body.innerHTML = '<pre><code class="language-ush">fn greet() {}</code></pre>';
+  assert.equal(documentPrefersDark(light.document, true), false);
+
+  const dark = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  dark.document.body.style.backgroundColor = "rgb(13, 17, 23)";
+  dark.document.body.innerHTML = '<pre><code class="language-ush">fn greet() {}</code></pre>';
+  assert.equal(documentPrefersDark(dark.document, false), true);
 });

@@ -101,6 +101,19 @@ GitLab, Discord, Slack, ChatGPT, and OpenAI Chat receive automatic host access
 from the generated extension. Any other origin is requested explicitly from the
 popup.
 
+### Install from GitHub Releases
+
+Download `web-highlighter-vVERSION-chrome-extension.zip` from the latest GitHub
+Release, unzip it into a persistent local folder, open `chrome://extensions`,
+enable Developer mode, choose **Load unpacked**, and select the unzipped folder
+that contains `manifest.json`. Keep that folder in place; Chrome loads the
+extension from it on each startup.
+
+For updates, download the newer GitHub Release ZIP, replace the same folder,
+then press reload for Web Highlighter on `chrome://extensions`. See
+[GitHub install](docs/github-install.md) for checksum verification and the
+Chrome Web Store boundary.
+
 Firefox can temporarily load `dist/firefox/manifest.json`; Safari uses
 `dist/safari` with `xcrun safari-web-extension-packager`.
 

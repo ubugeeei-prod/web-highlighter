@@ -7,50 +7,196 @@
     <style>
       :root {
         color-scheme: light dark;
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --text: #111827;
+        --muted: #667085;
+        --border: #d7dce3;
+        --border-strong: #b9c2cf;
+        --accent: #1769e0;
+        --accent-strong: #0b55c2;
+        --accent-text: #ffffff;
+        --control: #ffffff;
+        --shadow: 0 14px 30px rgb(15 23 42 / 12%);
         font:
           13px/1.45 system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
           sans-serif;
       }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #11151b;
+          --panel: #171d25;
+          --text: #f3f6fb;
+          --muted: #a7b0bf;
+          --border: #303a47;
+          --border-strong: #465365;
+          --accent: #8ab8ff;
+          --accent-strong: #a8cbff;
+          --accent-text: #07111f;
+          --control: #111820;
+          --shadow: 0 16px 34px rgb(0 0 0 / 32%);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        width: 260px;
+        width: 320px;
         margin: 0;
-        padding: 16px;
+        padding: 14px;
+        color: var(--text);
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--bg), var(--panel) 18%), var(--bg)),
+          var(--bg);
       }
-      h1 {
-        margin: 0 0 12px;
-        font-size: 16px;
-      }
-      label {
+
+      .panel {
         display: grid;
-        gap: 5px;
-        margin-bottom: 12px;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
       }
-      select,
-      button {
-        min-height: 32px;
-        border: 1px solid ButtonBorder;
-        border-radius: 6px;
+
+      .header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .eyebrow {
+        margin: 0 0 2px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      .status-dot {
+        width: 9px;
+        height: 9px;
+        margin-top: 5px;
+        border-radius: 999px;
+        background: #2da44e;
+        box-shadow: 0 0 0 4px color-mix(in srgb, #2da44e, transparent 82%);
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .select-control {
+        position: relative;
+      }
+
+      .select-control::after {
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        width: 8px;
+        height: 8px;
+        border-right: 1.5px solid var(--muted);
+        border-bottom: 1.5px solid var(--muted);
+        content: "";
+        pointer-events: none;
+        transform: translateY(-70%) rotate(45deg);
+      }
+
+      select {
+        width: 100%;
+        min-height: 38px;
+        padding: 0 34px 0 11px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        color: var(--text);
+        background: var(--control);
         font: inherit;
+        font-weight: 560;
+        appearance: none;
+        outline: none;
       }
+
+      select:focus-visible,
+      button:focus-visible {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 74%);
+      }
+
       button {
         width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--accent);
+        border-radius: 7px;
+        color: var(--accent-text);
+        background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+        font: inherit;
+        font-weight: 700;
+        letter-spacing: 0;
         cursor: pointer;
       }
+
+      button {
+        transition:
+          border-color 140ms ease,
+          filter 140ms ease,
+          transform 140ms ease;
+      }
+
+      button:hover {
+        filter: brightness(1.04);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
       p {
         min-height: 1.5em;
-        margin: 8px 0 0;
-        color: GrayText;
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
       }
     </style>
   </head>
   <body>
-    <h1>Web Highlighter</h1>
-    <label
-      >Theme
-      <select id="theme"></select
-    ></label>
-    <button id="enable" type="button">Enable on this site</button>
-    <p id="status" aria-live="polite"></p>
+    <main class="panel">
+      <header class="header">
+        <div>
+          <p class="eyebrow">Extension</p>
+          <h1>Web Highlighter</h1>
+        </div>
+        <span class="status-dot" aria-hidden="true"></span>
+      </header>
+      <label class="field" for="theme">
+        <span>Theme</span>
+        <span class="select-control">
+          <select id="theme"></select>
+        </span>
+      </label>
+      <button id="enable" type="button">Grant Site Access</button>
+      <p id="status" aria-live="polite"></p>
+    </main>
     <script src="popup.js"></script>
   </body>
 </html>

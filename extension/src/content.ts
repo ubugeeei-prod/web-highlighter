@@ -1,4 +1,4 @@
-import { BrowserHost, type Analyzer } from "./host.ts";
+import { BrowserHost, documentPrefersDark, type Analyzer } from "./host.ts";
 
 function api(): WebHighlighterBrowserApi | undefined {
   const host = globalThis as typeof globalThis & {
@@ -36,7 +36,7 @@ async function boot(): Promise<void> {
         .catch(() => ({ theme: "auto" }));
       await host.applyTheme(
         typeof stored?.theme === "string" ? stored.theme : "auto",
-        matchMedia("(prefers-color-scheme: dark)").matches,
+        documentPrefersDark(document, matchMedia("(prefers-color-scheme: dark)").matches),
       );
     };
     await readTheme();

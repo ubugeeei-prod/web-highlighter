@@ -77,6 +77,7 @@ mkdirSync(release, { recursive: true });
 
 for (const { name, target } of [
   { name: `web-highlighter-v${version}-chrome-web-store.zip`, target: "chromium" },
+  { name: `web-highlighter-v${version}-chrome-extension.zip`, target: "chromium" },
   { name: `web-highlighter-v${version}-edge-addons.zip`, target: "chromium" },
   { name: `web-highlighter-v${version}-firefox-amo.zip`, target: "firefox" },
   { name: `web-highlighter-v${version}-safari-web-extension.zip`, target: "safari" },

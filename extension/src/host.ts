@@ -44,20 +44,83 @@ interface Analysis {
 const MAX_SOURCE = 2_000_000;
 const MAX_SURFACES = 48;
 const languageClass = /(?:^|\s)(?:language|lang)-([\w+.#-]+)/iu;
+const languageAttributes = [
+  "data-language",
+  "data-code-language",
+  "data-code-lang",
+  "data-codeblock-language",
+  "data-lang",
+  "data-syntax",
+];
+const gitHubBlobLineSelectors = [
+  '[data-testid="code-cell"]',
+  ".react-code-line-contents",
+  "td.blob-code.js-file-line",
+];
+const gitLabBlobLineSelectors = [
+  'pre.code > code[data-testid="content"] + code > [id^="LC"].line',
+  ".blob-content [id^='LC'].line",
+  ".file-content [id^='LC'].line",
+];
+const gitLabDiffLineSelector = '[data-testid="diff-line-code"], .line_content';
+const discordHosts = new Set(["discord.com", "canary.discord.com", "ptb.discord.com"]);
+const discordCodeSelectors = [
+  "pre code",
+  '[class*="codeContainer"] code',
+  '[class*="codeBlock"] code',
+  '[class*="markup"] code.hljs',
+];
+const discordTextSelectors = [
+  '[class*="codeBlockText"]',
+  '[class*="codeBlockCode"]',
+  '[class*="codeBlockSyntax"]',
+];
+const discordRecoveryEvents = ["click", "pointerup", "focusin", "keyup"] as const;
+const discordRecoveryDelays = [0, 80, 240, 600] as const;
+const ignoredLanguageClasses = new Set([
+  "blob-code",
+  "blob-code-addition",
+  "blob-code-context",
+  "blob-code-deletion",
+  "blob-code-hunk",
+  "blob-code-inner",
+  "blob-code-marker",
+  "code",
+  "hljs",
+  "js-file-line",
+  "line",
+  "line_content",
+  "nohighlight",
+  "react-code-line-contents",
+  "wh-token",
+]);
+
+function classHint(value: string): string {
+  const explicit = value.match(languageClass)?.[1];
+  if (explicit) return explicit.toLowerCase();
+  for (const token of value.split(/\s+/u)) {
+    const normalized = token.trim().toLowerCase();
+    if (/^[a-z][a-z0-9+.#-]{1,31}$/u.test(normalized) && !ignoredLanguageClasses.has(normalized))
+      return normalized;
+  }
+  return "";
+}
+
+function metadataHint(element: HTMLElement): string {
+  for (const attribute of languageAttributes) {
+    const value = element.getAttribute(attribute)?.trim();
+    if (value) return value;
+  }
+  return "";
+}
 
 function hintOf(element: HTMLElement): string {
-  const direct =
-    element.dataset.language ?? element.dataset.codeLanguage ?? element.getAttribute("data-lang");
+  const direct = metadataHint(element) || classHint(element.className);
   if (direct) return direct;
   const container = element.closest<HTMLElement>(
-    "[data-language], [data-code-language], [data-lang]",
+    languageAttributes.map((attribute) => `[${attribute}]`).join(", "),
   );
-  const containerHint =
-    container?.dataset.language ||
-    container?.dataset.codeLanguage ||
-    container?.getAttribute("data-lang") ||
-    "";
-  return element.className.match(languageClass)?.[1] ?? containerHint;
+  return container ? metadataHint(container) || classHint(container.className) : "";
 }
 
 function filenameOf(document: Document): string {
@@ -78,6 +141,23 @@ function filenameOf(document: Document): string {
   }
 }
 
+function filenameFromContainer(container: HTMLElement): string {
+  for (const attribute of ["data-file-path", "data-new-path", "data-path", "data-old-path"]) {
+    const value = container.getAttribute(attribute)?.trim();
+    if (value) return value;
+  }
+  const labelled = container
+    .querySelector<HTMLElement>(
+      '[data-testid="file-name"], [data-testid="file-title"], .file-title-name, .diff-file-changes .file-title-name',
+    )
+    ?.textContent?.trim();
+  return labelled ?? "";
+}
+
+function gitHubCodeTarget(element: HTMLElement): HTMLElement {
+  return element.querySelector<HTMLElement>(":scope > .blob-code-inner") ?? element;
+}
+
 function makeSurface(elements: HTMLElement[], filename = ""): Surface | undefined {
   if (!elements.length) return undefined;
   const segments: Segment[] = [];
@@ -94,31 +174,130 @@ function makeSurface(elements: HTMLElement[], filename = ""): Surface | undefine
   return { key, source, segments, hint: elements.map(hintOf).find(Boolean) ?? "", filename };
 }
 
+function firstSurfaceBySelector(
+  document: Document,
+  selectors: readonly string[],
+  filename: string,
+  target = (element: HTMLElement) => element,
+): Surface | undefined {
+  for (const selector of selectors) {
+    const seen = new Set<HTMLElement>();
+    const lines = [...document.querySelectorAll<HTMLElement>(selector)]
+      .filter((line) => !line.closest("pre"))
+      .map(target)
+      .filter((line) => {
+        if (seen.has(line)) return false;
+        seen.add(line);
+        return true;
+      });
+    const surface = makeSurface(lines, filename);
+    if (surface) return surface;
+  }
+  return undefined;
+}
+
+function gitHubBlobSurface(document: Document): Surface | undefined {
+  if (!document.location.pathname.includes("/blob/")) return undefined;
+  return firstSurfaceBySelector(
+    document,
+    gitHubBlobLineSelectors,
+    filenameOf(document),
+    gitHubCodeTarget,
+  );
+}
+
+function gitHubDiffSurfaces(document: Document): Surface[] {
+  const groups = new Map<HTMLElement, { filename: string; lines: HTMLElement[] }>();
+  for (const cell of document.querySelectorAll<HTMLElement>("td.blob-code.js-file-line")) {
+    if (cell.classList.contains("blob-code-hunk")) continue;
+    const container = cell.closest<HTMLElement>("[data-file-path], [data-new-path], [data-path]");
+    if (!container) continue;
+    const target = gitHubCodeTarget(cell);
+    const group = groups.get(container);
+    if (group) {
+      group.lines.push(target);
+    } else {
+      groups.set(container, { filename: filenameFromContainer(container), lines: [target] });
+    }
+  }
+  return [...groups.values()]
+    .map(({ filename, lines }) => makeSurface(lines, filename))
+    .filter((surface): surface is Surface => Boolean(surface));
+}
+
+function gitLabBlobSurface(document: Document): Surface | undefined {
+  if (!document.location.pathname.includes("/-/blob/")) return undefined;
+  for (const selector of gitLabBlobLineSelectors) {
+    const lines = [...document.querySelectorAll<HTMLElement>(selector)].filter(
+      (line) => !line.matches('[data-testid="content"]'),
+    );
+    const surface = makeSurface(lines, filenameOf(document));
+    if (surface) return surface;
+  }
+  return undefined;
+}
+
+function gitLabDiffSurfaces(document: Document): Surface[] {
+  if (!document.location.pathname.includes("/diff")) return [];
+  const groups = new Map<HTMLElement, { filename: string; lines: HTMLElement[] }>();
+  for (const line of document.querySelectorAll<HTMLElement>(gitLabDiffLineSelector)) {
+    const container = line.closest<HTMLElement>(
+      "[data-file-path], [data-new-path], [data-path], [data-old-path], .diff-file, .file-holder",
+    );
+    if (!container) continue;
+    const group = groups.get(container);
+    if (group) {
+      group.lines.push(line);
+    } else {
+      groups.set(container, { filename: filenameFromContainer(container), lines: [line] });
+    }
+  }
+  return [...groups.values()]
+    .map(({ filename, lines }) => makeSurface(lines, filename))
+    .filter((surface): surface is Surface => Boolean(surface));
+}
+
+function discordSurfaces(document: Document): Surface[] {
+  const result: Surface[] = [];
+  const seen = new Set<HTMLElement>();
+  for (const selector of [...discordCodeSelectors, ...discordTextSelectors]) {
+    for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+      if (seen.has(element)) continue;
+      if (element.tagName !== "CODE" && element.querySelector("code, button, [role='button']"))
+        continue;
+      seen.add(element);
+      const block = element.closest<HTMLElement>(
+        'pre, [class*="codeContainer"], [class*="codeBlock"]',
+      );
+      if (!block) continue;
+      const text = element.textContent ?? "";
+      if (!element.closest("pre") && !text.includes("\n") && text.length < 80) continue;
+      const surface = makeSurface([element]);
+      if (surface) result.push(surface);
+    }
+  }
+  return result;
+}
+
 /** Finds code-bearing DOM only; language policy stays inside MoonBit. */
 export function discoverSurfaces(document: Document): Surface[] {
   if (document.location.hostname === "github.com") {
-    for (const selector of [
-      '[data-testid="code-cell"]',
-      "td.blob-code",
-      ".react-code-line-contents",
-    ]) {
-      const lines = [...document.querySelectorAll<HTMLElement>(selector)].filter(
-        (line) => !line.closest("pre"),
-      );
-      const surface = makeSurface(lines, filenameOf(document));
-      if (surface) return [surface, ...genericSurfaces(document)];
-    }
+    const blob = gitHubBlobSurface(document);
+    if (blob) return [blob, ...genericSurfaces(document)];
+    const diffs = gitHubDiffSurfaces(document);
+    if (diffs.length > 0) return [...diffs, ...genericSurfaces(document)];
   }
   if (document.location.pathname.includes("/-/blob/")) {
-    const lines = [
-      ...document.querySelectorAll<HTMLElement>(
-        'pre.code > code[data-testid="content"] + code > [id^="LC"].line',
-      ),
-    ];
-    const surface = makeSurface(lines, filenameOf(document));
+    const surface = gitLabBlobSurface(document);
     if (surface) return [surface];
     return [];
   }
+  if (discordHosts.has(document.location.hostname)) {
+    const discord = discordSurfaces(document);
+    if (discord.length > 0) return discord;
+  }
+  const gitLabDiffs = gitLabDiffSurfaces(document);
+  if (gitLabDiffs.length > 0) return gitLabDiffs;
   return genericSurfaces(document);
 }
 
@@ -138,6 +317,63 @@ function genericSurfaces(root: ParentNode): Surface[] {
     if (surface) result.push(surface);
   }
   return result;
+}
+
+interface Rgb {
+  r: number;
+  g: number;
+  b: number;
+  alpha: number;
+}
+
+function parseRgb(value: string): Rgb | undefined {
+  const match = value.match(/rgba?\(([^)]+)\)/iu);
+  if (!match) return undefined;
+  const parts = match[1]!.split(",").map((part) => part.trim());
+  const r = Number(parts[0]);
+  const g = Number(parts[1]);
+  const b = Number(parts[2]);
+  const alpha = parts[3] === undefined ? 1 : Number(parts[3]);
+  if ([r, g, b, alpha].some((part) => !Number.isFinite(part))) return undefined;
+  return { r, g, b, alpha };
+}
+
+function relativeChannel(value: number): number {
+  const normalized = value / 255;
+  return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance({ r, g, b }: Rgb): number {
+  return 0.2126 * relativeChannel(r) + 0.7152 * relativeChannel(g) + 0.0722 * relativeChannel(b);
+}
+
+function visibleBackground(element: HTMLElement): Rgb | undefined {
+  const view = element.ownerDocument.defaultView;
+  if (!view) return undefined;
+  let current: HTMLElement | null = element;
+  while (current) {
+    const background = parseRgb(view.getComputedStyle(current).backgroundColor);
+    if (background && background.alpha > 0.2) return background;
+    current = current.parentElement;
+  }
+  return undefined;
+}
+
+export function documentPrefersDark(document: Document, fallback: boolean): boolean {
+  for (const selector of [
+    '[data-testid="code-cell"]',
+    "td.blob-code",
+    "[id^='LC'].line",
+    gitLabDiffLineSelector,
+    "pre code",
+    "pre",
+    "body",
+  ]) {
+    const element = document.querySelector<HTMLElement>(selector);
+    const background = element ? visibleBackground(element) : undefined;
+    if (background) return luminance(background) < 0.28;
+  }
+  return fallback;
 }
 
 /** Decodes the compact line protocol emitted by MoonBit without a JSON runtime. */
@@ -172,6 +408,12 @@ function hash(source: string, language: string): string {
 export class BrowserHost {
   readonly #fingerprints = new WeakMap<HTMLElement, string>();
   readonly #entries = new WeakMap<HTMLElement, { surface: Surface; analysis: Analysis }>();
+  readonly #discordRecoveryListeners: Array<{
+    type: (typeof discordRecoveryEvents)[number];
+    listener: EventListener;
+    options: AddEventListenerOptions;
+  }> = [];
+  #discordRecoveryTimers: number[] = [];
   #observer: MutationObserver | undefined;
   #scheduled = false;
   #highlighting: Promise<number> | undefined;
@@ -182,6 +424,7 @@ export class BrowserHost {
     readonly analyzer: Analyzer,
   ) {
     this.#installNavigation();
+    if (discordHosts.has(this.document.location.hostname)) this.#installDiscordRecovery();
   }
 
   async applyTheme(theme: string, dark: boolean): Promise<void> {
@@ -253,6 +496,14 @@ export class BrowserHost {
   stop(): void {
     this.#observer?.disconnect();
     this.#observer = undefined;
+    for (const { type, listener, options } of this.#discordRecoveryListeners)
+      this.document.removeEventListener(type, listener, options);
+    this.#discordRecoveryListeners.length = 0;
+    const view = this.document.defaultView;
+    if (view) {
+      for (const timer of this.#discordRecoveryTimers) view.clearTimeout(timer);
+    }
+    this.#discordRecoveryTimers = [];
   }
 
   #render(surface: Surface, analysis: Analysis): void {
@@ -373,6 +624,35 @@ export class BrowserHost {
         jump(event.target);
       }
     });
+  }
+
+  #installDiscordRecovery(): void {
+    const isCodeInteraction = (event: Event): boolean =>
+      event.target instanceof HTMLElement &&
+      Boolean(
+        event.target.closest(
+          'pre, code, [class*="codeContainer"], [class*="codeBlock"], [class*="markup"]',
+        ),
+      );
+    const recover: EventListener = (event) => {
+      if (!isCodeInteraction(event)) return;
+      const view = this.document.defaultView;
+      if (!view) return;
+      for (const delay of discordRecoveryDelays) {
+        const timer = view.setTimeout(() => {
+          this.#discordRecoveryTimers = this.#discordRecoveryTimers.filter(
+            (item) => item !== timer,
+          );
+          void this.highlight().catch(() => undefined);
+        }, delay);
+        this.#discordRecoveryTimers.push(timer);
+      }
+    };
+    for (const type of discordRecoveryEvents) {
+      const options: AddEventListenerOptions = { capture: true, passive: true };
+      this.document.addEventListener(type, recover, options);
+      this.#discordRecoveryListeners.push({ type, listener: recover, options });
+    }
   }
 
   #schedule(): void {

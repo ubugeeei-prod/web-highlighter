@@ -278,7 +278,7 @@ test "weak and ambiguous weighted evidence is intentionally untouched" {
 test "theme selection and colors are emitted by MoonBit" {
   let dark = theme_wire("auto", true)
   assert_true(dark.has_prefix("M\tmidnight\n"))
-  assert_true(dark.contains("C\tkeyword\t#ff7b72"))
+  assert_true(dark.contains("C\tkeyword\t#ff8f87"))
   let light = theme_wire("adaptive", true)
   assert_true(light.has_prefix("M\tadaptive\n"))
 }

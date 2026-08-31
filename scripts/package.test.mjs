@@ -11,6 +11,7 @@ const release = resolve(root, "release");
 const version = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).version;
 const names = {
   chrome: `web-highlighter-v${version}-chrome-web-store.zip`,
+  chromeGitHub: `web-highlighter-v${version}-chrome-extension.zip`,
   edge: `web-highlighter-v${version}-edge-addons.zip`,
   firefox: `web-highlighter-v${version}-firefox-amo.zip`,
   safari: `web-highlighter-v${version}-safari-web-extension.zip`,
@@ -61,9 +62,11 @@ await test("store archives are rootless and target-correct", () => {
   }
 
   assert.equal(manifest(names.chrome).background.service_worker, "engine.js");
+  assert.equal(manifest(names.chromeGitHub).background.service_worker, "engine.js");
   assert.equal(manifest(names.edge).background.service_worker, "engine.js");
   assert.deepEqual(manifest(names.firefox).background.scripts, ["engine.js"]);
   assert.equal(manifest(names.safari).manifest_version, 3);
+  assert.deepEqual(digests()[names.chrome], digests()[names.chromeGitHub]);
   assert.deepEqual(digests()[names.chrome], digests()[names.edge]);
 });
 

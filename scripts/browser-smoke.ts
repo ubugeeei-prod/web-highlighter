@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { join, resolve } from "node:path";
 import { chromium, type BrowserContext } from "playwright";
 
-const gitlabFixture = `<!doctype html>
+const gitlabBlobFixture = `<!doctype html>
 <html><body>
 <a id="L1" data-line-number="1"></a><a id="L2" data-line-number="2"></a>
 <pre class="code highlight gl-relative">
@@ -15,15 +15,53 @@ const gitlabFixture = `<!doctype html>
   </code>
 </pre></body></html>`;
 
-const githubFixture = `<!doctype html>
+const gitlabDiffFixture = `<!doctype html>
+<html><body>
+<div class="diff-file" data-new-path="pkg/conditionals.tnix">
+  <div id="GL-DIFF-1" class="line_content">let enabled = true;</div>
+  <div id="GL-DIFF-2" class="line_content">in if enabled then { status = "enabled"; }</div>
+</div>
+</body></html>`;
+
+const githubBlobFixture = `<!doctype html>
 <html><body><table><tbody>
   <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">let enabled = true;</td></tr>
   <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">in if enabled then { status = "enabled"; }</td></tr>
 </tbody></table></body></html>`;
 
+const githubDiffFixture = `<!doctype html>
+<html><body>
+<div data-file-path="src/example.ush">
+  <table><tbody>
+    <tr><td class="blob-code blob-code-hunk">@@ -1 +1 @@</td></tr>
+    <tr>
+      <td class="blob-code blob-code-addition js-file-line">
+        <span id="GH-DIFF-1" class="blob-code-inner">fn greet() {}</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="blob-code blob-code-context js-file-line">
+        <span id="GH-DIFF-2" class="blob-code-inner">greet()</span>
+      </td>
+    </tr>
+  </tbody></table>
+</div>
+</body></html>`;
+
+const discordFixture = `<!doctype html>
+<html><body>
+<article>
+  <button id="discord-copy">Copy</button>
+  <div class="codeContainer_ab12">
+    <pre><code id="discord-code" class="hljs ush">fn greet() {}
+greet()</code></pre>
+  </div>
+</article>
+</body></html>`;
+
 const server = createServer((_request, response) => {
   response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-  response.end(gitlabFixture);
+  response.end(gitlabBlobFixture);
 });
 const temporary = await mkdtemp(resolve(".browser-smoke-"));
 let context: BrowserContext | undefined;
@@ -43,8 +81,13 @@ try {
     host_permissions: string[];
     content_scripts: Array<{ matches: string[] }>;
   };
-  manifest.host_permissions = ["http://127.0.0.1/*", "https://github.com/*"];
-  manifest.content_scripts[0]!.matches = ["http://127.0.0.1/*", "https://github.com/*"];
+  manifest.host_permissions = [
+    "http://127.0.0.1/*",
+    "https://github.com/*",
+    "https://gitlab.com/*",
+    "https://discord.com/*",
+  ];
+  manifest.content_scripts[0]!.matches = manifest.host_permissions;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   context = await chromium.launchPersistentContext(join(temporary, "profile"), {
@@ -84,7 +127,10 @@ try {
   assert.equal(startupErrors.length, 0, startupErrors.join("\n"));
 
   await page.route("https://github.com/**", (route) =>
-    route.fulfill({ contentType: "text/html; charset=utf-8", body: githubFixture }),
+    route.fulfill({
+      contentType: "text/html; charset=utf-8",
+      body: route.request().url().includes("/pull/") ? githubDiffFixture : githubBlobFixture,
+    }),
   );
   await page.goto(
     "https://github.com/ubugeeei-prod/tnix/blob/main/examples/basics/conditionals.tnix",
@@ -104,6 +150,51 @@ try {
   await page.locator("#LC1 .wh-keyword").first().waitFor({ timeout: 10_000 });
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
 
+  await page.goto("https://github.com/ubugeeei-prod/ush/pull/1/files");
+  await page.locator("#GH-DIFF-1 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "ush",
+  );
+  assert.equal(await page.locator("#GH-DIFF-1 .wh-keyword").first().textContent(), "fn");
+  assert.equal(await page.locator(".blob-code-hunk .wh-token").count(), 0);
+
+  await page.route("https://gitlab.com/**", (route) =>
+    route.fulfill({
+      contentType: "text/html; charset=utf-8",
+      body: route.request().url().includes("/diffs") ? gitlabDiffFixture : gitlabBlobFixture,
+    }),
+  );
+  await page.goto("https://gitlab.com/group/project/-/merge_requests/1/diffs");
+  await page.locator("#GL-DIFF-1 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "tnix",
+  );
+  assert.equal(await page.locator("#GL-DIFF-1 .wh-keyword").first().textContent(), "let");
+
+  await page.route("https://discord.com/**", (route) =>
+    route.fulfill({ contentType: "text/html; charset=utf-8", body: discordFixture }),
+  );
+  await page.goto("https://discord.com/channels/1/2/3");
+  await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "ush",
+  );
+  assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+  assert.equal(await page.locator("#discord-copy").textContent(), "Copy");
+  await page.locator("#discord-code").evaluate((code) => {
+    code.addEventListener(
+      "click",
+      () => code.replaceChildren(document.createTextNode("fn greet() {}\ngreet()")),
+      { once: true },
+    );
+  });
+  await page.locator("#discord-code .wh-keyword").first().click();
+  await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
@@ -121,7 +212,7 @@ try {
       .evaluate((element) => element.style.getPropertyValue("--wh-keyword")),
     "#9c1c1c",
   );
-  console.log("Chromium covered GitHub hydration, GitLab injection, and the Paper theme.");
+  console.log("Chromium covered GitHub/GitLab diffs, Discord recovery, and the Paper theme.");
 } finally {
   await context?.close();
   server.closeAllConnections();
