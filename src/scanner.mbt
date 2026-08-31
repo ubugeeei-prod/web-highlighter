@@ -226,21 +226,46 @@ fn symbol_scope(kind : SymbolKind) -> Scope {
 }
 
 ///|
-fn merge_tokens(left : Array[Token], right : Array[Token]) -> Array[Token] {
+/// Merges the lexical and deferred-reference token streams in source order.
+///
+/// The browser renderer sweeps this list once against ordered DOM segments
+/// instead of re-scanning it per line, so the merge re-checks the same verified
+/// append contract the scanner uses for a single stream: only spans that stay
+/// ordered, non-empty, and in range survive the merge.
+fn merge_tokens(
+  left : Array[Token],
+  right : Array[Token],
+  source_length : Int,
+) -> Array[Token] {
   let merged : Array[Token] = []
+  let mut cursor = 0
   let mut left_index = 0
   let mut right_index = 0
   while left_index < left.length() || right_index < right.length() {
-    if right_index >= right.length() ||
+    let next = if right_index >= right.length() ||
       (
         left_index < left.length() &&
         left[left_index].span.start <= right[right_index].span.start
       ) {
-      merged.push(left[left_index])
       left_index += 1
+      left[left_index - 1]
     } else {
-      merged.push(right[right_index])
       right_index += 1
+      right[right_index - 1]
+    }
+    if @proof.span_is_ordered_after(
+        cursor,
+        next.span.start,
+        next.span.end_,
+        source_length,
+      ) {
+      merged.push(next)
+      cursor = @proof.cursor_after_ordered_span(
+        cursor,
+        next.span.start,
+        next.span.end_,
+        source_length,
+      )
     }
   }
   merged
@@ -483,5 +508,9 @@ pub fn analyze_compiled_with_budget(
       None => ()
     }
   }
-  { tokens: merge_tokens(tokens, reference_tokens), definitions, references, }
+  {
+    tokens: merge_tokens(tokens, reference_tokens, source_length),
+    definitions,
+    references,
+  }
 }
