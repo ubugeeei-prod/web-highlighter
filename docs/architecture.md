@@ -34,6 +34,9 @@ themes_wire()                                    -> selectable theme metadata
 - Declarative language tables compile once into exact-word and codepoint indexes before scanning.
 - Service discovery contains no language vocabulary.
 - Rendering retains the original source and preserves GitHub line containers.
+- Rendering sweeps ordered segments against ordered tokens once and resolves
+  symbols through span-keyed indexes, so a surface costs segments plus tokens
+  plus symbols rather than segments times tokens.
 - Theme changes never reparse source.
 - Unknown and ambiguous blocks are left untouched.
 - A browser pass is capped at 48 surfaces. The MoonBit analyzer also owns a

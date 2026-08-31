@@ -34,11 +34,21 @@ interface Reference {
   end: number;
   name: string;
 }
+/**
+ * One analyzed surface plus the span indexes rendering needs.
+ *
+ * Symbol spans are identifier-aligned and never overlap, so a span start
+ * identifies at most one symbol. Keying by start keeps the render loop free of
+ * per-token key strings; the token end is confirmed on lookup.
+ */
 interface Analysis {
   language: string;
   tokens: Token[];
   definitions: Definition[];
   references: Reference[];
+  definitionBySpan: Map<number, Definition>;
+  referenceBySpan: Map<number, Reference>;
+  definitionByName: Map<string, Definition>;
 }
 interface BrowserHostOptions {
   beforeHighlight?: () => Promise<void> | void;
@@ -419,22 +429,81 @@ export function documentPrefersDark(document: Document, fallback: boolean): bool
 /** Decodes the compact line protocol emitted by MoonBit without a JSON runtime. */
 export function decodeAnalysis(wire: string, source: string): Analysis | undefined {
   if (!wire) return undefined;
-  const analysis: Analysis = { language: "", tokens: [], definitions: [], references: [] };
+  const analysis: Analysis = {
+    language: "",
+    tokens: [],
+    definitions: [],
+    references: [],
+    definitionBySpan: new Map(),
+    referenceBySpan: new Map(),
+    definitionByName: new Map(),
+  };
+  let cursor = 0;
   for (const line of wire.split("\n")) {
     const [tag, a = "", b = "", c = "", d = ""] = line.split("\t");
     if (tag === "L") analysis.language = a;
-    else if (tag === "T") analysis.tokens.push({ start: +a, end: +b, scope: c });
-    else if (tag === "D")
-      analysis.definitions.push({
-        start: +a,
-        end: +b,
-        kind: c,
-        line: +d,
-        name: source.slice(+a, +b),
-      });
-    else if (tag === "R") analysis.references.push({ start: +a, end: +b, name: c });
+    else if (tag === "T") {
+      const start = +a;
+      const end = +b;
+      // Rendering sweeps this list once, so keep the analyzer's own contract:
+      // spans stay ordered and non-empty even if a plan ever arrives malformed.
+      if (start >= cursor && start < end) {
+        analysis.tokens.push({ start, end, scope: c });
+        cursor = end;
+      }
+    } else if (tag === "D") {
+      const definition = { start: +a, end: +b, kind: c, line: +d, name: source.slice(+a, +b) };
+      analysis.definitions.push(definition);
+      if (!analysis.definitionBySpan.has(definition.start))
+        analysis.definitionBySpan.set(definition.start, definition);
+      if (!analysis.definitionByName.has(definition.name))
+        analysis.definitionByName.set(definition.name, definition);
+    } else if (tag === "R") {
+      const reference = { start: +a, end: +b, name: c };
+      analysis.references.push(reference);
+      if (!analysis.referenceBySpan.has(reference.start))
+        analysis.referenceBySpan.set(reference.start, reference);
+    }
   }
   return analysis.language ? analysis : undefined;
+}
+
+/** Resolves the symbol a token stands for without scanning the symbol tables. */
+function symbolAt<Item extends { start: number; end: number }>(
+  index: Map<number, Item>,
+  token: Token,
+): Item | undefined {
+  const item = index.get(token.start);
+  return item && item.end === token.end ? item : undefined;
+}
+
+/**
+ * Pairs every segment with the half-open token range covering it.
+ *
+ * Tokens are ordered, non-empty, and non-overlapping by MoonBit contract, and
+ * segments are built in source order, so both cursors only move forward. A
+ * surface therefore costs segments plus tokens instead of one token scan per
+ * line, which is what a large GitHub blob is made of.
+ */
+function* coveredTokens(
+  segments: readonly Segment[],
+  tokens: readonly Token[],
+): Generator<{ segment: Segment; from: number; to: number }> {
+  let from = 0;
+  for (const segment of segments) {
+    while (from < tokens.length && tokens[from]!.end <= segment.start) from += 1;
+    let to = from;
+    while (to < tokens.length && tokens[to]!.start < segment.end) to += 1;
+    yield { segment, from, to };
+  }
+}
+
+/** Finds the rendered definition of a symbol without materializing every span. */
+function definitionElement(surface: Surface, name: string): HTMLElement | undefined {
+  for (const { element } of surface.segments)
+    for (const item of element.querySelectorAll<HTMLElement>('[data-wh-definition="true"]'))
+      if (item.dataset.whSymbol === name) return item;
+  return undefined;
 }
 
 function hash(source: string, language: string): string {
@@ -553,13 +622,11 @@ export class BrowserHost {
   }
 
   #render(surface: Surface, analysis: Analysis): void {
-    for (const segment of surface.segments) {
+    for (const { segment, from, to } of coveredTokens(surface.segments, analysis.tokens)) {
       const fragment = this.document.createDocumentFragment();
-      const tokens = analysis.tokens.filter(
-        (token) => token.end > segment.start && token.start < segment.end,
-      );
       let cursor = segment.start;
-      for (const token of tokens) {
+      for (let index = from; index < to; index += 1) {
+        const token = analysis.tokens[index]!;
         const start = Math.max(token.start, segment.start);
         const end = Math.min(token.end, segment.end);
         if (start > cursor)
@@ -567,12 +634,8 @@ export class BrowserHost {
         const span = this.document.createElement("span");
         span.className = `wh-token wh-${token.scope}`;
         span.textContent = surface.source.slice(start, end);
-        const definition = analysis.definitions.find(
-          (item) => item.start === token.start && item.end === token.end,
-        );
-        const reference = analysis.references.find(
-          (item) => item.start === token.start && item.end === token.end,
-        );
+        const definition = symbolAt(analysis.definitionBySpan, token);
+        const reference = symbolAt(analysis.referenceBySpan, token);
         const symbol = definition?.name ?? reference?.name;
         if (symbol) {
           span.dataset.whSymbol = symbol;
@@ -599,13 +662,11 @@ export class BrowserHost {
 
   /** Detects framework hydration that replaced our spans without changing the source text. */
   #renderedSurfaceIsIntact(surface: Surface, analysis: Analysis): boolean {
-    return surface.segments.every((segment) => {
+    for (const { segment, from, to } of coveredTokens(surface.segments, analysis.tokens)) {
       if (segment.element.dataset.whSurface !== "true") return false;
-      const expected = analysis.tokens.filter(
-        (token) => token.end > segment.start && token.start < segment.end,
-      ).length;
-      return segment.element.querySelectorAll(":scope > .wh-token").length === expected;
-    });
+      if (segment.element.querySelectorAll(":scope > .wh-token").length !== to - from) return false;
+    }
+    return true;
   }
 
   #entry(target: HTMLElement) {
@@ -619,10 +680,9 @@ export class BrowserHost {
         event.target instanceof HTMLElement
           ? event.target.closest<HTMLElement>("[data-wh-symbol]")
           : null;
+      const symbol = target?.dataset.whSymbol;
       const entry = target ? this.#entry(target) : undefined;
-      const definition = entry?.analysis.definitions.find(
-        (item) => item.name === target?.dataset.whSymbol,
-      );
+      const definition = symbol ? entry?.analysis.definitionByName.get(symbol) : undefined;
       if (!target || !definition) return;
       let tip = this.document.querySelector<HTMLElement>("#wh-tooltip");
       if (!tip) {
@@ -644,11 +704,7 @@ export class BrowserHost {
     const jump = (target: HTMLElement) => {
       const entry = this.#entry(target);
       const name = target.dataset.whSymbol;
-      const definition = entry?.surface.segments
-        .flatMap(({ element }) => [
-          ...element.querySelectorAll<HTMLElement>('[data-wh-definition="true"]'),
-        ])
-        .find((item) => item.dataset.whSymbol === name);
+      const definition = entry && name ? definitionElement(entry.surface, name) : undefined;
       if (!definition) return;
       definition.scrollIntoView({ block: "center", behavior: "smooth" });
       definition.classList.remove("wh-jump-target");

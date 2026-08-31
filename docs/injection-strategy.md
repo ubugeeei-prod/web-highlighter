@@ -65,6 +65,13 @@ surrounding page chrome, copy buttons, line anchors, or message controls.
 The host keeps a source fingerprint so SPA hydration and mutation bursts become
 idempotent rescans instead of recursive rendering.
 
+Injection is one forward sweep. DOM segments are ordered by construction and
+tokens are ordered, non-empty, and non-overlapping by MoonBit contract, so the
+renderer advances one cursor through each list instead of re-filtering the token
+list per line, and resolves definitions and references through span-keyed
+indexes instead of searching the symbol tables per token. A blob with thousands
+of lines therefore stays linear in the host, where the scanner already is.
+
 ## Proved contracts
 
 MoonBit proof mode covers the arithmetic behind the strategy:
