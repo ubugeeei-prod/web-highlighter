@@ -51,7 +51,7 @@ These are reproducible budget signals, not universal hardware claims. Run `vp ru
 
 ## Development
 
-The Nix flake pins MoonBit CLI `0.1.20260827` with compiler `0.10.11`, Why3 `1.8.2`, Z3 `4.16.0`, Vite+ `0.2.4`, pnpm `11.9.0`, and Node.js `24.16.0`.
+The Nix flake pins MoonBit CLI `0.1.20260827` with compiler `0.10.11`, Why3 `1.8.2`, CVC5 `1.3.4`, Z3 `4.16.0`, Vite+ `0.2.4`, pnpm `11.9.0`, and Node.js `24.16.0`.
 
 ```sh
 nix develop

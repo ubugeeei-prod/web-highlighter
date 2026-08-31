@@ -119,6 +119,7 @@
               pkgs.git
               pkgs.gh
               pkgs.why3
+              pkgs.cvc5
               pkgs.z3
               pkgs.actionlint
               pkgs.zip

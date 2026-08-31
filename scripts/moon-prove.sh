@@ -6,8 +6,7 @@ trap 'rm -f "$config"' EXIT
 
 moon_bin="$(command -v moon)"
 moon_home="${MOON_HOME:-$(cd "$(dirname "$moon_bin")/.." && pwd)}"
-prover_path="$(command -v z3)"
-prover_version="$(z3 --version | awk '{ print $3 }')"
+prover_path="$(command -v cvc5)"
 
 cat >"$config" <<EOF
 [main]
@@ -19,20 +18,20 @@ running_provers_max = 1
 timelimit = 5.000000
 
 [partial_prover]
-name = "Z3"
+name = "CVC5"
 path = "$prover_path"
-version = "$prover_version"
+version = ""
 
 [strategy]
 code = "start:
-c Z3,$prover_version .2 1024
-c Z3,$prover_version 1 1024
+c CVC5, .2 1024
+c CVC5, 1 1024
 t compute_specified start
 t split_vc start
-c Z3,$prover_version 2 2048
+c CVC5, 2 2048
 "
-desc = "MoonBit CI single prover strategy"
-name = "MoonBit_CI"
+desc = "MoonBit CI single CVC5 strategy"
+name = "MoonBit_CI_CVC5"
 shortcut = "4"
 EOF
 
