@@ -136,7 +136,7 @@ export default defineConfig({
   run: {
     tasks: {
       "moon-check": "moon check --target wasm-gc --deny-warn",
-      "moon-prove": "moon prove --deny-warn --jobs 1 src/proof",
+      "moon-prove": "bash scripts/moon-prove.sh",
       "moon-test": "moon test --target wasm-gc --deny-warn",
       bench: "node scripts/benchmark.ts",
       "browser-smoke": {

@@ -4,6 +4,7 @@
 /coverage/
 /.vite-build/
 /release/
+pkg.generated.mbti
 *.zip
 *.xpi
 .DS_Store
