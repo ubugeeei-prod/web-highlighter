@@ -154,7 +154,7 @@ export default defineConfig({
         command: "vp exec vite preview --config docs/vite.config.mjs",
         cache: false,
       },
-      "docs-deploy": { command: "vp node scripts/deploy-docs-to-void.mjs", cache: false },
+      "docs-deploy": { command: "vp exec node scripts/deploy-docs-to-void.mjs", cache: false },
       "moon-check": "moon check --target wasm-gc --deny-warn",
       "moon-prove": "bash scripts/moon-prove.sh",
       "moon-test": "moon test --target wasm-gc --deny-warn",
