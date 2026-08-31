@@ -36,6 +36,16 @@ test("the wire protocol preserves definitions and references", async () => {
   assert.equal(result.references[0]?.name, "greet");
 });
 
+test("the wire decoder keeps token spans ordered and non-overlapping", () => {
+  const source = "fn greet() {}";
+  const wire = "L\tush\nT\t0\t2\tkeyword\nT\t1\t5\ttype\nT\t3\t8\tfunction\nT\t9\t9\toperator\n";
+  const result = decodeAnalysis(wire, source)!;
+  assert.deepEqual(result.tokens, [
+    { start: 0, end: 2, scope: "keyword" },
+    { start: 3, end: 8, scope: "function" },
+  ]);
+});
+
 test("GitHub lines remain intact while hover and jump metadata is injected", async () => {
   const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
   window.document.body.innerHTML = `
@@ -58,6 +68,62 @@ test("GitHub lines remain intact while hover and jump metadata is injected", asy
     "true",
   );
   assert.equal(await host.highlight(), 0);
+});
+
+const multilineAnalyzer: Analyzer = {
+  analyze_request(source) {
+    const comment = source.indexOf("*/") + 2;
+    const first = source.indexOf("greet");
+    const second = source.lastIndexOf("greet");
+    return `L\tush\nT\t0\t${comment}\tcomment\nT\t${first}\t${first + 5}\tfunction\nT\t${second}\t${second + 5}\tfunction\nD\t${first}\t${first + 5}\tfunction\t3\nR\t${second}\t${second + 5}\tgreet\n`;
+  },
+  theme_wire: () => "",
+};
+
+test("tokens covering several lines are injected into every line they reach", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  const lines = ["/* multi", "   line */", "fn greet() {}", "greet()"];
+  window.document.body.innerHTML = `<table><tbody>${lines
+    .map((line, index) => `<tr><td data-testid="code-cell" id="LC${index + 1}">${line}</td></tr>`)
+    .join("")}</tbody></table>`;
+  const host = new BrowserHost(window.document, multilineAnalyzer);
+
+  assert.equal(await host.highlight(), 1);
+  for (const [index, line] of lines.entries())
+    assert.equal(window.document.querySelector(`#LC${index + 1}`)?.textContent, line);
+  assert.equal(window.document.querySelector("#LC1 .wh-comment")?.textContent, "/* multi");
+  assert.equal(window.document.querySelector("#LC2 .wh-comment")?.textContent, "   line */");
+  assert.equal(window.document.querySelectorAll("#LC3 .wh-token").length, 1);
+  assert.equal(window.document.querySelector("#LC4 .wh-comment"), null);
+
+  const definition = window.document.querySelector<HTMLElement>("#LC3 .wh-function")!;
+  assert.equal(definition.dataset.whSymbol, "greet");
+  assert.equal(definition.dataset.whKind, "function");
+  assert.equal(definition.dataset.whLine, "3");
+  const reference = window.document.querySelector<HTMLElement>("#LC4 .wh-function")!;
+  assert.equal(reference.dataset.whReference, "true");
+  assert.equal(reference.dataset.whDefinition, undefined);
+
+  assert.equal(await host.highlight(), 0);
+});
+
+test("hovering a symbol reports its declaration without rescanning the file", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  window.document.body.innerHTML = `
+    <table><tbody>
+      <tr><td data-testid="code-cell" id="LC1">fn greet() {}</td></tr>
+      <tr><td data-testid="code-cell" id="LC2">greet()</td></tr>
+    </tbody></table>`;
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+
+  const reference = window.document.querySelector<HTMLElement>('[data-wh-reference="true"]')!;
+  const hover = window.document.createEvent("Event");
+  hover.initEvent("pointerover", true, false);
+  reference.dispatchEvent(hover);
+
+  const tooltip = window.document.querySelector<HTMLElement>("#wh-tooltip")!;
+  assert.equal(tooltip.textContent, "function greet · line 1");
+  assert.equal(tooltip.hidden, false);
 });
 
 test("GitHub hydration cannot permanently remove injected tokens", async () => {
