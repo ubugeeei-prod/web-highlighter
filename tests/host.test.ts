@@ -132,6 +132,51 @@ test("hovering a symbol reports its declaration without rescanning the file", as
   assert.equal(tooltip.hidden, false);
 });
 
+function githubBlobPage(lines: readonly string[]): string {
+  return `<div class="react-code-file-contents"><div class="react-code-lines">${lines
+    .map(
+      (line, index) =>
+        `<div data-key="${index}" class="react-code-text react-code-line-contents"><div><div id="LC${index + 1}" class="react-file-line html-div" data-testid="code-cell" data-line-number="${index + 1}">${line}</div></div></div>`,
+    )
+    .join("")}</div></div>`;
+}
+
+test("GitHub blob lines are patched inside their LC node, not the React wrapper", async () => {
+  const window = testWindow(
+    "https://github.com/mizchi/vibe-lang/blob/main/lib/%40vibe/ast/example.ush",
+  );
+  window.document.body.innerHTML = githubBlobPage(["fn greet() {}", "greet()"]);
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.filename, "example.ush");
+  assert.equal(surface?.segments.length, 2);
+  assert.equal(surface?.hint, "");
+
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector("#LC1")?.getAttribute("data-line-number"), "1");
+  assert.equal(window.document.querySelector("#LC2 .wh-token")?.textContent, "greet");
+});
+
+test("GitHub line wrappers still resolve to the LC node without a test id", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  window.document.body.innerHTML = `
+    <div class="react-code-lines">
+      <div class="react-code-text react-code-line-contents">
+        <div><div id="LC1" class="react-file-line html-div">fn greet() {}</div></div>
+      </div>
+      <div class="react-code-text react-code-line-contents">
+        <div><div id="LC2" class="react-file-line html-div">greet()</div></div>
+      </div>
+    </div>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.segments.length, 2);
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "fn");
+  assert.equal(window.document.querySelector(".react-code-line-contents > div > #LC1")?.id, "LC1");
+});
+
 test("GitHub hydration cannot permanently remove injected tokens", async () => {
   const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
   window.document.body.innerHTML =

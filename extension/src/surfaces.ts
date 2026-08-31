@@ -57,11 +57,14 @@ const ignoredLanguageClasses = new Set([
   "code",
   "code-line",
   "hljs",
+  "html-div",
   "js-file-line",
   "line",
   "line_content",
   "nohighlight",
   "react-code-line-contents",
+  "react-code-text",
+  "react-file-line",
   "shiki",
   "wh-token",
 ]);
@@ -125,8 +128,20 @@ function filenameFromContainer(container: HTMLElement): string {
   return labelled ?? "";
 }
 
+/**
+ * Resolves the node that actually holds one line of code.
+ *
+ * GitHub nests a blob line as `.react-code-line-contents > div > #LC1`, and the
+ * `LC` node is the one carrying the line anchor, so patching the wrapper would
+ * replace the anchor along with the text. Diff rows wrap their text in
+ * `.blob-code-inner` instead. Older flat rows are already the code node.
+ */
 function gitHubCodeTarget(element: HTMLElement): HTMLElement {
-  return element.querySelector<HTMLElement>(":scope > .blob-code-inner") ?? element;
+  return (
+    element.querySelector<HTMLElement>(":scope > .blob-code-inner") ??
+    element.querySelector<HTMLElement>(':scope [data-testid="code-cell"], :scope [id^="LC"]') ??
+    element
+  );
 }
 
 function makeSurface(elements: HTMLElement[], filename = ""): Surface | undefined {

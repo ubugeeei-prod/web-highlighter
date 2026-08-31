@@ -23,24 +23,41 @@ const gitlabDiffFixture = `<!doctype html>
 </div>
 </body></html>`;
 
-const githubBlobFixture = `<!doctype html>
-<html data-color-mode="dark"><body><table><tbody>
-  <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">let enabled = true;</td></tr>
-  <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">in if enabled then { status = "enabled"; }</td></tr>
-</tbody></table></body></html>`;
+/** Mirrors the nested React blob DOM GitHub ships: the LC node holds the text. */
+function githubLines(lines: readonly string[]): string {
+  return lines
+    .map(
+      (line, index) =>
+        `<div data-key="${index}" class="react-code-text react-code-line-contents"><div><div id="LC${index + 1}" class="react-file-line html-div" data-testid="code-cell" data-line-number="${index + 1}">${line}</div></div></div>`,
+    )
+    .join("\n");
+}
 
-const githubVpkgFixture = `<!doctype html>
-<html data-color-mode="dark"><body><table><tbody>
-  <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">name = @vibe/ast</td></tr>
-  <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">export enum TypeExpr { TyName(String) }</td></tr>
-</tbody></table></body></html>`;
+function githubBlobPage(lines: readonly string[]): string {
+  return `<!doctype html>
+<html data-color-mode="dark"><body>
+<div class="react-code-file-contents">
+  <div class="react-line-numbers">${lines.map((_, index) => `<div id="L${index + 1}">${index + 1}</div>`).join("")}</div>
+  <div class="react-code-lines">${githubLines(lines)}</div>
+</div>
+</body></html>`;
+}
 
-const githubVerylFixture = `<!doctype html>
-<html data-color-mode="dark"><body><table><tbody>
-  <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">module DataSelector {</td></tr>
-  <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">  always_ff { if_reset {} }</td></tr>
-  <tr><td id="L3"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC3">}</td></tr>
-</tbody></table></body></html>`;
+const githubBlobFixture = githubBlobPage([
+  "let enabled = true;",
+  'in if enabled then { status = "enabled"; }',
+]);
+
+const githubVpkgFixture = githubBlobPage([
+  "name = @vibe/ast",
+  "export enum TypeExpr { TyName(String) }",
+]);
+
+const githubVerylFixture = githubBlobPage([
+  "module DataSelector {",
+  "  always_ff { if_reset {} }",
+  "}",
+]);
 
 const githubDiffFixture = `<!doctype html>
 <html data-color-mode="dark"><body>
