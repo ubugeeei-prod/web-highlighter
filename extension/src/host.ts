@@ -40,9 +40,14 @@ interface Analysis {
   definitions: Definition[];
   references: Reference[];
 }
+interface BrowserHostOptions {
+  beforeHighlight?: () => Promise<void> | void;
+}
 
 const MAX_SOURCE = 2_000_000;
 const MAX_SURFACES = 48;
+const transientRetryDelays = [120, 300, 800, 1800, 3600, 7200] as const;
+const startupScanDelays = [60, 180, 420, 900, 1800, 3600, 7200] as const;
 const languageClass = /(?:^|\s)(?:language|lang)-([\w+.#-]+)/iu;
 const languageAttributes = [
   "data-language",
@@ -76,7 +81,7 @@ const discordTextSelectors = [
   '[class*="codeBlockSyntax"]',
 ];
 const discordRecoveryEvents = ["click", "pointerup", "focusin", "keyup"] as const;
-const discordRecoveryDelays = [0, 80, 240, 600] as const;
+const discordRecoveryDelays = [0, 80, 240, 600, 1200, 2400] as const;
 const ignoredLanguageClasses = new Set([
   "blob-code",
   "blob-code-addition",
@@ -359,8 +364,43 @@ function visibleBackground(element: HTMLElement): Rgb | undefined {
   return undefined;
 }
 
+function darkThemeHint(document: Document): boolean | undefined {
+  const root = document.documentElement;
+  const body = document.body;
+  for (const element of [root, body]) {
+    if (!element) continue;
+    for (const attribute of [
+      "data-theme",
+      "data-color-mode",
+      "data-bs-theme",
+      "data-color-scheme",
+    ]) {
+      const value = element.getAttribute(attribute)?.trim().toLowerCase();
+      if (value === "dark" || value === "dimmed") return true;
+      if (value === "light") return false;
+    }
+  }
+  const classText = `${root.className} ${body?.className ?? ""}`.toLowerCase();
+  if (/(^|\s)(theme-dark|dark-theme|color-theme-dark|is-dark|dark)(\s|$)/u.test(classText))
+    return true;
+  if (/(^|\s)(theme-light|light-theme|color-theme-light|is-light|light)(\s|$)/u.test(classText))
+    return false;
+  const scheme = document.defaultView
+    ?.getComputedStyle(root)
+    .getPropertyValue("color-scheme")
+    .trim()
+    .toLowerCase()
+    .split(/\s+/u)[0];
+  if (scheme === "dark") return true;
+  if (scheme === "light") return false;
+  return undefined;
+}
+
 export function documentPrefersDark(document: Document, fallback: boolean): boolean {
+  const hinted = darkThemeHint(document);
+  if (hinted !== undefined) return hinted;
   for (const selector of [
+    "html",
     '[data-testid="code-cell"]',
     "td.blob-code",
     "[id^='LC'].line",
@@ -413,15 +453,17 @@ export class BrowserHost {
     listener: EventListener;
     options: AddEventListenerOptions;
   }> = [];
-  #discordRecoveryTimers: number[] = [];
+  readonly #timers: number[] = [];
   #observer: MutationObserver | undefined;
   #scheduled = false;
   #highlighting: Promise<number> | undefined;
+  #transientRetries = 0;
   #rerun = false;
 
   constructor(
     readonly document: Document,
     readonly analyzer: Analyzer,
+    readonly options: BrowserHostOptions = {},
   ) {
     this.#installNavigation();
     if (discordHosts.has(this.document.location.hostname)) this.#installDiscordRecovery();
@@ -457,12 +499,18 @@ export class BrowserHost {
 
   async #highlightOnce(): Promise<number> {
     let count = 0;
+    let sawTransientFailure = false;
+    await this.#runBeforeHighlight();
     for (const surface of discoverSurfaces(this.document).slice(0, MAX_SURFACES)) {
       if (surface.source.length > MAX_SOURCE) continue;
-      const analysis = decodeAnalysis(
-        await this.analyzer.analyze_request(surface.source, surface.hint, surface.filename),
-        surface.source,
-      );
+      let wire = "";
+      try {
+        wire = await this.analyzer.analyze_request(surface.source, surface.hint, surface.filename);
+      } catch {
+        sawTransientFailure = true;
+        continue;
+      }
+      const analysis = decodeAnalysis(wire, surface.source);
       if (!analysis) continue;
       const fingerprint = hash(surface.source, analysis.language);
       if (
@@ -474,6 +522,8 @@ export class BrowserHost {
       this.#fingerprints.set(surface.key, fingerprint);
       count += 1;
     }
+    if (sawTransientFailure) this.#scheduleTransientRetry();
+    else this.#transientRetries = 0;
     return count;
   }
 
@@ -485,12 +535,8 @@ export class BrowserHost {
       characterData: true,
       subtree: true,
     });
-    try {
-      await this.highlight();
-    } catch (error) {
-      this.stop();
-      throw error;
-    }
+    for (const delay of startupScanDelays) this.#setTimer(delay, () => this.#schedule());
+    await this.highlight().catch(() => undefined);
   }
 
   stop(): void {
@@ -501,9 +547,9 @@ export class BrowserHost {
     this.#discordRecoveryListeners.length = 0;
     const view = this.document.defaultView;
     if (view) {
-      for (const timer of this.#discordRecoveryTimers) view.clearTimeout(timer);
+      for (const timer of this.#timers) view.clearTimeout(timer);
     }
-    this.#discordRecoveryTimers = [];
+    this.#timers.length = 0;
   }
 
   #render(surface: Surface, analysis: Analysis): void {
@@ -639,13 +685,9 @@ export class BrowserHost {
       const view = this.document.defaultView;
       if (!view) return;
       for (const delay of discordRecoveryDelays) {
-        const timer = view.setTimeout(() => {
-          this.#discordRecoveryTimers = this.#discordRecoveryTimers.filter(
-            (item) => item !== timer,
-          );
+        this.#setTimer(delay, () => {
           void this.highlight().catch(() => undefined);
-        }, delay);
-        this.#discordRecoveryTimers.push(timer);
+        });
       }
     };
     for (const type of discordRecoveryEvents) {
@@ -653,6 +695,32 @@ export class BrowserHost {
       this.document.addEventListener(type, recover, options);
       this.#discordRecoveryListeners.push({ type, listener: recover, options });
     }
+  }
+
+  async #runBeforeHighlight(): Promise<void> {
+    try {
+      await this.options.beforeHighlight?.();
+    } catch {
+      // Theme and startup retries are best-effort; code discovery must stay alive.
+    }
+  }
+
+  #scheduleTransientRetry(): void {
+    if (this.#transientRetries >= transientRetryDelays.length) return;
+    const delay = transientRetryDelays[this.#transientRetries]!;
+    this.#transientRetries += 1;
+    this.#setTimer(delay, () => this.#schedule());
+  }
+
+  #setTimer(delay: number, callback: () => void): void {
+    const view = this.document.defaultView;
+    if (!view) return;
+    const timer = view.setTimeout(() => {
+      const index = this.#timers.indexOf(timer);
+      if (index >= 0) this.#timers.splice(index, 1);
+      callback();
+    }, delay);
+    this.#timers.push(timer);
   }
 
   #schedule(): void {

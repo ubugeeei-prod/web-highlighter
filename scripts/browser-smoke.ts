@@ -24,13 +24,13 @@ const gitlabDiffFixture = `<!doctype html>
 </body></html>`;
 
 const githubBlobFixture = `<!doctype html>
-<html><body><table><tbody>
+<html data-color-mode="dark"><body><table><tbody>
   <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">let enabled = true;</td></tr>
   <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">in if enabled then { status = "enabled"; }</td></tr>
 </tbody></table></body></html>`;
 
 const githubDiffFixture = `<!doctype html>
-<html><body>
+<html data-color-mode="dark"><body>
 <div data-file-path="src/example.ush">
   <table><tbody>
     <tr><td class="blob-code blob-code-hunk">@@ -1 +1 @@</td></tr>
@@ -49,7 +49,7 @@ const githubDiffFixture = `<!doctype html>
 </body></html>`;
 
 const discordFixture = `<!doctype html>
-<html><body>
+<html class="theme-dark"><body>
 <article>
   <button id="discord-copy">Copy</button>
   <div class="codeContainer_ab12">
@@ -143,12 +143,22 @@ try {
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
   assert.equal(await page.locator("#LC2 .wh-keyword").first().textContent(), "in");
   assert.equal(await page.locator("#L2").count(), 1);
+  assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
 
   await page
     .locator("#LC1")
     .evaluate((line) => line.replaceChildren(document.createTextNode("let enabled = true;")));
   await page.locator("#LC1 .wh-keyword").first().waitFor({ timeout: 10_000 });
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator("#LC1 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "tnix",
+  );
+  assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
+  assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
 
   await page.goto("https://github.com/ubugeeei-prod/ush/pull/1/files");
   await page.locator("#GH-DIFF-1 .wh-keyword").first().waitFor({ timeout: 10_000 });
@@ -184,6 +194,7 @@ try {
   );
   assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
   assert.equal(await page.locator("#discord-copy").textContent(), "Copy");
+  assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
   await page.locator("#discord-code").evaluate((code) => {
     code.addEventListener(
       "click",
@@ -194,6 +205,15 @@ try {
   await page.locator("#discord-code .wh-keyword").first().click();
   await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
   assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "ush",
+  );
+  assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+  assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
 
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const popup = await context.newPage();

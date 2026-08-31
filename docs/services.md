@@ -14,9 +14,20 @@ decisions remain in MoonBit and use the evidence strategy documented in
 | ChatGPT      | `pre > code` and language metadata                                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome     |
 | Generic site | code-shaped `pre` nodes only                                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords  |
 
-## SPA updates
+## Startup and SPA updates
 
-The host observes subtree changes, coalesces them into an idle callback, and then performs idempotent discovery. It stores the original source on each code element. A fingerprint prevents injected spans from recursively triggering another render.
+The host observes subtree changes, coalesces them into an idle callback, and
+then performs idempotent discovery. It also runs a short startup scan ladder so
+GitHub, GitLab, and Discord code that appears after the content script starts
+is still picked up without a manual theme change. A cold background service
+worker or Wasm startup failure does not stop the observer; transient analysis
+failures are retried with bounded backoff.
+
+The original source is stored on each code element. A fingerprint prevents
+injected spans from recursively triggering another render. In automatic theme
+mode, every highlight pass re-checks the page's visible background and root
+theme hints before rendering, so dark Discord/GitHub views do not depend on a
+later popup theme change to become visible.
 
 ## GitHub navigation
 

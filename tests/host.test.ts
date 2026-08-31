@@ -77,6 +77,42 @@ test("GitHub hydration cannot permanently remove injected tokens", async () => {
   assert.equal(line.querySelector(".wh-keyword")?.textContent, "fn");
 });
 
+test("GitHub code inserted after initial boot is highlighted", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  const host = new BrowserHost(window.document, analyzer);
+
+  await host.start();
+  window.document.body.innerHTML =
+    '<table><tbody><tr><td data-testid="code-cell" id="LC1">fn greet() {}</td></tr></tbody></table>';
+
+  await new Promise((resolve) => setTimeout(resolve, 140));
+  assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "fn");
+  host.stop();
+});
+
+test("transient analyzer startup failures keep the observer alive", async () => {
+  const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  window.document.body.innerHTML =
+    '<table><tbody><tr><td data-testid="code-cell" id="LC1">fn greet() {}</td></tr></tbody></table>';
+  let calls = 0;
+  const flakyAnalyzer: Analyzer = {
+    ...analyzer,
+    analyze_request(source, hint, filename) {
+      calls += 1;
+      if (calls === 1) throw new Error("service worker cold start");
+      return analyzer.analyze_request(source, hint, filename);
+    },
+  };
+  const host = new BrowserHost(window.document, flakyAnalyzer);
+
+  await host.start();
+  await new Promise((resolve) => setTimeout(resolve, 220));
+
+  assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "fn");
+  assert(calls >= 2);
+  host.stop();
+});
+
 test("GitHub pull request diff files are grouped by filename", async () => {
   const window = testWindow("https://github.com/ubugeeei-prod/ush/pull/1/files");
   window.document.body.innerHTML = `
@@ -236,6 +272,35 @@ greet()</code></pre>
   host.stop();
 });
 
+test("Discord delayed click re-render is highlighted again", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <article>
+      <div class="codeContainer_ab12">
+        <pre><code class="hljs ush">fn greet() {}
+greet()</code></pre>
+      </div>
+    </article>`;
+  const code = window.document.querySelector<HTMLElement>("code")!;
+  const host = new BrowserHost(window.document, analyzer);
+
+  await host.start();
+  assert.equal(code.querySelector(".wh-keyword")?.textContent, "fn");
+
+  code.addEventListener("click", () => {
+    setTimeout(() => {
+      code.replaceChildren(window.document.createTextNode("fn greet() {}\ngreet()"));
+    }, 900);
+  });
+  const click = window.document.createEvent("Event");
+  click.initEvent("click", true, false);
+  code.dispatchEvent(click);
+
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  assert.equal(code.querySelector(".wh-keyword")?.textContent, "fn");
+  host.stop();
+});
+
 test("Discord codeBlockText fallback covers code nodes recreated without code tags", async () => {
   const window = testWindow("https://discord.com/channels/1/2/3");
   window.document.body.innerHTML = `
@@ -299,6 +364,16 @@ test("ancestor data-lang remains reachable past an empty language attribute", as
 });
 
 test("automatic theme mode follows page background before OS preference", () => {
+  const hinted = testWindow("https://discord.com/channels/1/2/3");
+  hinted.document.documentElement.className = "theme-dark";
+  assert.equal(documentPrefersDark(hinted.document, false), true);
+
+  const github = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
+  github.document.documentElement.setAttribute("data-color-mode", "light");
+  assert.equal(documentPrefersDark(github.document, true), false);
+  github.document.documentElement.setAttribute("data-color-mode", "dark");
+  assert.equal(documentPrefersDark(github.document, false), true);
+
   const light = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
   light.document.body.style.backgroundColor = "rgb(255, 255, 255)";
   light.document.body.innerHTML = '<pre><code class="language-ush">fn greet() {}</code></pre>';
