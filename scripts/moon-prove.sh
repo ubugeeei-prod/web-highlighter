@@ -14,7 +14,7 @@ cat >"$config" <<EOF
 magic = 14
 datadir = "$moon_home/share/why3"
 libdir = "$moon_home/lib/why3"
-memlimit = 256
+memlimit = 2048
 running_provers_max = 1
 timelimit = 5.000000
 
@@ -25,11 +25,11 @@ version = "$prover_version"
 
 [strategy]
 code = "start:
-c Z3,$prover_version .2 128
-c Z3,$prover_version 1 256
+c Z3,$prover_version .2 1024
+c Z3,$prover_version 1 1024
 t compute_specified start
 t split_vc start
-c Z3,$prover_version 2 512
+c Z3,$prover_version 2 2048
 "
 desc = "MoonBit CI single prover strategy"
 name = "MoonBit_CI"
