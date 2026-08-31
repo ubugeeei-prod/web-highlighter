@@ -25,7 +25,7 @@ Code and page metadata are kept only in extension memory for the time needed to 
 ## Permissions
 
 - `storage` stores the selected theme.
-- Access to GitHub, GitLab, Discord, Slack, and ChatGPT lets the extension find and decorate code on those services.
+- Access to GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, and Qiita lets the extension find and decorate code on those services.
 - `activeTab` and `scripting` let you enable the extension from its popup on another site only after an explicit action.
 - Optional `http` and `https` host access is requested per site and only when you choose to enable that site.
 

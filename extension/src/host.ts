@@ -101,12 +101,14 @@ const ignoredLanguageClasses = new Set([
   "blob-code-inner",
   "blob-code-marker",
   "code",
+  "code-line",
   "hljs",
   "js-file-line",
   "line",
   "line_content",
   "nohighlight",
   "react-code-line-contents",
+  "shiki",
   "wh-token",
 ]);
 

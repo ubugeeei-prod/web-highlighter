@@ -40,6 +40,11 @@ score reaches the threshold and beats the runner-up by the configured margin.
 Weak evidence and tied evidence return `None`, so the browser leaves the block
 untouched.
 
+Evidence scoring is one forward pass. Every catalog signature is compiled into a
+first-code-unit index, so each source position only tests the signatures that
+could start there instead of running one substring search per signature per
+language. Adding a language therefore costs catalog bytes, not detection time.
+
 ## 3. Bounded scanning
 
 Each selected language is compiled once into:

@@ -1,6 +1,6 @@
 # Web Highlighter
 
-**Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
+**Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, Qiita, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
 
 When a service renders an `mbtx`, `mbti`, `mbtp`, `vpkg`, `veryl`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
 
@@ -16,7 +16,7 @@ The product is deliberately opinionated:
 
 - Manifest V3 builds for Chromium browsers, Firefox, and Safari Web Extensions.
 - GitHub and GitLab blob lines with their native `LC…` nodes preserved, plus lexical hover and same-file jump-to-definition.
-- Discord, Slack, ChatGPT, and ordinary `pre > code` blocks, including fenced aliases.
+- Discord, Slack, ChatGPT, Zenn, Qiita, and ordinary `pre > code` blocks, including fenced aliases.
 - Explicit aliases, filename extensions, special filenames, and conservative weighted inference when a service discards language metadata.
 - Declarative MoonBit language and theme add-ons without TextMate/tmLanguage repositories, regex callbacks, `eval`, or remote code.
 - Exact-word function and property vocabularies for small languages whose standard helpers matter as much as reserved words, with validation rejecting empty, duplicated, or cross-scope vocabulary.
@@ -35,19 +35,37 @@ The requested languages ship in the Wasm catalog:
 - [ubugeeei-prod/ush](https://github.com/ubugeeei-prod/ush) (`ush`, `.ush`)
 - [ubugeeei-prod/vapor-moon](https://github.com/ubugeeei-prod/vapor-moon) (`mbtv`, `.mbtv`)
 
-Veryl, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are also built in. The selection is a curated response to recurring hosted-service gaps, not a popularity ranking; see [the research snapshot](docs/research.md).
+Veryl, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are also built in.
+
+A second group targets languages that GitHub, GitLab, Discord, Zenn, or Qiita still render as plain text, ordered by how widely known each language is:
+
+| Language   | Aliases and files                | Still unsupported by                     |
+| ---------- | -------------------------------- | ---------------------------------------- |
+| Zig        | `zig`, `.zig`, `.zon`            | Discord, GitLab source view              |
+| V          | `vlang`, `.vsh`, `.vv`, `v.mod`  | Qiita, GitLab diffs                      |
+| Just       | `just`, `justfile`, `.just`      | Discord, GitLab source view, Qiita       |
+| Carbon     | `carbon`, `.carbon`              | Discord, GitLab, Zenn, Qiita             |
+| Slint      | `slint`, `.slint`                | Discord, GitLab, Zenn, Qiita             |
+| Odin       | `odin`, `.odin`                  | Qiita, GitLab diffs                      |
+| PureScript | `purescript`, `purs`, `.purs`    | Discord, GitLab source view, Qiita       |
+| ReScript   | `rescript`, `res`, `.res`, `.resi` | Discord, GitLab source view, Zenn      |
+
+The order is notability, the selection is availability: every entry is missing from at least one of the five services checked. See [the research snapshot](docs/research.md) for the engine behind each service and how the gaps were measured.
 
 ## Size and speed
 
 The release engine is a dependency-free Wasm-GC module. A local Apple-silicon run in the pinned Nix environment measured:
 
-| Signal                          |   Measured |        CI budget |
-| ------------------------------- | ---------: | ---------------: |
-| Content host + analyzer, Brotli |   14.7 KiB |   at most 32 KiB |
-| Wasm instantiate + first scan   |     1.6 ms |   at most 100 ms |
-| Repeated 512 KiB MoonBit scan   | 17.1 MiB/s | at least 2 MiB/s |
+| Signal                             |   Measured |        CI budget |
+| ---------------------------------- | ---------: | ---------------: |
+| Content host + analyzer, Brotli    |   23.6 KiB |   at most 32 KiB |
+| Wasm instantiate + first scan      |     4.9 ms |   at most 100 ms |
+| Repeated 512 KiB MoonBit scan      | 10.5 MiB/s | at least 2 MiB/s |
+| Unlabelled 256 KiB detection sweep | 32.6 MiB/s |                — |
 
 These are reproducible budget signals, not universal hardware claims. Run `vpr bench` for the current machine.
+
+Detection cost does not grow with the catalog: every signature is compiled into one first-code-unit index, so unlabelled inference walks the source once instead of running one substring search per language.
 
 ## Development
 

@@ -18,7 +18,7 @@ The extension intentionally leaves unsupported, ambiguous, empty, and oversized 
 
 ## Permissions
 
-Automatic host access is limited to GitHub, GitLab, Discord, Slack, and ChatGPT. On another HTTP or HTTPS site, the extension requests that single origin only after the reviewer selects **Enable on this site** in the popup. `activeTab` and `scripting` perform that explicit injection. `storage` stores only the selected theme.
+Automatic host access is limited to GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, and Qiita. On another HTTP or HTTPS site, the extension requests that single origin only after the reviewer selects **Enable on this site** in the popup. `activeTab` and `scripting` perform that explicit injection. `storage` stores only the selected theme.
 
 ## Local processing and remote code
 

@@ -170,6 +170,29 @@ pub struct CompiledCatalog {
   aliases : Map[String, Int]
   extensions : Map[String, Int]
   filenames : Map[String, Int]
+  signatures : CompiledSignatures
+}
+
+///|
+/// One catalog signature compiled with the index of the language that owns it.
+pub(all) struct CompiledSignature {
+  text : String
+  weight : Int
+  language : Int
+}
+
+///|
+/// Every catalog signature indexed by its first UTF-16 code unit.
+///
+/// Unlabelled inference used to run one substring search per signature per
+/// language, so its cost grew with the catalog. This index turns detection into
+/// one forward pass over the source: each position only tests the signatures
+/// that can start there, which keeps evidence scoring independent of how many
+/// languages ship.
+pub(all) struct CompiledSignatures {
+  entries : Array[CompiledSignature]
+  ascii : FixedArray[Array[Int]]
+  wide : Array[Int]
 }
 
 ///|
@@ -371,6 +394,37 @@ fn register_index(
 }
 
 ///|
+/// Indexes every catalog signature by the code unit it can start at.
+fn compile_signatures(languages : Array[Language]) -> CompiledSignatures {
+  let entries : Array[CompiledSignature] = []
+  let ascii : FixedArray[Array[Int]] = FixedArray::make(128, [])
+  for slot in 0..<128 {
+    ascii[slot] = []
+  }
+  let wide : Array[Int] = []
+  for index in 0..<languages.length() {
+    for fingerprint in languages[index].signatures {
+      if fingerprint.text == "" || fingerprint.weight <= 0 {
+        continue
+      }
+      let id = entries.length()
+      entries.push({
+        text: fingerprint.text,
+        weight: fingerprint.weight,
+        language: index,
+      })
+      let first = fingerprint.text[0].to_int()
+      if first >= 0 && first < 128 {
+        ascii[first].push(id)
+      } else {
+        wide.push(id)
+      }
+    }
+  }
+  { entries, ascii, wide, }
+}
+
+///|
 /// Compiles a language catalog once for detection and scanning.
 pub fn compile_catalog(languages : Array[Language]) -> CompiledCatalog {
   let compiled : Array[CompiledLanguage] = []
@@ -384,7 +438,13 @@ pub fn compile_catalog(languages : Array[Language]) -> CompiledCatalog {
     register_index(extensions, language.extensions, index)
     register_index(filenames, language.filenames, index)
   }
-  { languages: compiled, aliases, extensions, filenames, }
+  {
+    languages: compiled,
+    aliases,
+    extensions,
+    filenames,
+    signatures: compile_signatures(languages),
+  }
 }
 
 ///|
