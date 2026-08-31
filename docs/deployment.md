@@ -37,7 +37,8 @@ vp node scripts/deploy-docs-to-void.mjs -- --project web-highlighter-preview
 ## GitHub Actions OIDC
 
 The deploy workflow lives at `.github/workflows/docs.yml`. The build job runs on
-pull requests and pushes. The deploy job runs only for `main` and grants:
+pull requests and pushes. The deploy job runs only for `main` when
+`VOID_PROJECT` is configured, and grants:
 
 ```yaml
 permissions:
@@ -45,16 +46,17 @@ permissions:
   id-token: write
 ```
 
-Void must trust GitHub's OIDC provider for this repository and workflow. At run
-time, `void deploy` receives the GitHub Actions OIDC environment, exchanges it
-for a short-lived Void deploy credential, and publishes `dist/docs`.
+Void must trust GitHub's OIDC provider for this repository and workflow. Without
+that connection, GitHub Actions builds the docs but skips production deploy. At
+run time, `void deploy` receives the GitHub Actions OIDC environment, exchanges
+it for a short-lived Void deploy credential, and publishes `dist/docs`.
 
 ## Configuration
 
 | Setting                         | Default                            | Purpose                      |
 | ------------------------------- | ---------------------------------- | ---------------------------- |
 | `VOID_API_URL`                  | `https://api.void.cloud`           | Void API endpoint            |
-| `VOID_PROJECT`                  | `web-highlighter`                  | Void project name            |
+| `VOID_PROJECT`                  | required in GitHub Actions         | Void project name            |
 | `WEB_HIGHLIGHTER_DOCS_BASE`     | `/`                                | Ox Content base path         |
 | `WEB_HIGHLIGHTER_DOCS_SITE_URL` | `https://web-highlighter.void.app` | Canonical metadata site URL  |
 | Deploy directory                | `dist/docs`                        | Directory passed to Void CLI |

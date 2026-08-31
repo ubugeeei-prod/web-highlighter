@@ -63,7 +63,7 @@ jobs:
 
   deploy:
     name: Deploy docs to Void
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.VOID_PROJECT != ''
     needs: build
     runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 10
@@ -75,7 +75,7 @@ jobs:
       id-token: write
     env:
       VOID_API_URL: ${{ vars.VOID_API_URL || 'https://api.void.cloud' }}
-      VOID_PROJECT: ${{ vars.VOID_PROJECT || 'web-highlighter' }}
+      VOID_PROJECT: ${{ vars.VOID_PROJECT }}
       WEB_HIGHLIGHTER_DOCS_BASE: /
       WEB_HIGHLIGHTER_DOCS_SITE_URL: https://web-highlighter.void.app
     steps:
