@@ -5,14 +5,25 @@ source, language hint, optional filename, and one or more DOM segments. Language
 decisions remain in MoonBit and use the evidence strategy documented in
 [Injection Strategy](./injection-strategy.md).
 
-| Service      | Discovery                                                           | Language signal                                          | Rendering constraint                            |
-| ------------ | ------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------- |
-| GitHub       | blob line cells, PR diff files, and ordinary fenced blocks          | filename first                                           | preserve each `#LC…` line cell and line anchor  |
-| GitLab       | visible blob lines, MR diff files, and plain-source overlays        | filename first                                           | preserve `#LC…` lines and `#L…` anchors         |
-| Discord      | `pre code`, CSS-module code nodes, `.hljs`, and code text fallbacks | language class/data attribute, then dominant signatures  | preserve message controls outside the code node |
-| Slack        | `pre > code` and language metadata                                  | data attributes, then signatures                         | preserve message and thread containers          |
-| ChatGPT      | `pre > code` and language metadata                                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome     |
-| Generic site | code-shaped `pre` nodes only                                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords  |
+| Service      | Discovery                                                           | Language signal                                          | Rendering constraint                                  |
+| ------------ | ------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------- |
+| GitHub       | blob line cells, PR diff files, and ordinary fenced blocks          | filename first                                           | preserve each `#LC…` line cell and line anchor        |
+| GitLab       | visible blob lines, MR diff files, and plain-source overlays        | filename first                                           | preserve `#LC…` lines and `#L…` anchors               |
+| Discord      | `pre code`, CSS-module code nodes, `.hljs`, and code text fallbacks | language class/data attribute, then dominant signatures  | preserve message controls outside the code node       |
+| Slack        | `pre > code` and language metadata                                  | data attributes, then signatures                         | preserve message and thread containers                |
+| ChatGPT      | `pre > code` and language metadata                                  | language class/data attribute, then signatures           | preserve copy buttons and code-block chrome           |
+| Zenn         | `pre > code` inside Shiki code blocks                               | dominant signatures only; Shiki drops the fence language | preserve the code-block container and filename header |
+| Qiita        | `pre > code` inside `.code-frame`                                   | `data-lang` on the code frame, then signatures           | preserve the language label and copy affordances      |
+| Generic site | code-shaped `pre` nodes only                                        | class/data attribute, filename when supplied, signatures | never recolor prose merely containing keywords        |
+
+## Zenn and Qiita articles
+
+Both render fenced blocks server-side. Qiita keeps the fence language in
+`data-lang` on the surrounding `.code-frame`, so an unsupported language still
+arrives as an explicit hint. Zenn renders anything Shiki cannot load as plain
+`text` and drops the name, so those blocks reach MoonBit without metadata and
+depend on dominant weighted evidence. Shiki's own wrapper classes (`shiki`,
+`code-line`) are ignored as language hints for that reason.
 
 ## Startup and SPA updates
 

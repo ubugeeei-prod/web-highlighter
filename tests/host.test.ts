@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "vite-plus/test";
-import {
-  BrowserHost,
-  decodeAnalysis,
-  discoverSurfaces,
-  documentPrefersDark,
-  type Analyzer,
-} from "../extension/src/host.ts";
+import { decodeAnalysis } from "../extension/src/analysis.ts";
+import { BrowserHost, type Analyzer } from "../extension/src/host.ts";
+import { discoverSurfaces } from "../extension/src/surfaces.ts";
+import { documentPrefersDark } from "../extension/src/theme.ts";
 import { testWindow } from "./dom.ts";
 
 const analyzer: Analyzer = {
@@ -461,6 +458,37 @@ test("ChatGPT language metadata is applied without replacing code-block chrome",
   assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
   assert.equal(window.document.querySelector("#copy"), copy);
   assert.equal(copy?.textContent, "Copy code");
+});
+
+test("Qiita code frames read the language from their wrapper metadata", async () => {
+  const window = testWindow("https://qiita.com/ubugeeei/items/example");
+  window.document.body.innerHTML = `
+    <div class="code-frame" data-lang="ush">
+      <div class="code-lang"><span class="bold">ush</span></div>
+      <pre class="code-frame"><code>fn greet() {}\ngreet()</code></pre>
+    </div>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "ush");
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
+});
+
+test("Zenn code blocks stay analyzable after Shiki drops the language name", async () => {
+  const window = testWindow("https://zenn.dev/ubugeeei/articles/example");
+  window.document.body.innerHTML = `
+    <div class="code-block-container">
+      <pre class="shiki github-dark"><code class="code-line">fn greet() {}\ngreet()</code></pre>
+    </div>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "");
+  const inferring: Analyzer = {
+    analyze_request: (source) => analyzer.analyze_request(source, "ush", ""),
+    theme_wire: () => "",
+  };
+  assert.equal(await new BrowserHost(window.document, inferring).highlight(), 1);
+  assert.equal(window.document.querySelector(".wh-keyword")?.textContent, "fn");
 });
 
 test("ancestor data-lang remains reachable past an empty language attribute", async () => {

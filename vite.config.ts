@@ -16,6 +16,8 @@ const automaticHosts = [
   "https://*.slack.com/*",
   "https://chatgpt.com/*",
   "https://chat.openai.com/*",
+  "https://zenn.dev/*",
+  "https://qiita.com/*",
 ];
 
 function manifest(target: (typeof targets)[number]) {

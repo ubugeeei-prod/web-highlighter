@@ -45,6 +45,8 @@ for (const target of ["chromium", "firefox", "safari"] as const) {
     assert(manifest.content_scripts[0]?.matches.includes("https://discord.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://*.slack.com/*"));
     assert(manifest.content_scripts[0]?.matches.includes("https://chatgpt.com/*"));
+    assert(manifest.content_scripts[0]?.matches.includes("https://zenn.dev/*"));
+    assert(manifest.content_scripts[0]?.matches.includes("https://qiita.com/*"));
     assert.deepEqual(manifest.optional_host_permissions, ["https://*/*", "http://*/*"]);
     assert(manifest.content_security_policy.extension_pages.includes("wasm-unsafe-eval"));
     assert(

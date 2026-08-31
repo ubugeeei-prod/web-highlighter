@@ -31,3 +31,20 @@ test "verified cursor helpers accept only bounded scanner shapes" {
   assert_true(!score_is_dominant(2, 0, 3, 2))
   assert_true(!score_is_dominant(4, 3, 3, 2))
 }
+
+///|
+test "verified sweep helpers accept only covering slices" {
+  assert_true(span_covers_segment(2, 6, 4, 8))
+  assert_true(span_covers_segment(0, 12, 4, 8))
+  assert_true(!span_covers_segment(2, 4, 4, 8))
+  assert_true(!span_covers_segment(8, 9, 4, 8))
+  assert_true(span_covers_segment(0, 12, 4, 4))
+  assert_true(span_precedes_segment(4, 4))
+  assert_true(!span_precedes_segment(5, 4))
+  assert_true(span_follows_segment(8, 8))
+  assert_true(!span_follows_segment(7, 8))
+  assert_eq(clip_span_start(2, 4), 4)
+  assert_eq(clip_span_start(6, 4), 6)
+  assert_eq(clip_span_end(9, 8), 8)
+  assert_eq(clip_span_end(7, 8), 7)
+}

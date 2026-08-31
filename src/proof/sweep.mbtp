@@ -1,0 +1,299 @@
+///|
+/// A rendered surface segment is a bounded slice of the same source.
+///
+/// Segments are the host's DOM cells: ordered, disjoint, and possibly empty for
+/// a blank line.
+pub predicate segment_slice(start : Int, end_ : Int, length : Int) {
+  bounded_span(start, end_, length)
+}
+
+///|
+/// A token reaches into a segment and must be rendered inside it.
+pub predicate covers_segment(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+) {
+  (segment_start < token_end) && (token_start < segment_end)
+}
+
+///|
+/// A token ends at or before a segment, so it cannot cover that segment.
+pub predicate precedes_segment(token_end : Int, segment_start : Int) {
+  token_end <= segment_start
+}
+
+///|
+/// A token starts at or after a segment ends, so it cannot cover that segment.
+pub predicate follows_segment(token_start : Int, segment_end : Int) {
+  segment_end <= token_start
+}
+
+///|
+/// A clipped start is the later of the token and segment starts.
+pub predicate clip_start(
+  token_start : Int,
+  segment_start : Int,
+  start : Int,
+) {
+  ((start == token_start) || (start == segment_start)) &&
+  (token_start <= start) &&
+  (segment_start <= start)
+}
+
+///|
+/// A clipped end is the earlier of the token and segment ends.
+pub predicate clip_end(token_end : Int, segment_end : Int, end_ : Int) {
+  ((end_ == token_end) || (end_ == segment_end)) &&
+  (end_ <= token_end) &&
+  (end_ <= segment_end)
+}
+
+///|
+/// The rendered slice of one token inside one segment.
+pub predicate clipped_span(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+  start : Int,
+  end_ : Int,
+) {
+  clip_start(token_start, segment_start, start) &&
+  clip_end(token_end, segment_end, end_)
+}
+
+///|
+/// A skipped token and a covered segment are contradictory sweep states.
+pub predicate skipped_yet_covering(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+) {
+  precedes_segment(token_end, segment_start) &&
+  covers_segment(token_start, token_end, segment_start, segment_end)
+}
+
+///|
+/// A stopped-at token and a covered segment are contradictory sweep states.
+pub predicate stopped_yet_covering(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+) {
+  follows_segment(token_start, segment_end) &&
+  covers_segment(token_start, token_end, segment_start, segment_end)
+}
+
+///|
+/// A token skipped for one segment, in front of the next ordered segment.
+pub predicate skipped_before_next_segment(
+  token_end : Int,
+  segment_start : Int,
+  next_segment_start : Int,
+) {
+  precedes_segment(token_end, segment_start) &&
+  (segment_start <= next_segment_start)
+}
+
+///|
+/// An ordered token pair whose right span is already skipped for a segment.
+pub predicate ordered_pair_with_skipped_right(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  segment_start : Int,
+  length : Int,
+) {
+  ordered_pair(left_start, left_end, right_start, right_end, length) &&
+  precedes_segment(right_end, segment_start)
+}
+
+///|
+/// An ordered token pair whose left span already stopped a segment scan.
+pub predicate ordered_pair_with_stopping_left(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  segment_end : Int,
+  length : Int,
+) {
+  ordered_pair(left_start, left_end, right_start, right_end, length) &&
+  follows_segment(left_start, segment_end)
+}
+
+///|
+/// One covering token clipped into one bounded segment of the same source.
+pub predicate covered_clip(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+  start : Int,
+  end_ : Int,
+  length : Int,
+) {
+  nonempty_span(token_start, token_end, length) &&
+  segment_slice(segment_start, segment_end, length) &&
+  covers_segment(token_start, token_end, segment_start, segment_end) &&
+  clipped_span(token_start, token_end, segment_start, segment_end, start, end_)
+}
+
+///|
+/// One covering token clipped into one non-empty segment of the same source.
+pub predicate covered_clip_of_nonempty_segment(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+  start : Int,
+  end_ : Int,
+  length : Int,
+) {
+  covered_clip(
+    token_start, token_end, segment_start, segment_end, start, end_, length,
+  ) &&
+  nonempty_span(segment_start, segment_end, length)
+}
+
+///|
+/// A token that ends before a segment cannot cover it, so the sweep may skip it.
+lemma skipped_token_cannot_cover(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+) where {
+  proof_require: skipped_yet_covering(
+    token_start,
+    token_end,
+    segment_start,
+    segment_end,
+  ),
+  proof_ensure: false,
+} {}
+
+///|
+/// A token that starts past a segment cannot cover it, so the sweep may stop.
+lemma stopped_token_cannot_cover(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+) where {
+  proof_require: stopped_yet_covering(
+    token_start,
+    token_end,
+    segment_start,
+    segment_end,
+  ),
+  proof_ensure: false,
+} {}
+
+///|
+/// Skipping is permanent: ordered segments never reach a skipped token again.
+lemma skipped_token_stays_skipped(
+  token_end : Int,
+  segment_start : Int,
+  next_segment_start : Int,
+) where {
+  proof_require: skipped_before_next_segment(
+    token_end,
+    segment_start,
+    next_segment_start,
+  ),
+  proof_ensure: precedes_segment(token_end, next_segment_start),
+} {}
+
+///|
+/// Skipping is a prefix: ordered tokens before a skipped token are skipped too.
+lemma skipped_token_skips_its_prefix(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  segment_start : Int,
+  length : Int,
+) where {
+  proof_require: ordered_pair_with_skipped_right(
+    left_start,
+    left_end,
+    right_start,
+    right_end,
+    segment_start,
+    length,
+  ),
+  proof_ensure: precedes_segment(left_end, segment_start),
+} {}
+
+///|
+/// Stopping is a suffix: ordered tokens after a stopped token are past it too.
+lemma stopped_token_stops_its_suffix(
+  left_start : Int,
+  left_end : Int,
+  right_start : Int,
+  right_end : Int,
+  segment_end : Int,
+  length : Int,
+) where {
+  proof_require: ordered_pair_with_stopping_left(
+    left_start,
+    left_end,
+    right_start,
+    right_end,
+    segment_end,
+    length,
+  ),
+  proof_ensure: follows_segment(right_start, segment_end),
+} {}
+
+///|
+/// Clipping a covering token stays inside both the segment and the source.
+lemma covered_clip_is_bounded(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+  start : Int,
+  end_ : Int,
+  length : Int,
+) where {
+  proof_require: covered_clip(
+    token_start,
+    token_end,
+    segment_start,
+    segment_end,
+    start,
+    end_,
+    length,
+  ),
+  proof_ensure: bounded_span(start, end_, length),
+} {}
+
+///|
+/// A covering token clipped to a non-empty segment renders a non-empty slice.
+lemma covered_clip_is_nonempty(
+  token_start : Int,
+  token_end : Int,
+  segment_start : Int,
+  segment_end : Int,
+  start : Int,
+  end_ : Int,
+  length : Int,
+) where {
+  proof_require: covered_clip_of_nonempty_segment(
+    token_start,
+    token_end,
+    segment_start,
+    segment_end,
+    start,
+    end_,
+    length,
+  ),
+  proof_ensure: nonempty_span(start, end_, length),
+} {}

@@ -10,7 +10,7 @@ Inject lightweight language support into code hosts and chats that do not suppor
 
 ### Description
 
-Web Highlighter injects missing language support into code hosts and chat services. It is built for private, experimental, composite, and overlooked languages that GitHub, GitLab, Discord, Slack, ChatGPT, and similar services are unlikely to support upstream.
+Web Highlighter injects missing language support into code hosts and chat services. It is built for private, experimental, composite, and overlooked languages that GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, Qiita, and similar services are unlikely to support upstream.
 
 The extension detects code already present on a page and processes it locally with a small MoonBit/WebAssembly engine. It adds semantic colors, lexical hover information, and same-file jump-to-definition while preserving the page's own layout, line anchors, selection, and copy behavior. Unsupported or ambiguous code is left unchanged.
 
@@ -30,7 +30,7 @@ Inject local highlighting, lexical hover information, and same-file navigation f
 
 ### Description
 
-Web Highlighter は、コードホストやチャットサービスに欠けている言語サポートを外部から注入するブラウザ拡張です。GitHub、GitLab、Discord、Slack、ChatGPT などで今後も公式対応を期待しにくい、自作・実験的・複合的・見落とされている言語を対象にしています。
+Web Highlighter は、コードホストやチャットサービスに欠けている言語サポートを外部から注入するブラウザ拡張です。GitHub、GitLab、Discord、Slack、ChatGPT、Zenn、Qiita などで今後も公式対応を期待しにくい、自作・実験的・複合的・見落とされている言語を対象にしています。
 
 ページ上にすでに表示されているコードを検出し、小さな MoonBit/WebAssembly エンジンで端末内処理します。ページ自身のレイアウト、行アンカー、選択、コピー動作を保ったまま、意味に沿った色、字句的な hover 情報、同一ファイル内の定義ジャンプを追加します。未対応または判定が曖昧なコードは変更しません。
 
@@ -44,13 +44,13 @@ Idris 2 と `.ipkg`、MoonBit Executable (`mbtx`)、vibe-lang、tnix、ush、mbt
 
 ## Permission justifications
 
-| Permission                                          | Store justification                                                                                               |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `storage`                                           | Stores only the user's selected theme through the browser synchronization API.                                    |
-| Supported-service host access                       | Finds and decorates code on GitHub, GitLab, Discord, Slack, and ChatGPT without requiring a click on every visit. |
-| `activeTab`                                         | Reads the active tab only after the user opens the popup to enable another site.                                  |
-| `scripting`                                         | Injects the packaged content script and stylesheet after the user grants access to another site.                  |
-| Optional `http://*/*` and `https://*/*` host access | Lets the user opt in one additional origin at a time; no optional origin is granted automatically.                |
+| Permission                                          | Store justification                                                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `storage`                                           | Stores only the user's selected theme through the browser synchronization API.                                                 |
+| Supported-service host access                       | Finds and decorates code on GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, and Qiita without requiring a click on every visit. |
+| `activeTab`                                         | Reads the active tab only after the user opens the popup to enable another site.                                               |
+| `scripting`                                         | Injects the packaged content script and stylesheet after the user grants access to another site.                               |
+| Optional `http://*/*` and `https://*/*` host access | Lets the user opt in one additional origin at a time; no optional origin is granted automatically.                             |
 
 ## Data and code declarations
 
