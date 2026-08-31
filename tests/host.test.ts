@@ -1,12 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "vite-plus/test";
-import {
-  BrowserHost,
-  decodeAnalysis,
-  discoverSurfaces,
-  documentPrefersDark,
-  type Analyzer,
-} from "../extension/src/host.ts";
+import { decodeAnalysis } from "../extension/src/analysis.ts";
+import { BrowserHost, type Analyzer } from "../extension/src/host.ts";
+import { discoverSurfaces } from "../extension/src/surfaces.ts";
+import { documentPrefersDark } from "../extension/src/theme.ts";
 import { testWindow } from "./dom.ts";
 
 const analyzer: Analyzer = {

@@ -5,15 +5,18 @@ Web Highlighter is an injected-language-support product, not an embeddable highl
 ## Layers
 
 1. `src/model.mbt` defines immutable language, compiled grammar, symbol, token, and theme data.
-2. `src/catalog.mbt` is the declarative built-in support catalog.
-3. `src/proof` contains the proof-enabled UTF-16 bounds contracts used by the scanner.
-4. `src/detection.mbt` selects support by indexed hint, filename, extension, or dominant weighted literal evidence.
-5. `src/scanner.mbt` performs one bounded lexical and symbol pass without constructing an AST.
-6. `src/theme.mbt` selects a declarative theme and emits semantic-role colors.
-7. `src/wire.mbt` defines the compact tab-delimited protocol in an importable core library.
-8. `cmd/analyzer` is the thin executable package that exports three Wasm-GC functions.
-9. `extension/src/engine.ts` owns the Wasm instance in the extension origin.
-10. `extension/src/host.ts` discovers service DOM, renders spans, and implements hover/jump.
+2. `src/compile.mbt` builds the lexeme, codepoint, alias, filename, and signature indexes once per catalog.
+3. `src/contract.mbt` is the executable analysis oracle the scanner tests assert against.
+4. `src/catalog.mbt` composes the built-in catalog from `src/languages_requested.mbt`, `src/languages_curated.mbt`, and `src/languages_notable.mbt`, one file per selection round.
+5. `src/proof` contains the proof-enabled contracts: `bounds` for UTF-16 cursors and spans, `sweep` for the segment algebra the renderer walks.
+6. `src/detection.mbt` selects support by indexed hint, filename, extension, or dominant weighted literal evidence.
+7. `src/cursor.mbt` holds the UTF-16 cursor and delimiter primitives; `src/scanner.mbt` performs one bounded lexical and symbol pass without constructing an AST.
+8. `src/theme.mbt` selects a declarative theme and emits semantic-role colors.
+9. `src/addon.mbt` composes add-on contributions; `src/validation.mbt` rejects malformed or ambiguous ones.
+10. `src/wire.mbt` defines the compact tab-delimited protocol in an importable core library.
+11. `cmd/analyzer` is the thin executable package that exports three Wasm-GC functions.
+12. `extension/src/engine.ts` owns the Wasm instance in the extension origin.
+13. `extension/src/surfaces.ts` discovers service DOM, `analysis.ts` decodes the wire plan and indexes it, `theme.ts` reads the page's theme, and `host.ts` renders spans and implements hover/jump.
 
 The only runtime calls crossing the Wasm boundary are:
 
