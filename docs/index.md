@@ -22,9 +22,9 @@ surfaces and applies the token plan returned by Wasm.
 - `ubugeeei-prod/ush`
 - `ubugeeei-prod/tnix`
 - `ubugeeei-prod/vapor-moon`
-- `mizchi/vibe-lang`
-- Idris 2, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and
-  Uiua
+- `mizchi/vibe-lang`: `vibe`, `vpkg`
+- Veryl
+- Idris 2, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua
 
 ## Engineering shape
 

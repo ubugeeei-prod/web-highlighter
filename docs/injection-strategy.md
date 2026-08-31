@@ -31,7 +31,8 @@ The precedence is:
 
 1. exact language alias from a class or data attribute;
 2. exact filename such as `moon.pkg`;
-3. case-insensitive extension such as `.mbtp`, `.ush`, `.tnix`, `.vibe`, `.mbtv`;
+3. case-insensitive extension such as `.mbtp`, `.ush`, `.tnix`, `.vibe`, `.vpkg`,
+   `.mbtv`, or `.veryl`;
 4. weighted literal fingerprints only when metadata is gone.
 
 Weighted inference is fail-closed. A language is selected only when the winning

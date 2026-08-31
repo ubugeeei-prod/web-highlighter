@@ -46,7 +46,7 @@ CSS-module containers such as `codeContainer...`, `codeBlock...`, and
 `codeBlockText...`. The adapter patches only the code-bearing node, so
 reactions, copy affordances, message menus, and thread UI remain owned by
 Discord. When the class or wrapper metadata contains a supported alias such as
-`language-mbtp`, `hljs mbtp`, or `data-code-lang="mbtp"`, MoonBit treats it as
+`language-mbtp`, `hljs vpkg`, or `data-code-lang="veryl"`, MoonBit treats it as
 explicit evidence. Without that metadata, weighted inference must be dominant or
 the block is left as Discord rendered it.
 
