@@ -11,14 +11,14 @@
   },
   "devDependencies": {
     "@ox-content/vite-plugin": "3.0.0-beta.0",
-    "@types/node": "26.1.1",
-    "addons-linter": "10.9.0",
-    "happy-dom": "20.10.6",
-    "playwright": "1.61.1",
+    "@types/node": "26.4.0",
+    "addons-linter": "10.10.0",
+    "happy-dom": "20.11.12",
+    "playwright": "1.62.1",
     "vite": "8.2.2",
-    "vite-plus": "0.2.4",
+    "vite-plus": "0.3.0",
     "void": "0.10.13",
-    "web-ext": "10.5.0"
+    "web-ext": "10.6.0"
   },
   "engines": {
     "node": ">=24.0.0"
