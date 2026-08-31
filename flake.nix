@@ -31,11 +31,11 @@
             {
               aarch64-darwin = {
                 name = "aarch64-apple-darwin";
-                hash = "sha256-s7sbXQsgUrl9PHso/Eodl1Wu+XKSR8ZSkiiRUc0B2Mo=";
+                hash = "sha256-0+eh5oK2Qhbj2pOTcdclm4I47CHeQp0DmRwZg6gqlh4=";
               };
               x86_64-linux = {
                 name = "x86_64-unknown-linux-gnu";
-                hash = "sha256-qA914Zwqko85EN94Qnqftk9/pUzg0mIaYIFwFvHPzJ0=";
+                hash = "sha256-aOAquir4d8OPGepADnMB0IPqGOrYdx3IB1eBLCSsxNA=";
               };
             }
             .${system};
@@ -65,11 +65,11 @@
                 (cd "$out/lib/core" && MOON_HOME="$out" "$out/bin/moon" bundle --target wasm-gc --release)
               '';
           vitePlusArchive = pkgs.fetchurl {
-            url = "https://github.com/voidzero-dev/vite-plus/releases/download/v0.2.4/vp-${vpPlatform.name}.tar.gz";
+            url = "https://github.com/voidzero-dev/vite-plus/releases/download/v0.3.0/vp-${vpPlatform.name}.tar.gz";
             inherit (vpPlatform) hash;
           };
           vitePlusBinary =
-            pkgs.runCommand "vite-plus-0.2.4"
+            pkgs.runCommand "vite-plus-0.3.0"
               {
                 nativeBuildInputs = [
                   pkgs.gnutar
@@ -87,17 +87,35 @@
             name = "vp";
             text = ''
               # The Darwin launcher delegates to the project-local package. Keep the
-              # first dependency install bootstrappable through the same `vp` command.
+              # first dependency install bootstrappable through the pinned launcher.
               if [[ "$#" -gt 0 && "$1" == "install" && ! -f node_modules/vite-plus/dist/bin.js ]]; then
                 exec ${pkgs.pnpm}/bin/pnpm "$@"
               fi
               exec ${vitePlusBinary}/bin/vp "$@"
             '';
           };
+          vitePlusRun = pkgs.writeShellApplication {
+            name = "vpr";
+            text = ''
+              if [[ "$#" -gt 0 && "$1" == "install" ]]; then
+                shift
+                exec ${vitePlus}/bin/vp install --frozen-lockfile "$@"
+              fi
+
+              if [[ "$#" -gt 0 && "$1" == "ready" ]]; then
+                shift
+                ${vitePlus}/bin/vp install --frozen-lockfile
+                exec ${vitePlus}/bin/vp run ready "$@"
+              fi
+
+              exec ${vitePlus}/bin/vp run "$@"
+            '';
+          };
         in
         {
           inherit moonbit vitePlus;
-          default = vitePlus;
+          vpr = vitePlusRun;
+          default = vitePlusRun;
         };
     in
     {
@@ -114,6 +132,7 @@
             packages = [
               tools.moonbit
               tools.vitePlus
+              tools.vpr
               pkgs.nodejs_24
               pkgs.pnpm
               pkgs.git

@@ -34,9 +34,9 @@ From the source root:
 
 ```sh
 nix develop
-vp install --frozen-lockfile
-vp run verify
-vp run package
+vpr install
+vpr verify
+vpr package
 ```
 
-`vp run verify` checks and tests MoonBit, formats/lints/type-checks JavaScript and TypeScript, builds each browser distribution, runs Firefox's add-on linter, tests the distribution contract, and enforces runtime budgets. `vp run package` creates the submission archives and checksums.
+`vpr verify` checks and tests MoonBit, formats/lints/type-checks JavaScript and TypeScript, builds each browser distribution, runs Firefox's add-on linter, tests the distribution contract, and enforces runtime budgets. `vpr package` creates the submission archives and checksums.

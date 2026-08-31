@@ -13,9 +13,8 @@ The bundled `addons/ush` and `addons/paper` packages are the executable contract
 For local development, create `addons/<name>/moon.pkg`, put a `contribution()`
 function beside it, import that package from `cmd/analyzer/moon.pkg`, and add
 the contribution to `configured_addons` in `cmd/analyzer/main.mbt`. Rebuild with
-`nix develop -c vp build`, then reload `dist/chromium` in Chrome's extensions
-page. No remote registry or extension-store upload is needed for a private
-language.
+`nix develop -c vpr ready`. No remote registry or extension-store upload is
+needed for a private language.
 
 ## Language contract
 
@@ -60,7 +59,7 @@ between two add-ons must leave the block untouched.
 - Keep inference conservative; a false negative is preferable to recoloring unrelated content.
 - Test weak and ambiguous signature evidence when adding a language that shares
   syntax with another package.
-- Run `nix develop -c vp run verify`; this includes `moon prove` for the proof-enabled bounds package and retains the 32 KiB combined Brotli budget.
+- Run `nix develop -c vpr verify`; this includes `moon prove` for the proof-enabled bounds package and retains the 32 KiB combined Brotli budget.
 
 The add-on contract suite lives in `src/addon_wbtest.mbt`; built-in cases live in `src/catalog_wbtest.mbt`; scanner edge cases live beside the scanner in `src/scanner_wbtest.mbt`.
 

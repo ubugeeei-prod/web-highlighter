@@ -48,10 +48,10 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Build Ox Content docs
-        run: nix develop --command vp exec vite build --config docs/vite.config.mjs
+        run: nix develop --command vpr docs-build
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -88,7 +88,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Deploy Ox Content docs to Void
-        run: nix develop --command vp node scripts/deploy-docs-to-void.mjs
+        run: nix develop --command vpr docs-deploy

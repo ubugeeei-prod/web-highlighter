@@ -107,7 +107,7 @@ For normal releases, change `package.json` and `moon.mod` to the same new semant
 For the first release only, a clean, synchronized local `main` can bump the version and start the tag-triggered path:
 
 ```sh
-vp run release minor
+vpr release minor
 ```
 
 The atomic tag push starts the same `.github/workflows/release.yml`. In either path, wait until **Verify and package** passes, approve **Attest and publish**, and confirm that the final GitHub Release contains every ZIP plus `SHA256SUMS`.
@@ -122,4 +122,4 @@ Then open **Actions → Store publish → Run workflow** on `main`:
 4. Review the pending deployment, inspect the selected tag, and approve `store-publish`.
 5. Follow the store dashboard until its review is approved. A green workflow means the store accepted the submission, not that human review is complete.
 
-For a dry build with no credentials or external writes, run `vp run package` locally or download `store-submission-artifacts` from any successful CI run.
+For a dry build with no credentials or external writes, run `vpr package` locally or download `store-submission-artifacts` from any successful CI run.

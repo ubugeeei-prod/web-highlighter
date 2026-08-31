@@ -56,10 +56,10 @@ if (!hasOption(extraArgs, "--dir")) {
 
 voidArgs.push(...extraArgs);
 
-run("vp", ["exec", "vite", "build", "--config", "docs/vite.config.mjs"], {
+run("vite", ["build", "--config", "docs/vite.config.mjs"], {
   env: {
     WEB_HIGHLIGHTER_DOCS_BASE: docsBase,
     WEB_HIGHLIGHTER_DOCS_SITE_URL: docsSiteUrl,
   },
 });
-run("vp", ["exec", "void", ...voidArgs]);
+run("void", voidArgs);

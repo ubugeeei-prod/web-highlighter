@@ -4,6 +4,7 @@
 /coverage/
 /.vite-build/
 /release/
+/.chrome-profile/
 pkg.generated.mbti
 *.zip
 *.xpi

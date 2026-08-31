@@ -85,6 +85,6 @@ test("store declarations stay aligned with the privacy policy", async () => {
     ),
   );
   assert(reviewerNotes.includes("No source text or browsing data is sent over the network."));
-  assert(reviewerNotes.includes("vp run verify"));
-  assert(reviewerNotes.includes("vp run package"));
+  assert(reviewerNotes.includes("vpr verify"));
+  assert(reviewerNotes.includes("vpr package"));
 });

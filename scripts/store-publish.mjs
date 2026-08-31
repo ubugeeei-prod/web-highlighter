@@ -203,7 +203,7 @@ export async function publishEdge({
 async function main() {
   const [store, archivePath] = process.argv.slice(2);
   if (!archivePath || !["chrome", "edge"].includes(store)) {
-    throw new Error("usage: vp run store-publish <chrome|edge> <archive.zip>");
+    throw new Error("usage: vpr store-publish <chrome|edge> <archive.zip>");
   }
   const archive = readFileSync(archivePath);
   if (store === "chrome") {

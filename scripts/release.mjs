@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 const root = new URL("..", import.meta.url).pathname;
 const level = process.argv[2];
 if (!["major", "minor", "patch"].includes(level)) {
-  throw new Error("usage: vp run release <major|minor|patch>");
+  throw new Error("usage: vpr release <major|minor|patch>");
 }
 
 const git = (...args) =>
@@ -37,7 +37,7 @@ packageJson.version = version;
 writeFileSync(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
 const moduleSource = readFileSync(modulePath, "utf8");
 writeFileSync(modulePath, moduleSource.replace(/^version = "[^"]+"$/m, `version = "${version}"`));
-execFileSync("vp", ["run", "verify"], { cwd: root, stdio: "inherit" });
+execFileSync("vpr", ["verify"], { cwd: root, stdio: "inherit" });
 execFileSync("git", ["add", "package.json", "moon.mod", "pnpm-lock.yaml"], { cwd: root });
 execFileSync("git", ["commit", "-m", `chore(release): ${tag}`], { cwd: root, stdio: "inherit" });
 execFileSync("git", ["tag", "-a", tag, "-m", tag], { cwd: root, stdio: "inherit" });

@@ -66,7 +66,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Download and verify Chrome archive
         env:
@@ -98,7 +98,7 @@ jobs:
           CHROME_ACCESS_TOKEN: ${{ steps.google-auth.outputs.access_token }}
           CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
           CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
-        run: nix develop --command vp run store-publish chrome "release/$ARCHIVE"
+        run: nix develop --command vpr store-publish chrome "release/$ARCHIVE"
 
   firefox:
     name: Submit Firefox Add-ons
@@ -118,7 +118,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Download and verify Firefox archives
         env:
@@ -148,7 +148,7 @@ jobs:
           WEB_EXT_NO_INPUT: "true"
           WEB_EXT_SOURCE_DIR: .publish/firefox
           WEB_EXT_UPLOAD_SOURCE_CODE: release/web-highlighter-${{ inputs.tag }}-firefox-source.zip
-        run: nix develop --command vp exec web-ext sign
+        run: nix develop --command vpr firefox-sign
 
   edge:
     name: Submit Microsoft Edge Add-ons
@@ -168,7 +168,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Download and verify Edge archive
         env:
@@ -189,7 +189,7 @@ jobs:
           EDGE_CERTIFICATION_NOTES: Web Highlighter ${{ inputs.tag }}; reproducible source and reviewer instructions are linked from the store listing.
           EDGE_CLIENT_ID: ${{ vars.EDGE_CLIENT_ID }}
           EDGE_PRODUCT_ID: ${{ vars.EDGE_PRODUCT_ID }}
-        run: nix develop --command vp run store-publish edge "release/$ARCHIVE"
+        run: nix develop --command vpr store-publish edge "release/$ARCHIVE"
 
   safari:
     name: Prepare Safari App Store submission
@@ -209,7 +209,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Download and verify Safari archive
         env:
@@ -234,7 +234,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$SAFARI_BUNDLE_ID"
-          nix develop --command vp run safari-package .publish/safari \
+          nix develop --command vpr safari-package .publish/safari \
             --project-location .publish/project \
             --app-name "Web Highlighter" \
             --bundle-identifier "$SAFARI_BUNDLE_ID" \

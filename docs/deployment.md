@@ -8,8 +8,8 @@ long-lived `VOID_TOKEN` secret.
 
 ```sh
 nix develop
-vp install --frozen-lockfile
-vp exec vite build --config docs/vite.config.mjs
+vpr install
+vpr docs-build
 ```
 
 The output is written to `dist/docs`.
@@ -18,8 +18,8 @@ The output is written to `dist/docs`.
 
 ```sh
 nix develop
-vp install --frozen-lockfile
-vp node scripts/deploy-docs-to-void.mjs
+vpr install
+vpr docs-deploy
 ```
 
 The script builds the docs from the local checkout, then runs:
@@ -31,7 +31,7 @@ void deploy --project web-highlighter --dir dist/docs
 Extra arguments are forwarded to `void deploy`:
 
 ```sh
-vp node scripts/deploy-docs-to-void.mjs -- --project web-highlighter-preview
+vpr docs-deploy -- --project web-highlighter-preview
 ```
 
 ## GitHub Actions OIDC

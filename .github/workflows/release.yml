@@ -84,13 +84,13 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
 
       - name: Install pnpm dependencies through Vite+
-        run: nix develop --command vp install --frozen-lockfile
+        run: nix develop --command vpr install
 
       - name: Verify source and browser extensions
-        run: nix develop --command vp run verify
+        run: nix develop --command vpr verify
 
       - name: Package browser extensions
-        run: nix develop --command vp run package
+        run: nix develop --command vpr package
 
       - name: Upload release archives
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -47,30 +47,31 @@ The release engine is a dependency-free Wasm-GC module. A local Apple-silicon ru
 | Wasm instantiate + first scan   |     1.6 ms |   at most 100 ms |
 | Repeated 512 KiB MoonBit scan   | 17.1 MiB/s | at least 2 MiB/s |
 
-These are reproducible budget signals, not universal hardware claims. Run `vp run bench` for the current machine.
+These are reproducible budget signals, not universal hardware claims. Run `vpr bench` for the current machine.
 
 ## Development
 
-The Nix flake pins MoonBit CLI `0.1.20260827` with compiler `0.10.11`, Why3 `1.8.2`, CVC5 `1.3.4`, Z3 `4.16.0`, Vite+ `0.2.4`, pnpm `11.9.0`, and Node.js `24.16.0`.
+The Nix flake pins MoonBit CLI `0.1.20260827` with compiler `0.10.11`, Why3 `1.8.2`, CVC5 `1.3.4`, Z3 `4.16.0`, Vite+ `0.3.0`, pnpm `11.9.0`, and Node.js `24.16.0`.
 
 ```sh
 nix develop
-vp install --frozen-lockfile
-vp run verify
+vpr install
+vpr verify
 ```
 
-All project operations are exposed through `vp`:
+All project operations are exposed through `vpr`:
 
 ```sh
-vp check         # Oxfmt, Oxlint, and strict TypeScript checking
-vp run moon-prove # Formal verification for the proof-enabled MoonBit package
-vp test --run    # DOM and distribution tests
-vp build         # MoonBit Wasm-GC + all unpacked WebExtensions
-vp run browser-smoke # launches the unpacked Chromium extension against fixtures
-vp run firefox-lint # Mozilla submission validation
-vp run bench     # measured runtime budgets
-vp run package   # reproducible store/source ZIP archives and SHA256SUMS
-vp run verify    # MoonBit checks/tests + all checks above
+vpr ready        # installs deps, builds, and loads dist/chromium into Chrome
+vpr check        # Oxfmt, Oxlint, and strict TypeScript checking
+vpr moon-prove   # Formal verification for the proof-enabled MoonBit package
+vpr test --run   # DOM and distribution tests
+vpr build        # MoonBit Wasm-GC + all unpacked WebExtensions
+vpr browser-smoke # launches the unpacked Chromium extension against fixtures
+vpr firefox-lint # Mozilla submission validation
+vpr bench        # measured runtime budgets
+vpr package      # reproducible store/source ZIP archives and SHA256SUMS
+vpr verify       # MoonBit checks/tests + all checks above
 ```
 
 ### Documentation site
@@ -79,8 +80,8 @@ Docs are built with `@ox-content/vite-plugin@3.0.0-beta.0` and deployed to
 Void. The production workflow uses GitHub OIDC, not a long-lived deploy token.
 
 ```sh
-vp exec vite build --config docs/vite.config.mjs
-vp node scripts/deploy-docs-to-void.mjs
+vpr docs-build
+vpr docs-deploy
 ```
 
 Read [Docs deployment](docs/deployment.md) for Void project variables and the
@@ -90,14 +91,15 @@ OIDC workflow shape.
 
 ```sh
 nix develop
-vp install --frozen-lockfile
-vp build
+vpr ready
 ```
 
-Open `chrome://extensions`, enable Developer mode, choose **Load unpacked**,
-and select `dist/chromium`. GitHub, GitLab, Discord, Slack, ChatGPT, and
-OpenAI Chat receive automatic host access from the generated Manifest V3
-extension. Any other origin is requested explicitly from the popup.
+`vpr ready` builds `dist/chromium` and launches Chrome with an isolated user
+cache profile using Manifest V3's unpacked-extension flags. Set
+`WEB_HIGHLIGHTER_CHROME_PROFILE` to override that profile location. GitHub,
+GitLab, Discord, Slack, ChatGPT, and OpenAI Chat receive automatic host access
+from the generated extension. Any other origin is requested explicitly from the
+popup.
 
 Firefox can temporarily load `dist/firefox/manifest.json`; Safari uses
 `dist/safari` with `xcrun safari-web-extension-packager`.
@@ -137,8 +139,7 @@ pub fn contribution() -> @highlight.Addon {
 
 For a local language, create a package under `addons/<name>`, import it from
 `cmd/analyzer/moon.pkg`, add `@name.contribution()` to `configured_addons` in
-`cmd/analyzer/main.mbt`, then run `nix develop -c vp build` and reload
-`dist/chromium` from `chrome://extensions`.
+`cmd/analyzer/main.mbt`, then run `nix develop -c vpr ready`.
 
 The package imports the core as `@highlight`; the thin analyzer entrypoint imports selected add-on packages and lists their contributions in `configured_addons`. A theme uses the equally declarative `theme(...)` constructor and stable semantic roles. See [Writing add-ons](docs/plugins.md).
 
@@ -169,7 +170,7 @@ Change `package.json` and `moon.mod` to the same new semantic version in a conve
 For the first release, a clean, synchronized local `main` can bootstrap the same tag-triggered workflow:
 
 ```sh
-vp run release minor
+vpr release minor
 ```
 
 The local task bumps both version files, runs the complete verification suite, creates a conventional release commit and annotated tag, then atomically pushes `main` and the tag. Both entry points create the GitHub Release without reading store credentials. Firefox and Edge credentials are isolated in the separately approved `store-publish` environment; Chrome uses short-lived OIDC instead.
