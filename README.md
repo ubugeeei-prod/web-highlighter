@@ -62,7 +62,7 @@ vpr verify
 All project operations are exposed through `vpr`:
 
 ```sh
-vpr ready        # installs deps, builds, and loads dist/chromium into Chrome
+vpr ready        # builds and loads dist/chromium into a local Chromium browser
 vpr check        # Oxfmt, Oxlint, and strict TypeScript checking
 vpr moon-prove   # Formal verification for the proof-enabled MoonBit package
 vpr test --run   # DOM and distribution tests
@@ -94,14 +94,30 @@ nix develop
 vpr ready
 ```
 
-`vpr ready` builds `dist/chromium`, restarts its isolated Chrome profile, and
-opens a real GitHub code page with Manifest V3's unpacked-extension flags. Set
-`WEB_HIGHLIGHTER_CHROME_PROFILE` to override that profile location. GitHub,
-GitLab, Discord, Slack, ChatGPT, and OpenAI Chat receive automatic host access
-from the generated extension. Any other origin is requested explicitly from the
-popup. Existing normal Chrome windows do not receive this unpacked extension
-automatically; use the launched profile, or load `dist/chromium` from
-`chrome://extensions` in the profile you normally use.
+`vpr ready` builds `dist/chromium`, restarts its isolated Chrome profile, loads
+the unpacked extension through Chrome's CDP pipe path, and opens a real GitHub
+code page. Chrome 137+ removed command-line unpacked extension loading from
+branded Chrome builds, so the `vpr ready` process must stay running while you
+use the opened Chrome window. Set `WEB_HIGHLIGHTER_BROWSER=dia` or `chromium`
+to force another Chromium browser, and set `WEB_HIGHLIGHTER_BROWSER_PROFILE` to
+override the isolated profile location. GitHub, GitLab, Discord, Slack,
+ChatGPT, and OpenAI Chat receive automatic host access from the generated
+extension. Any other origin is requested explicitly from the popup. Existing
+normal browser windows do not receive this unpacked extension automatically; use
+the launched profile, or load `dist/chromium` from `chrome://extensions` in the
+profile you normally use.
+
+To force a clean Chrome repro for the GitHub page in this README:
+
+```sh
+WEB_HIGHLIGHTER_BROWSER=chrome vpr ready
+```
+
+For Dia:
+
+```sh
+WEB_HIGHLIGHTER_BROWSER=dia vpr ready
+```
 
 ### Install from GitHub Releases
 

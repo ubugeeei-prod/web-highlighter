@@ -23,6 +23,9 @@ importers:
       playwright:
         specifier: 1.62.1
         version: 1.62.1
+      puppeteer-core:
+        specifier: 25.9.0
+        version: 25.9.0(yauzl@3.4.0)
       vite:
         specifier: 8.2.2
         version: 8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)

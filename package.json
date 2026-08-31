@@ -15,6 +15,7 @@
     "addons-linter": "10.10.0",
     "happy-dom": "20.11.12",
     "playwright": "1.62.1",
+    "puppeteer-core": "25.9.0",
     "vite": "8.2.2",
     "vite-plus": "0.3.0",
     "void": "0.10.13",
