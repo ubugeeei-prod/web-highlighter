@@ -2,7 +2,7 @@
 
 **Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
 
-When a service renders an `mbtx`, `mbti`, `mbtp`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
+When a service renders an `mbtx`, `mbti`, `mbtp`, `vpkg`, `veryl`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
 
 The product is deliberately opinionated:
 
@@ -30,12 +30,12 @@ The requested languages ship in the Wasm catalog:
 
 - Idris 2 (`idris`, `idris2`, `.idr`, `.lidr`, `.ipkg`)
 - MoonBit (`moonbit`, `mbt`, `mbtx`, `mbti`, `mbtp`, `.mbt`, `.mbtx`, `.mbti`, `.mbtp`)
-- [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `.vibe`, `.vibex`)
+- [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `vpkg`, `.vibe`, `.vibex`, `.vpkg`)
 - [ubugeeei-prod/tnix](https://github.com/ubugeeei-prod/tnix) (`tnix`, `.tnix`)
 - [ubugeeei-prod/ush](https://github.com/ubugeeei-prod/ush) (`ush`, `.ush`)
 - [ubugeeei-prod/vapor-moon](https://github.com/ubugeeei-prod/vapor-moon) (`mbtv`, `.mbtv`)
 
-Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are also built in. The selection is a curated response to recurring hosted-service gaps, not a popularity ranking; see [the research snapshot](docs/research.md).
+Veryl, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua are also built in. The selection is a curated response to recurring hosted-service gaps, not a popularity ranking; see [the research snapshot](docs/research.md).
 
 ## Size and speed
 

@@ -29,6 +29,19 @@ const githubBlobFixture = `<!doctype html>
   <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">in if enabled then { status = "enabled"; }</td></tr>
 </tbody></table></body></html>`;
 
+const githubVpkgFixture = `<!doctype html>
+<html data-color-mode="dark"><body><table><tbody>
+  <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">name = @vibe/ast</td></tr>
+  <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">export enum TypeExpr { TyName(String) }</td></tr>
+</tbody></table></body></html>`;
+
+const githubVerylFixture = `<!doctype html>
+<html data-color-mode="dark"><body><table><tbody>
+  <tr><td id="L1"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC1">module DataSelector {</td></tr>
+  <tr><td id="L2"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC2">  always_ff { if_reset {} }</td></tr>
+  <tr><td id="L3"></td><td data-testid="code-cell" class="react-code-line-contents" id="LC3">}</td></tr>
+</tbody></table></body></html>`;
+
 const githubDiffFixture = `<!doctype html>
 <html data-color-mode="dark"><body>
 <div data-file-path="src/example.ush">
@@ -140,12 +153,20 @@ try {
   assert.equal(await page.locator("#L2").count(), 1);
   assert.equal(startupErrors.length, 0, startupErrors.join("\n"));
 
-  await page.route("https://github.com/**", (route) =>
-    route.fulfill({
+  await page.route("https://github.com/**", (route) => {
+    const url = route.request().url();
+    const body = url.includes("/pull/")
+      ? githubDiffFixture
+      : url.endsWith("/index.vpkg")
+        ? githubVpkgFixture
+        : url.endsWith("/a.veryl")
+          ? githubVerylFixture
+          : githubBlobFixture;
+    return route.fulfill({
       contentType: "text/html; charset=utf-8",
-      body: route.request().url().includes("/pull/") ? githubDiffFixture : githubBlobFixture,
-    }),
-  );
+      body,
+    });
+  });
   await page.goto(
     "https://github.com/ubugeeei-prod/tnix/blob/main/examples/basics/conditionals.tnix",
   );
@@ -174,6 +195,25 @@ try {
   );
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
+  await assertDistinctTokenColor(page, "#LC1 .wh-keyword");
+
+  await page.goto("https://github.com/mizchi/vibe-lang/blob/main/lib/%40vibe/ast/index.vpkg");
+  await page.locator("#LC2 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "vibe",
+  );
+  assert.equal(await page.locator("#LC2 .wh-keyword").first().textContent(), "export");
+  await assertDistinctTokenColor(page, "#LC2 .wh-keyword");
+
+  await page.goto("https://github.com/veryl-lang/veryl/blob/master/testcases/vl/a.veryl");
+  await page.locator("#LC1 .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "veryl",
+  );
+  assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "module");
+  assert.equal(await page.locator("#LC1 .wh-type").first().textContent(), "DataSelector");
   await assertDistinctTokenColor(page, "#LC1 .wh-keyword");
 
   await page.goto("https://github.com/ubugeeei-prod/ush/pull/1/files");
@@ -250,7 +290,9 @@ try {
       .evaluate((element) => element.style.getPropertyValue("--wh-keyword")),
     "#9c1c1c",
   );
-  console.log("Chromium covered GitHub/GitLab diffs, Discord recovery, and the Paper theme.");
+  console.log(
+    "Chromium covered GitHub vpkg/Veryl blobs, GitHub/GitLab diffs, Discord recovery, and the Paper theme.",
+  );
 } finally {
   await context?.close();
   server.closeAllConnections();

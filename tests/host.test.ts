@@ -12,6 +12,15 @@ import { testWindow } from "./dom.ts";
 const analyzer: Analyzer = {
   analyze_request(source, hint, filename) {
     if (filename.endsWith(".ipkg")) return "L\tidris\nT\t0\t7\tkeyword\n";
+    if (filename.endsWith(".vpkg")) {
+      const keyword = source.indexOf("export");
+      return `L\tvibe\nT\t${keyword}\t${keyword + 6}\tkeyword\n`;
+    }
+    if (filename.endsWith(".veryl")) {
+      const keyword = source.indexOf("module");
+      const name = source.indexOf("DataSelector");
+      return `L\tveryl\nT\t${keyword}\t${keyword + 6}\tkeyword\nT\t${name}\t${name + 12}\ttype\n`;
+    }
     if (hint !== "ush" && !filename.endsWith(".ush")) return "";
     const first = source.indexOf("greet");
     const second = source.lastIndexOf("greet");
@@ -154,6 +163,46 @@ test("GitHub code inserted after initial boot is highlighted", async () => {
   await new Promise((resolve) => setTimeout(resolve, 140));
   assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "fn");
   host.stop();
+});
+
+test("GitHub vpkg blobs are discovered and highlighted by filename", async () => {
+  const window = testWindow(
+    "https://github.com/mizchi/vibe-lang/blob/main/lib/%40vibe/ast/index.vpkg",
+  );
+  window.document.body.innerHTML = `
+    <table><tbody>
+      <tr><td data-testid="code-cell" id="LC1">name = @vibe/ast</td></tr>
+      <tr><td data-testid="code-cell" id="LC2">export enum TypeExpr { TyName(String) }</td></tr>
+    </tbody></table>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.filename, "index.vpkg");
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector("#LC2 .wh-keyword")?.textContent, "export");
+  assert.equal(
+    window.document.querySelector<HTMLElement>("[data-wh-language]")?.dataset.whLanguage,
+    "vibe",
+  );
+});
+
+test("GitHub Veryl blobs are discovered and highlighted by filename", async () => {
+  const window = testWindow("https://github.com/veryl-lang/veryl/blob/master/testcases/vl/a.veryl");
+  window.document.body.innerHTML = `
+    <table><tbody>
+      <tr><td data-testid="code-cell" id="LC1">module DataSelector {</td></tr>
+      <tr><td data-testid="code-cell" id="LC2">  always_ff { if_reset {} }</td></tr>
+      <tr><td data-testid="code-cell" id="LC3">}</td></tr>
+    </tbody></table>`;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.filename, "a.veryl");
+  assert.equal(await new BrowserHost(window.document, analyzer).highlight(), 1);
+  assert.equal(window.document.querySelector("#LC1 .wh-keyword")?.textContent, "module");
+  assert.equal(window.document.querySelector("#LC1 .wh-type")?.textContent, "DataSelector");
+  assert.equal(
+    window.document.querySelector<HTMLElement>("[data-wh-language]")?.dataset.whLanguage,
+    "veryl",
+  );
 });
 
 test("transient analyzer startup failures keep the observer alive", async () => {

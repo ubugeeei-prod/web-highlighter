@@ -47,6 +47,24 @@ test "custom project extensions are recognized" {
     }) ==
     Some("mbtv"),
   )
+  assert_true(
+    detect_language(
+      languages,
+      "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }",
+      "",
+      "lib/@vibe/ast/index.vpkg",
+    ).map(fn(item) { item.id }) ==
+    Some("vibe"),
+  )
+  assert_true(
+    detect_language(
+      languages,
+      "module DataSelector { always_ff { if_reset {} } }",
+      "",
+      "rtl/DataSelector.veryl",
+    ).map(fn(item) { item.id }) ==
+    Some("veryl"),
+  )
 }
 
 ///|
@@ -106,6 +124,15 @@ test "extension detection is case-insensitive at the filename boundary" {
     }) ==
     Some("mbtv"),
   )
+  assert_true(
+    detect_language(
+      builtin_languages(),
+      "module DataSelector { always_ff {} }",
+      "",
+      "DataSelector.VERYL",
+    ).map(fn(item) { item.id }) ==
+    Some("veryl"),
+  )
   let plan = detect_compiled_plan(
     compile_catalog(builtin_languages()),
     "<template />",
@@ -129,6 +156,22 @@ test "compiled catalog indexes explicit hints filenames and extensions" {
       item.language.id
     }) ==
     Some("vibe"),
+  )
+  assert_true(
+    detect_compiled_language(catalog, "plain", "", "lib/@vibe/ast/index.vpkg").map(fn(
+      item,
+    ) {
+      item.language.id
+    }) ==
+    Some("vibe"),
+  )
+  assert_true(
+    detect_compiled_language(catalog, "plain", "", "rtl/DataSelector.veryl").map(fn(
+      item,
+    ) {
+      item.language.id
+    }) ==
+    Some("veryl"),
   )
   assert_true(
     detect_compiled_language(catalog, "plain", "", "lib.mbti").map(fn(item) {
@@ -172,6 +215,18 @@ test "compiled and declarative detectors agree across target languages" {
     (
       "vibe", "fn main with Console { handle { println(\"ok\") } }", "vibe-lang",
       "main.vibex",
+    ),
+    (
+      "vibe",
+      "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }",
+      "",
+      "lib/@vibe/ast/index.vpkg",
+    ),
+    (
+      "veryl",
+      "module DataSelector { always_ff { if_reset {} } }",
+      "",
+      "rtl/DataSelector.veryl",
     ),
     (
       "mbtv", "<script>let props = defineProps()</script><template><input v-model=\"name\" /></template>",

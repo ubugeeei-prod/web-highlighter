@@ -50,7 +50,7 @@ fn assert_builtin_scope(
 ///|
 test "built-in ids and aliases are unique" {
   let catalog = builtin_languages()
-  assert_eq(catalog.length(), 15)
+  assert_eq(catalog.length(), 16)
   for index in 0..<catalog.length() {
     assert_true(catalog[index].aliases.length() > 0)
     assert_true(catalog[index].aliases[0] == catalog[index].id)
@@ -116,6 +116,12 @@ test "Vibe support" {
   assert_builtin(
     "vibe", "vibe-lang", "main.vibex", "fn main with Console { println(\"42\") }",
   )
+  assert_builtin(
+    "vibe",
+    "vpkg",
+    "lib/@vibe/ast/index.vpkg",
+    "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }\nfn type_param_key(name: String) -> String",
+  )
   assert_builtin_scope(
     "vibe",
     "main.vibex",
@@ -136,6 +142,44 @@ test "Vibe support" {
     "fn main with Console { handle { Throw(\"x\") } }",
     "Throw",
     Constant,
+  )
+}
+
+///|
+test "Veryl support" {
+  assert_builtin(
+    "veryl",
+    "veryl",
+    "rtl/DataSelector.veryl",
+    "module DataSelector #(param Width: u32 = 8) (i_clk: input clock, o_data: output logic<Width>) { always_ff { if_reset { o_data = 0; } } }",
+  )
+  assert_builtin_scope(
+    "veryl",
+    "rtl/DataSelector.veryl",
+    "module DataSelector #(param Width: u32 = 8) (i_clk: input clock) { always_ff { if_reset {} } }",
+    "module",
+    Keyword,
+  )
+  assert_builtin_scope(
+    "veryl",
+    "rtl/DataSelector.veryl",
+    "module DataSelector #(param Width: u32 = 8) (i_clk: input clock) { always_ff { if_reset {} } }",
+    "DataSelector",
+    Type,
+  )
+  assert_builtin_scope(
+    "veryl",
+    "rtl/DataSelector.veryl",
+    "module DataSelector #(param Width: u32 = 8) (i_clk: input clock, o_data: output logic<Width>) { always_ff { if_reset {} } }",
+    "logic",
+    Type,
+  )
+  assert_builtin_scope(
+    "veryl",
+    "rtl/PackageA.veryl",
+    "package PackageA { function FuncA(a: input logic<8>) -> logic<8> { return a + 1; } }",
+    "FuncA",
+    Function,
   )
 }
 
