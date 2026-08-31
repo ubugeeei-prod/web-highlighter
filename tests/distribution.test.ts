@@ -95,6 +95,17 @@ test("the runtime stays below its hard compressed-size budget", async () => {
   assert(!text.includes("new Function"));
 });
 
+test("the content stylesheet has visible startup fallback colors", async () => {
+  const stylesheet = await readFile(
+    new URL("../dist/chromium/content.css", import.meta.url),
+    "utf8",
+  );
+  assert(stylesheet.includes("--wh-keyword: #cf222e"));
+  assert(stylesheet.includes("--wh-keyword: #ff8f87"));
+  assert(stylesheet.includes(':root[data-color-mode="dark"]'));
+  assert(stylesheet.includes(".wh-keyword"));
+});
+
 test("the packaged Wasm-GC engine exports real injected support", async () => {
   const wasm = await readFile(new URL("../dist/chromium/analyzer.wasm", import.meta.url));
   const { instance } = await WebAssembly.instantiate(

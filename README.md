@@ -94,12 +94,14 @@ nix develop
 vpr ready
 ```
 
-`vpr ready` builds `dist/chromium` and launches Chrome with an isolated user
-cache profile using Manifest V3's unpacked-extension flags. Set
+`vpr ready` builds `dist/chromium`, restarts its isolated Chrome profile, and
+opens a real GitHub code page with Manifest V3's unpacked-extension flags. Set
 `WEB_HIGHLIGHTER_CHROME_PROFILE` to override that profile location. GitHub,
 GitLab, Discord, Slack, ChatGPT, and OpenAI Chat receive automatic host access
 from the generated extension. Any other origin is requested explicitly from the
-popup.
+popup. Existing normal Chrome windows do not receive this unpacked extension
+automatically; use the launched profile, or load `dist/chromium` from
+`chrome://extensions` in the profile you normally use.
 
 ### Install from GitHub Releases
 

@@ -1,10 +1,10 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const defaultUrl = "https://github.com/ubugeeei-prod/web-highlighter";
+export const defaultUrl = "https://github.com/mizchi/vibe-lang/blob/main/lib/%40vibe/ast/ast.vibe";
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 function unique(items) {
@@ -84,6 +84,49 @@ export function defaultProfileDir({
   return join(env.XDG_CACHE_HOME ?? join(home, ".cache"), "web-highlighter/chrome-profile");
 }
 
+function sleep(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+export function chromeProfilePids({
+  execFileSyncImpl,
+  profileDir,
+  platform = process.platform,
+} = {}) {
+  if (platform === "win32" || !execFileSyncImpl || !profileDir) return [];
+  const output = execFileSyncImpl("ps", ["axww", "-o", "pid=,command="], {
+    encoding: "utf8",
+  });
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.includes(`--user-data-dir=${profileDir}`))
+    .map((line) => Number(line.match(/^\d+/)?.[0]))
+    .filter((pid) => Number.isInteger(pid) && pid !== process.pid);
+}
+
+export function restartChromeProfile({
+  env = process.env,
+  execFileSyncImpl,
+  kill = (pid, signal) => process.kill(pid, signal),
+  profileDir,
+  platform = process.platform,
+  sleepImpl = sleep,
+} = {}) {
+  if (env.WEB_HIGHLIGHTER_CHROME_PROFILE && env.WEB_HIGHLIGHTER_RESTART_CHROME_PROFILE !== "1")
+    return [];
+  const pids = chromeProfilePids({ execFileSyncImpl, profileDir, platform });
+  for (const pid of pids) {
+    try {
+      kill(pid, "SIGTERM");
+    } catch {
+      // The process may already have exited between ps and kill.
+    }
+  }
+  if (pids.length > 0) sleepImpl(700);
+  return pids;
+}
+
 export function validateExtension(extensionDir, exists = existsSync) {
   const required = ["manifest.json", "analyzer.wasm", "content.js", "engine.js"];
   const missing = required.filter((file) => !exists(join(extensionDir, file)));
@@ -120,6 +163,7 @@ export function launchChrome(executable, args, spawnImpl = spawn) {
 export function main(argv = process.argv.slice(2), deps = {}) {
   const root = deps.root ?? repoRoot;
   const exists = deps.exists ?? existsSync;
+  const execFileSyncImpl = deps.execFileSync ?? execFileSync;
   const mkdir = deps.mkdir ?? mkdirSync;
   const spawnImpl = deps.spawn ?? spawn;
   const extensionDir = resolve(root, "dist/chromium");
@@ -128,6 +172,13 @@ export function main(argv = process.argv.slice(2), deps = {}) {
 
   validateExtension(extensionDir, exists);
   mkdir(profileDir, { recursive: true });
+  const restarted = restartChromeProfile({
+    env: deps.env ?? process.env,
+    execFileSyncImpl,
+    kill: deps.kill,
+    platform: deps.platform ?? process.platform,
+    profileDir,
+  });
 
   const executable = findChromeExecutable({ ...deps, exists });
   if (!executable) {
@@ -141,6 +192,12 @@ export function main(argv = process.argv.slice(2), deps = {}) {
 
   console.log(`Chrome launched with Web Highlighter from ${extensionDir}`);
   console.log(`Profile: ${profileDir}`);
+  if (restarted.length > 0) {
+    console.log(`Restarted existing Web Highlighter Chrome profile: ${restarted.join(", ")}`);
+  }
+  console.log(
+    "This is an isolated Chrome profile. Existing normal Chrome windows must reload or load this unpacked extension separately.",
+  );
   console.log(`PID: ${pid ?? "unknown"}`);
 }
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { join, resolve } from "node:path";
-import { chromium, type BrowserContext } from "playwright";
+import { chromium, type BrowserContext, type Page } from "playwright";
 
 const gitlabBlobFixture = `<!doctype html>
 <html><body>
@@ -65,6 +65,20 @@ const server = createServer((_request, response) => {
 });
 const temporary = await mkdtemp(resolve(".browser-smoke-"));
 let context: BrowserContext | undefined;
+
+async function assertDistinctTokenColor(page: Page, selector: string) {
+  const colors = await page
+    .locator(selector)
+    .first()
+    .evaluate((token) => {
+      const parent = token.parentElement ?? token;
+      return {
+        token: getComputedStyle(token).color,
+        parent: getComputedStyle(parent).color,
+      };
+    });
+  assert.notEqual(colors.token, colors.parent);
+}
 
 try {
   await new Promise<void>((resolveListen, reject) => {
@@ -144,6 +158,7 @@ try {
   assert.equal(await page.locator("#LC2 .wh-keyword").first().textContent(), "in");
   assert.equal(await page.locator("#L2").count(), 1);
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
+  await assertDistinctTokenColor(page, "#LC1 .wh-keyword");
 
   await page
     .locator("#LC1")
@@ -159,6 +174,7 @@ try {
   );
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
+  await assertDistinctTokenColor(page, "#LC1 .wh-keyword");
 
   await page.goto("https://github.com/ubugeeei-prod/ush/pull/1/files");
   await page.locator("#GH-DIFF-1 .wh-keyword").first().waitFor({ timeout: 10_000 });
@@ -195,6 +211,7 @@ try {
   assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
   assert.equal(await page.locator("#discord-copy").textContent(), "Copy");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
+  await assertDistinctTokenColor(page, "#discord-code .wh-keyword");
   await page.locator("#discord-code").evaluate((code) => {
     code.addEventListener(
       "click",
@@ -214,6 +231,7 @@ try {
   );
   assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
+  await assertDistinctTokenColor(page, "#discord-code .wh-keyword");
 
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const popup = await context.newPage();
