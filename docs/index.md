@@ -40,11 +40,15 @@ pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
 ```veryl
 module DataSelector #(param Width: u32 = 8) (
   i_clk: input clock,
+  i_rst: input reset,
+  i_data: input logic<Width>,
   o_data: output logic<Width>,
 ) {
-  always_ff {
+  always_ff (i_clk, i_rst) {
     if_reset {
       o_data = 0;
+    } else {
+      o_data = i_data;
     }
   }
 }

@@ -106,7 +106,7 @@ test "effect script validates and detects by extension" {
   let catalog = @highlight.addon_languages([contribution])
   let result = @highlight.analyze_catalog_request(
     catalog,
-    "effect fetch { handler ok { perform std.log } }",
+    "let cached = 1",
     "",
     "service.effect",
   )
