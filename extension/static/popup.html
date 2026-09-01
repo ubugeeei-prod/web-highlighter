@@ -7,19 +7,27 @@
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #f6f8fb;
-        --panel: #ffffff;
-        --text: #111827;
-        --muted: #667085;
-        --border: #d7dce3;
-        --border-strong: #b9c2cf;
-        --accent: #1769e0;
-        --accent-strong: #0b55c2;
-        --accent-text: #ffffff;
-        --control: #ffffff;
-        --shadow: 0 14px 30px rgb(15 23 42 / 12%);
+        --page: #f2f4f1;
+        --surface: #fbfbf8;
+        --surface-muted: #eef1ec;
+        --surface-pressed: #e5e9e2;
+        --text: #171a1f;
+        --muted: #646c75;
+        --subtle: #5f686f;
+        --border: #7f8c83;
+        --border-strong: #aeb8aa;
+        --accent: #175c4a;
+        --action: #175c4a;
+        --action-hover: #104a3c;
+        --action-text: #ffffff;
+        --focus: #267762;
+        --syntax-keyword: #7b3fc1;
+        --syntax-type: #0c6f88;
+        --syntax-string: #736200;
+        --syntax-comment: #67736e;
         font:
-          13px/1.45 system-ui,
+          13px/1.46 ui-sans-serif,
+          system-ui,
           -apple-system,
           BlinkMacSystemFont,
           "Segoe UI",
@@ -28,17 +36,24 @@
 
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #11151b;
-          --panel: #171d25;
-          --text: #f3f6fb;
-          --muted: #a7b0bf;
-          --border: #303a47;
-          --border-strong: #465365;
-          --accent: #8ab8ff;
-          --accent-strong: #a8cbff;
-          --accent-text: #07111f;
-          --control: #111820;
-          --shadow: 0 16px 34px rgb(0 0 0 / 32%);
+          --page: #090c0d;
+          --surface: #111516;
+          --surface-muted: #171c1d;
+          --surface-pressed: #202728;
+          --text: #edf2ef;
+          --muted: #a8b2ae;
+          --subtle: #78837f;
+          --border: #2d3634;
+          --border-strong: #4d5a56;
+          --accent: #85d3b6;
+          --action: #17362d;
+          --action-hover: #1d4439;
+          --action-text: #d9f3e8;
+          --focus: #85d3b6;
+          --syntax-keyword: #d6b5ff;
+          --syntax-type: #8bd8ef;
+          --syntax-string: #d9cf86;
+          --syntax-comment: #8fa29a;
         }
       }
 
@@ -47,35 +62,38 @@
       }
 
       body {
-        width: 320px;
+        width: 348px;
         margin: 0;
-        padding: 14px;
+        padding: 0;
         color: var(--text);
-        background:
-          linear-gradient(180deg, color-mix(in srgb, var(--bg), var(--panel) 18%), var(--bg)),
-          var(--bg);
+        background: var(--page);
       }
 
-      .panel {
+      .popup-shell {
         display: grid;
-        gap: 14px;
-        padding: 16px;
+        gap: 16px;
+        padding: 18px;
         border: 1px solid var(--border);
         border-radius: 8px;
-        background: var(--panel);
-        box-shadow: var(--shadow);
+        background: var(--surface);
       }
 
       .header {
         display: flex;
-        align-items: start;
+        align-items: center;
         justify-content: space-between;
-        gap: 16px;
+        gap: 14px;
       }
 
-      .eyebrow {
-        margin: 0 0 2px;
-        color: var(--muted);
+      .title {
+        display: grid;
+        gap: 3px;
+        min-width: 0;
+      }
+
+      .kicker {
+        margin: 0;
+        color: var(--subtle);
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0;
@@ -89,25 +107,39 @@
         letter-spacing: 0;
       }
 
+      .status {
+        display: inline-flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 7px;
+        min-height: 28px;
+        padding: 0 9px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        color: var(--muted);
+        background: var(--surface-muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
       .status-dot {
-        width: 9px;
-        height: 9px;
-        margin-top: 5px;
+        width: 6px;
+        height: 6px;
         border-radius: 999px;
-        background: #2da44e;
-        box-shadow: 0 0 0 4px color-mix(in srgb, #2da44e, transparent 82%);
+        background: var(--accent);
       }
 
       .field {
         display: grid;
-        gap: 7px;
+        gap: 8px;
         color: var(--muted);
         font-size: 12px;
-        font-weight: 650;
+        font-weight: 700;
       }
 
       .select-control {
         position: relative;
+        display: block;
       }
 
       .select-control::after {
@@ -116,8 +148,8 @@
         right: 12px;
         width: 8px;
         height: 8px;
-        border-right: 1.5px solid var(--muted);
-        border-bottom: 1.5px solid var(--muted);
+        border-right: 1.5px solid var(--subtle);
+        border-bottom: 1.5px solid var(--subtle);
         content: "";
         pointer-events: none;
         transform: translateY(-70%) rotate(45deg);
@@ -125,68 +157,116 @@
 
       select {
         width: 100%;
-        min-height: 38px;
-        padding: 0 34px 0 11px;
+        min-height: 42px;
+        padding: 0 38px 0 12px;
         border: 1px solid var(--border);
         border-radius: 7px;
         color: var(--text);
-        background: var(--control);
+        background: var(--surface-muted);
         font: inherit;
-        font-weight: 560;
+        font-weight: 650;
         appearance: none;
         outline: none;
       }
 
+      select:hover {
+        border-color: var(--border-strong);
+        background: var(--surface);
+      }
+
       select:focus-visible,
       button:focus-visible {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent), transparent 74%);
+        border-color: var(--focus);
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .sample-strip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow: hidden;
+        min-height: 36px;
+        padding: 0 11px;
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        background: var(--surface-muted);
+        font:
+          12px/1.2 ui-monospace,
+          "SFMono-Regular",
+          Menlo,
+          Consolas,
+          monospace;
+        white-space: nowrap;
+      }
+
+      .sample-keyword {
+        color: var(--syntax-keyword);
+        font-weight: 700;
+      }
+
+      .sample-type {
+        color: var(--syntax-type);
+        font-weight: 700;
+      }
+
+      .sample-string {
+        color: var(--syntax-string);
+      }
+
+      .sample-comment {
+        color: var(--syntax-comment);
       }
 
       button {
         width: 100%;
-        min-height: 38px;
+        min-height: 42px;
         border: 1px solid var(--accent);
         border-radius: 7px;
-        color: var(--accent-text);
-        background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+        color: var(--action-text);
+        background: var(--action);
         font: inherit;
         font-weight: 700;
         letter-spacing: 0;
         cursor: pointer;
-      }
-
-      button {
         transition:
+          background-color 140ms ease,
           border-color 140ms ease,
-          filter 140ms ease,
           transform 140ms ease;
       }
 
       button:hover {
-        filter: brightness(1.04);
+        border-color: var(--action-hover);
+        background: var(--action-hover);
       }
 
       button:active {
         transform: translateY(1px);
+        background: var(--action-hover);
       }
 
       p {
-        min-height: 1.5em;
         margin: 0;
-        color: var(--muted);
+        color: var(--subtle);
         font-size: 12px;
+      }
+
+      p:empty {
+        display: none;
       }
     </style>
   </head>
   <body>
-    <main class="panel">
+    <main class="popup-shell">
       <header class="header">
-        <div>
-          <p class="eyebrow">Extension</p>
+        <div class="title">
+          <p class="kicker">Extension</p>
           <h1>Web Highlighter</h1>
         </div>
-        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status" aria-label="Ready">
+          <span class="status-dot" aria-hidden="true"></span>
+          Ready
+        </span>
       </header>
       <label class="field" for="theme">
         <span>Theme</span>
@@ -194,6 +274,12 @@
           <select id="theme"></select>
         </span>
       </label>
+      <div class="sample-strip" aria-hidden="true">
+        <span class="sample-keyword">fn</span>
+        <span class="sample-type">Type</span>
+        <span class="sample-string">"text"</span>
+        <span class="sample-comment">// note</span>
+      </div>
       <button id="enable" type="button">Grant Site Access</button>
       <p id="status" aria-live="polite"></p>
     </main>
