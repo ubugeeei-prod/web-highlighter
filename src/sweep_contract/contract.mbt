@@ -3,7 +3,8 @@
 ///
 /// The browser renderer sweeps ordered tokens against ordered segments with one
 /// forward cursor each. This is the exact membership test that sweep replaces,
-/// kept here so the host mirrors a proved formula instead of a local one.
+/// kept beside the sweep regression tests so the host mirrors a proved formula
+/// instead of a local one.
 pub fn span_covers_segment(
   token_start : Int,
   token_end : Int,
@@ -14,9 +15,9 @@ pub fn span_covers_segment(
     result == covers_segment(token_start, token_end, segment_start, segment_end)
   },
   proof_reasoning: (
-    #| Two half-open spans meet exactly when each starts before the other ends.
-    #| Tokens crossing a line break therefore cover every segment they reach,
-    #| which is what keeps a multi-line comment highlighted on all of its lines.
+    #| Half-open spans intersect exactly when each starts before the other
+    #| ends. This admits tokens crossing line breaks while rejecting both
+    #| boundary-touching cases, so empty adjacency never becomes a render span.
   ),
 } {
   segment_start < token_end && token_start < segment_end
@@ -30,9 +31,10 @@ pub fn span_precedes_segment(
 ) -> Bool where {
   proof_ensure: result => result == precedes_segment(token_end, segment_start),
   proof_reasoning: (
-    #| `precedes_segment_excludes_cover` proves a skipped token cannot cover the
-    #| segment, and `skipped_token_stays_skipped` proves later segments cannot
-    #| reach it either, so the sweep cursor is safe to advance and never rewind.
+    #| Once `token_end <= segment_start`, `skipped_token_cannot_cover` proves the
+    #| token cannot affect this segment. With ordered segments,
+    #| `skipped_token_stays_skipped` then proves the same token cannot reappear
+    #| in any later segment, so the sweep cursor only moves forward.
   ),
 } {
   token_end <= segment_start
@@ -46,9 +48,9 @@ pub fn span_follows_segment(
 ) -> Bool where {
   proof_ensure: result => result == follows_segment(token_start, segment_end),
   proof_reasoning: (
-    #| `follows_segment_excludes_cover` proves the stopping token covers nothing
-    #| in this segment, and `ordered_pair_stops_as_suffix` proves every later
-    #| token starts even further away, so the scan can end at the first one.
+    #| If `segment_end <= token_start`, the current token starts after the
+    #| segment. For ordered tokens, `stopped_token_stops_its_suffix` proves every
+    #| later token starts no earlier, so scanning this segment can stop here.
   ),
 } {
   segment_end <= token_start
@@ -83,8 +85,9 @@ pub fn clip_span_end(
   proof_ensure: result => clip_end(token_end, segment_end, result),
   proof_reasoning: (
     #| A token continuing into a later segment must end at the segment boundary.
-    #| With `clip_span_start` this pair satisfies `clipped_span`, so
-    #| `covered_clip_is_bounded` proves the rendered slice stays in range.
+    #| Together with `clip_span_start`, this gives `clipped_span`; the
+    #| `covered_clip_*` lemmas prove the DOM slice stays bounded and non-empty
+    #| when the source segment itself is non-empty.
   ),
 } {
   if segment_end < token_end {

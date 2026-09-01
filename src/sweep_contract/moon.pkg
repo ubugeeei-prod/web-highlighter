@@ -1,0 +1,9 @@
+import {
+  "ubugeeei-prod/web_highlighter/src/scanner_contract",
+}
+
+supported_targets = "wasm-gc"
+
+options(
+  "proof-enabled": true,
+)

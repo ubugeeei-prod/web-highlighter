@@ -35,4 +35,18 @@ name = "MoonBit_CI_CVC5"
 shortcut = "4"
 EOF
 
-"$moon_bin" prove --deny-warn --jobs 1 --why3-config "$config" src/proof "$@"
+targets=(
+  src/cursor_contract
+  src/scanner_contract
+  src/model_contract
+  src/detection_contract
+  src/sweep_contract
+)
+
+if [[ $# -gt 0 ]]; then
+  targets=("$@")
+fi
+
+for target in "${targets[@]}"; do
+  "$moon_bin" prove --deny-warn --jobs 1 --why3-config "$config" "$target"
+done

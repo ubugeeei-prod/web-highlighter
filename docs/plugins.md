@@ -59,7 +59,9 @@ between two add-ons must leave the block untouched.
 - Keep inference conservative; a false negative is preferable to recoloring unrelated content.
 - Test weak and ambiguous signature evidence when adding a language that shares
   syntax with another package.
-- Run `nix develop -c vpr verify`; this includes `moon prove` for the proof-enabled bounds package and retains the 32 KiB combined Brotli budget.
+- Run `nix develop -c vpr verify`; this includes `moon prove` for the
+  colocated proof-enabled contract packages and retains the 32 KiB combined
+  Brotli budget.
 
 The add-on contract suite lives in `src/addon_wbtest.mbt`; built-in cases live in `src/catalog_wbtest.mbt`; scanner edge cases live beside the scanner in `src/scanner_wbtest.mbt`.
 

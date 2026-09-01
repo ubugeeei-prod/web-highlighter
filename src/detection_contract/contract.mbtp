@@ -1,0 +1,31 @@
+///|
+/// Weighted language evidence is strong enough and clearly separated.
+///
+/// This predicate is local to detection because it is the fail-closed contract
+/// for Discord/Zenn-style blocks where the host dropped the original language
+/// label.
+pub predicate dominant_score(
+  best : Int,
+  runner_up : Int,
+  threshold : Int,
+  margin : Int,
+) {
+  (0 <= runner_up) &&
+  (runner_up <= best) &&
+  (0 < threshold) &&
+  (0 < margin) &&
+  (threshold <= best) &&
+  (runner_up + margin <= best)
+}
+
+///|
+/// Dominant evidence is always above the configured inference threshold.
+lemma dominant_score_implies_threshold(
+  best : Int,
+  runner_up : Int,
+  threshold : Int,
+  margin : Int,
+) where {
+  proof_require: dominant_score(best, runner_up, threshold, margin),
+  proof_ensure: threshold <= best,
+} {}

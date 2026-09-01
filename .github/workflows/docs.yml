@@ -63,7 +63,7 @@ jobs:
 
   deploy:
     name: Deploy docs to Void
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.VOID_PROJECT != ''
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 10

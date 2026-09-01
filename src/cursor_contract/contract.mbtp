@@ -1,0 +1,71 @@
+///|
+/// `index` is a valid cursor into a UTF-16 string of `length` code units.
+///
+/// This predicate lives beside `cursor.mbt` because the scanner's core unit of
+/// motion is not a byte offset or Unicode scalar index; it is the browser's
+/// UTF-16 code-unit cursor.
+pub predicate in_bounds(index : Int, length : Int) {
+  (0 <= index) && (index < length)
+}
+
+///|
+/// `index` is a valid half-open UTF-16 boundary for a source of `length`.
+pub predicate bounded_cursor(index : Int, length : Int) {
+  (0 <= index) && (index <= length)
+}
+
+///|
+/// The scanner only advances by one BMP code unit or one surrogate pair.
+pub predicate utf16_width(width : Int) {
+  (width == 1) || (width == 2)
+}
+
+///|
+/// A cursor advance is allowed only when it stays inside the input.
+pub predicate safe_advance_input(
+  length : Int,
+  index : Int,
+  width : Int,
+) {
+  in_bounds(index, length) && utf16_width(width) && (index + width <= length)
+}
+
+///|
+/// A scanner cursor moves by exactly the decoded scalar width.
+pub predicate cursor_advanced_exact(
+  length : Int,
+  before : Int,
+  width : Int,
+  after : Int,
+) {
+  safe_advance_input(length, before, width) && (after == before + width)
+}
+
+///|
+/// A scanner cursor moves forward and remains a legal end offset.
+pub predicate cursor_advanced(
+  length : Int,
+  before : Int,
+  after : Int,
+) {
+  (before < after) && (after <= length)
+}
+
+///|
+/// Exact advance carries the simpler monotonic cursor contract.
+lemma exact_advance_implies_advanced(
+  length : Int,
+  before : Int,
+  width : Int,
+  after : Int,
+) where {
+  proof_require: cursor_advanced_exact(length, before, width, after),
+  proof_ensure: cursor_advanced(length, before, after),
+} {}
+
+///|
+/// Every in-range cursor is also a legal half-open boundary.
+lemma in_bounds_implies_bounded_cursor(index : Int, length : Int) where {
+  proof_require: in_bounds(index, length),
+  proof_ensure: bounded_cursor(index, length),
+} {}

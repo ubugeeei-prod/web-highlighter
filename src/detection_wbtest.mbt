@@ -280,7 +280,7 @@ test "Discord unlabelled MoonBit snippets recover from typed function evidence" 
   assert_eq(plan.score, 6)
   assert_eq(plan.runner_up, 2)
   assert_true(
-    @proof.score_is_dominant(
+    @detection_contract.score_is_dominant(
       plan.score, plan.runner_up, inference_threshold(), inference_margin(),
     ),
   )
@@ -295,7 +295,7 @@ test "Discord unlabelled Vibe package snippets prefer Vibe over MoonBit" {
   assert_eq(plan.score, 13)
   assert_eq(plan.runner_up, 1)
   assert_true(
-    @proof.score_is_dominant(
+    @detection_contract.score_is_dominant(
       plan.score, plan.runner_up, inference_threshold(), inference_margin(),
     ),
   )
