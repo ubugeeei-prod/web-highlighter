@@ -28,13 +28,19 @@ fn swept_token_indexes(
   let mut head = 0
   for segment in segments {
     while head < tokens.length() &&
-          @proof.span_precedes_segment(tokens[head].span.end_, segment.0) {
+          render_span_precedes_segment(
+            tokens[head].span.end_,
+            segment.0,
+          ) {
       head = head + 1
     }
     let indexes : Array[Int] = []
     let mut index = head
     while index < tokens.length() &&
-          !@proof.span_follows_segment(tokens[index].span.start, segment.1) {
+          !render_span_follows_segment(
+            tokens[index].span.start,
+            segment.1,
+          ) {
       indexes.push(index)
       index = index + 1
     }
@@ -53,7 +59,7 @@ fn scanned_token_indexes(
   for segment in segments {
     let indexes : Array[Int] = []
     for index in 0..<tokens.length() {
-      if @proof.span_covers_segment(
+      if render_span_covers_segment(
           tokens[index].span.start,
           tokens[index].span.end_,
           segment.0,

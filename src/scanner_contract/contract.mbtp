@@ -1,53 +1,4 @@
 ///|
-/// `index` is a valid cursor into a UTF-16 string of `length` code units.
-pub predicate in_bounds(index : Int, length : Int) {
-  (0 <= index) && (index < length)
-}
-
-///|
-/// `index` is a valid half-open UTF-16 boundary for a source of `length`.
-pub predicate bounded_cursor(index : Int, length : Int) {
-  (0 <= index) && (index <= length)
-}
-
-///|
-/// The scanner only advances by one BMP code unit or one surrogate pair.
-pub predicate utf16_width(width : Int) {
-  (width == 1) || (width == 2)
-}
-
-///|
-/// A cursor advance is allowed only when it stays inside the input.
-pub predicate safe_advance_input(
-  length : Int,
-  index : Int,
-  width : Int,
-) {
-  in_bounds(index, length) && utf16_width(width) && (index + width <= length)
-}
-
-///|
-/// A scanner cursor moves by exactly the decoded scalar width.
-pub predicate cursor_advanced_exact(
-  length : Int,
-  before : Int,
-  width : Int,
-  after : Int,
-) {
-  safe_advance_input(length, before, width) && (after == before + width)
-}
-
-///|
-/// A scanner cursor moves forward and remains a legal end offset.
-pub predicate cursor_advanced(
-  length : Int,
-  before : Int,
-  after : Int,
-) {
-  (before < after) && (after <= length)
-}
-
-///|
 /// A semantic span is inside `[0, length]` and may be empty only for internal
 /// sentinel checks, never for emitted tokens.
 pub predicate bounded_span(start : Int, end_ : Int, length : Int) {
@@ -68,8 +19,8 @@ pub predicate ordered_span_after(
   end_ : Int,
   length : Int,
 ) {
-  bounded_cursor(cursor, length) && nonempty_span(start, end_, length) &&
-  (cursor <= start)
+  @cursor_contract.bounded_cursor(cursor, length) &&
+  nonempty_span(start, end_, length) && (cursor <= start)
 }
 
 ///|
@@ -105,8 +56,8 @@ pub predicate region_cursor(
   cursor : Int,
   length : Int,
 ) {
-  bounded_cursor(start, length) && bounded_cursor(cursor, length) &&
-  (start <= cursor)
+  @cursor_contract.bounded_cursor(start, length) &&
+  @cursor_contract.bounded_cursor(cursor, length) && (start <= cursor)
 }
 
 ///|
@@ -130,12 +81,6 @@ pub predicate positive_span_width(
 pub predicate count_step(before : Int, delta : Int, after : Int) {
   nonnegative_count(before) && nonnegative_count(delta) &&
   (after == before + delta)
-}
-
-///|
-/// A source length is inside the analyzer's explicit runtime budget.
-pub predicate source_length_allowed(length : Int, limit : Int) {
-  (0 <= length) && (0 <= limit) && (length <= limit)
 }
 
 ///|
@@ -164,41 +109,6 @@ pub predicate budget_push_step(before : Int, limit : Int, after : Int) {
     (after == before)
   )
 }
-
-///|
-/// Weighted language evidence is strong enough and clearly separated.
-pub predicate dominant_score(
-  best : Int,
-  runner_up : Int,
-  threshold : Int,
-  margin : Int,
-) {
-  (0 <= runner_up) &&
-  (runner_up <= best) &&
-  (0 < threshold) &&
-  (0 < margin) &&
-  (threshold <= best) &&
-  (runner_up + margin <= best)
-}
-
-///|
-/// Exact advance carries the simpler monotonic cursor contract.
-lemma exact_advance_implies_advanced(
-  length : Int,
-  before : Int,
-  width : Int,
-  after : Int,
-) where {
-  proof_require: cursor_advanced_exact(length, before, width, after),
-  proof_ensure: cursor_advanced(length, before, after),
-} {}
-
-///|
-/// Every in-range cursor is also a legal half-open boundary.
-lemma in_bounds_implies_bounded_cursor(index : Int, length : Int) where {
-  proof_require: in_bounds(index, length),
-  proof_ensure: bounded_cursor(index, length),
-} {}
 
 ///|
 /// Non-empty spans carry the weaker bounded-span contract.
@@ -296,24 +206,14 @@ lemma count_step_implies_nonnegative(
 } {}
 
 ///|
-/// A region cursor is always an appendable empty boundary at its current end.
+/// A region cursor is always a legal half-open boundary at its current end.
 lemma region_cursor_implies_bounded_end(
   start : Int,
   cursor : Int,
   length : Int,
 ) where {
   proof_require: region_cursor(start, cursor, length),
-  proof_ensure: bounded_cursor(cursor, length),
-} {}
-
-///|
-/// An allowed source length is also a bounded budget counter.
-lemma source_length_allowed_implies_budget_count(
-  length : Int,
-  limit : Int,
-) where {
-  proof_require: source_length_allowed(length, limit),
-  proof_ensure: budget_count(length, limit),
+  proof_ensure: @cursor_contract.bounded_cursor(cursor, length),
 } {}
 
 ///|
@@ -325,16 +225,4 @@ lemma budget_push_step_preserves_count(
 ) where {
   proof_require: budget_push_step(before, limit, after),
   proof_ensure: budget_count(after, limit),
-} {}
-
-///|
-/// Dominant evidence is always above the configured inference threshold.
-lemma dominant_score_implies_threshold(
-  best : Int,
-  runner_up : Int,
-  threshold : Int,
-  margin : Int,
-) where {
-  proof_require: dominant_score(best, runner_up, threshold, margin),
-  proof_ensure: threshold <= best,
 } {}

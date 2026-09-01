@@ -193,7 +193,7 @@ pub fn detect_compiled_plan(
     }
   }
   if best_index >= 0 &&
-    @proof.score_is_dominant(
+    @detection_contract.score_is_dominant(
       best_score,
       runner_up,
       inference_threshold(),

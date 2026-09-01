@@ -8,7 +8,11 @@ Web Highlighter is an injected-language-support product, not an embeddable highl
 2. `src/compile.mbt` builds the lexeme, codepoint, alias, filename, and signature indexes once per catalog.
 3. `src/contract.mbt` is the executable analysis oracle the scanner tests assert against.
 4. `src/catalog.mbt` composes the built-in catalog from `src/languages_requested.mbt`, `src/languages_curated.mbt`, and `src/languages_notable.mbt`, one file per selection round.
-5. `src/proof` contains the proof-enabled contracts: `bounds` for UTF-16 cursors and spans, `sweep` for the segment algebra the renderer walks.
+5. Proof contracts are colocated with their owners: `src/cursor_contract/` for
+   UTF-16 cursor motion, `src/scanner_contract/` for spans and output budgets,
+   `src/model_contract/` for source budgets, `src/detection_contract/` for
+   evidence dominance, and `src/sweep_contract/` for the segment algebra the
+   renderer walks.
 6. `src/detection.mbt` selects support by indexed hint, filename, extension, or dominant weighted literal evidence.
 7. `src/cursor.mbt` holds the UTF-16 cursor and delimiter primitives; `src/scanner.mbt` performs one bounded lexical and symbol pass without constructing an AST.
 8. `src/theme.mbt` selects a declarative theme and emits semantic-role colors.
@@ -32,7 +36,8 @@ themes_wire()                                    -> selectable theme metadata
 - Tokens are ordered, non-empty, and non-overlapping.
 - Scanner cursor arithmetic, token span width, ordered append steps, region
   cursors, line-count arithmetic, analyzer budgets, and dominant evidence
-  checks are proved in the proof-enabled `src/proof` package.
+  checks are proved in colocated `.mbtp` contracts beside the MoonBit source
+  that owns each invariant.
 - Language and theme add-ons are data without callbacks or DOM access.
 - Declarative language tables compile once into exact-word and codepoint indexes before scanning.
 - Service discovery contains no language vocabulary.
@@ -40,7 +45,7 @@ themes_wire()                                    -> selectable theme metadata
 - Rendering sweeps ordered segments against ordered tokens once and resolves
   symbols through span-keyed indexes, so a surface costs segments plus tokens
   plus symbols rather than segments times tokens. Skipping, stopping, and slice
-  clipping are proved sound in `src/proof`.
+  clipping are proved sound in `src/sweep_contract/contract.mbtp`.
 - Theme changes never reparse source.
 - Unknown and ambiguous blocks are left untouched.
 - A browser pass is capped at 48 surfaces. The MoonBit analyzer also owns a
@@ -74,11 +79,12 @@ TextMate grammars combine regular-expression behavior, recursive repositories, a
 
 Each declarative `Language` compiles to a `CompiledLanguage`: exact-word lexemes are merged into one lookup table, ASCII operator and identifier-extra characters become fixed membership tables, and a `CompiledCatalog` indexes aliases, filenames, and extensions. This keeps the authoring surface readable while making repeated SPA rescans independent from catalog size.
 
-The executable scanner still remains deliberately small: it delegates UTF-16
-advance, ordered token append checks, and line-count arithmetic to the verified
-kernel, then tests every emitted analysis through the same executable predicates.
-That makes malformed spans and overlapping tokens fail as core invariants, not
-only as service-rendering accidents.
+The executable scanner still remains deliberately small: UTF-16 advance,
+ordered token append checks, and line-count arithmetic are verified directly
+beside the scanner code that calls them, then every emitted analysis is tested
+through the same executable predicates. That makes malformed spans and
+overlapping tokens fail as core invariants, not only as service-rendering
+accidents.
 
 This narrower model gives predictable runtime cost and testable conflict rules. A Monogram-like parser compiler can later emit the same token and symbol plan without changing any service adapter.
 

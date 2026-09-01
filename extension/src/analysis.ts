@@ -54,9 +54,9 @@ export function decodeAnalysis(wire: string, source: string): Analysis | undefin
     else if (tag === "T") {
       const start = +a;
       const end = +b;
-      // Rendering sweeps this list once, so keep the analyzer's own contract
-      // (`ordered_span_after` in `src/proof`): spans stay ordered and non-empty
-      // even if a plan ever arrives malformed.
+      // Rendering sweeps this list once, so keep the analyzer's own colocated
+      // contract (`ordered_span_after` in `src/scanner_contract/contract.mbtp`):
+      // spans stay ordered and non-empty even if a plan ever arrives malformed.
       if (start >= cursor && start < end) {
         analysis.tokens.push({ start, end, scope: c });
         cursor = end;
@@ -96,10 +96,11 @@ export function symbolAt<Item extends { start: number; end: number }>(
  * line, which is what a large GitHub blob is made of.
  *
  * The two conditions are the executable predicates `span_precedes_segment` and
- * `span_follows_segment` in `src/proof`, where `skipped_token_cannot_cover`,
- * `stopped_token_cannot_cover`, `skipped_token_skips_its_prefix`, and
- * `stopped_token_stops_its_suffix` prove that skipping and stopping can never
- * drop a token that covers the segment.
+ * `span_follows_segment` colocated in `src/sweep_contract.mbt`, where
+ * `skipped_token_cannot_cover`, `stopped_token_cannot_cover`,
+ * `skipped_token_skips_its_prefix`, and `stopped_token_stops_its_suffix` in
+ * `src/sweep_contract/contract.mbtp` prove that skipping and stopping can
+ * never drop a token that covers the segment.
  */
 export function* coveredTokens(
   segments: readonly Segment[],

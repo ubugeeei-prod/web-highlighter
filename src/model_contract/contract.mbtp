@@ -1,0 +1,18 @@
+///|
+/// A source length is inside the analyzer's explicit runtime budget.
+///
+/// The budget model is colocated with `ScannerBudget` because rejecting
+/// oversized snippets is a data-model invariant, not a host-side convention.
+pub predicate source_length_allowed(length : Int, limit : Int) {
+  (0 <= length) && (0 <= limit) && (length <= limit)
+}
+
+///|
+/// An allowed source length is below its declared source limit.
+lemma source_length_allowed_implies_limit(
+  length : Int,
+  limit : Int,
+) where {
+  proof_require: source_length_allowed(length, limit),
+  proof_ensure: length <= limit,
+} {}
