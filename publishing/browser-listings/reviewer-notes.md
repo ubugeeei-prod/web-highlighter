@@ -36,7 +36,7 @@ From the source root:
 nix develop
 vpr install
 vpr verify
-vpr package
+vpr release:package
 ```
 
-`vpr verify` checks and tests MoonBit, formats/lints/type-checks JavaScript and TypeScript, builds each browser distribution, runs Firefox's add-on linter, tests the distribution contract, and enforces runtime budgets. `vpr package` creates the submission archives and checksums.
+`vpr verify` checks and tests MoonBit, proves MoonBit invariants, formats/lints/type-checks the browser host, builds each browser distribution, runs Firefox's add-on linter, tests the distribution manifest, and enforces runtime budgets. `vpr release:package` creates the submission archives and checksums.

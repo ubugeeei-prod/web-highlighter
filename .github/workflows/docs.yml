@@ -6,7 +6,6 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - "docs/**"
-      - "tools/scripts/deploy-docs-to-void.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "flake.nix"
@@ -15,7 +14,6 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - "docs/**"
-      - "tools/scripts/deploy-docs-to-void.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "flake.nix"
@@ -51,7 +49,7 @@ jobs:
         run: nix develop --command vpr install
 
       - name: Build Ox Content docs
-        run: nix develop --command vpr docs-build
+        run: nix develop --command vpr docs:build
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -63,7 +61,7 @@ jobs:
 
   deploy:
     name: Deploy docs to Void
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.VOID_PROJECT != ''
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 10
@@ -75,7 +73,7 @@ jobs:
       id-token: write
     env:
       VOID_API_URL: ${{ vars.VOID_API_URL || 'https://api.void.cloud' }}
-      VOID_PROJECT: ${{ vars.VOID_PROJECT }}
+      VOID_PROJECT: ${{ vars.VOID_PROJECT || 'web-highlighter' }}
       WEB_HIGHLIGHTER_DOCS_BASE: /
       WEB_HIGHLIGHTER_DOCS_SITE_URL: https://web-highlighter.void.app
     steps:
@@ -91,4 +89,4 @@ jobs:
         run: nix develop --command vpr install
 
       - name: Deploy Ox Content docs to Void
-        run: nix develop --command vpr docs-deploy
+        run: nix develop --command vpr docs:deploy

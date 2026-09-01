@@ -50,7 +50,7 @@ export default defineConfig({
               text: "Operations",
               items: [
                 { text: "Docs Deployment", link: "/deployment.md" },
-                { text: "Store Publishing", link: "/store-publishing.md" },
+                { text: "Browser Store Publishing", link: "/store-publishing.md" },
               ],
             },
           ],

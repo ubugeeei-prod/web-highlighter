@@ -18,10 +18,10 @@ function listingSummary(listing: string, localeHeading: string): string {
   return listing.slice(start + marker.length).split("\n", 1)[0]!;
 }
 
-test("AMO metadata contains the first-submission contract", async () => {
+test("AMO metadata contains the first-submission listing data", async () => {
   const [metadataSource, listing] = await Promise.all([
-    readFile(new URL("store/amo-metadata.json", root), "utf8"),
-    readFile(new URL("store/listing.md", root), "utf8"),
+    readFile(new URL("publishing/browser-listings/amo-metadata.json", root), "utf8"),
+    readFile(new URL("publishing/browser-listings/listing.md", root), "utf8"),
   ]);
   const metadata = JSON.parse(metadataSource) as AmoMetadata;
 
@@ -37,9 +37,9 @@ test("AMO metadata contains the first-submission contract", async () => {
 
 test("store declarations stay aligned with the privacy policy", async () => {
   const [listing, privacy, reviewerNotes] = await Promise.all([
-    readFile(new URL("store/listing.md", root), "utf8"),
+    readFile(new URL("publishing/browser-listings/listing.md", root), "utf8"),
     readFile(new URL("PRIVACY.md", root), "utf8"),
-    readFile(new URL("store/reviewer-notes.md", root), "utf8"),
+    readFile(new URL("publishing/browser-listings/reviewer-notes.md", root), "utf8"),
   ]);
 
   for (const statement of [
@@ -86,5 +86,5 @@ test("store declarations stay aligned with the privacy policy", async () => {
   );
   assert(reviewerNotes.includes("No source text or browsing data is sent over the network."));
   assert(reviewerNotes.includes("vpr verify"));
-  assert(reviewerNotes.includes("vpr package"));
+  assert(reviewerNotes.includes("vpr release:package"));
 });

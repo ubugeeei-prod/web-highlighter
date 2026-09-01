@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icons/icon-128.png" width="96" height="96" alt="Web Highlighter logo">
+</p>
+
 # Web Highlighter
 
 **Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, Qiita, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
@@ -7,8 +11,8 @@ When a service renders an `mbtx`, `mbti`, `mbtp`, `vpkg`, `veryl`, `ush`, `tnix`
 The product is deliberately opinionated:
 
 - language detection, declarative grammars, compiled lexical indexes, tokenization, symbols, proved invariants, and themes live in MoonBit;
-- TypeScript is only the WebExtension and DOM boundary;
-- add-ons are immutable build-time data, never downloaded executable code;
+- browser JavaScript/TypeScript is only the WebExtension and DOM boundary;
+- local add-ons are immutable MoonBit build-time data, never downloaded executable code;
 - unknown, ambiguous, oversized, or unsupported input is left untouched;
 - no source code leaves the browser.
 
@@ -67,7 +71,7 @@ The release engine is a dependency-free Wasm-GC module. A local Apple-silicon ru
 | Repeated 512 KiB MoonBit scan      | 10.5 MiB/s | at least 2 MiB/s |
 | Unlabelled 256 KiB detection sweep | 32.6 MiB/s |                — |
 
-These are reproducible budget signals, not universal hardware claims. Run `vpr bench` for the current machine.
+These are reproducible budget signals, not universal hardware claims. Run `vpr tools:bench` for the current machine.
 
 Detection cost does not grow with the catalog: every signature is compiled into one first-code-unit index, so unlabelled inference walks the source once instead of running one substring search per language.
 
@@ -86,13 +90,14 @@ All project operations are exposed through `vpr`:
 ```sh
 vpr ready        # builds and loads dist/chromium into a local Chromium browser
 vpr check        # Oxfmt, Oxlint, and strict TypeScript checking
-vpr moon-prove   # Formal verification for the proof-enabled MoonBit package
+vpr moon:prove   # Formal verification for the proof-enabled MoonBit package
+vpr moon:fuzz    # Deterministic MoonBit fuzz corpus over every built-in language
 vpr test --run   # DOM and distribution tests
 vpr build        # MoonBit Wasm-GC + all unpacked WebExtensions
-vpr browser-smoke # launches the unpacked Chromium extension against fixtures
-vpr firefox-lint # Mozilla submission validation
-vpr bench        # measured runtime budgets
-vpr package      # reproducible store/source ZIP archives and SHA256SUMS
+vpr browser:smoke # launches the unpacked Chromium extension against fixtures
+vpr firefox:lint # Mozilla submission validation
+vpr tools:bench        # measured runtime budgets
+vpr release:package      # reproducible store/source ZIP archives and SHA256SUMS
 vpr verify       # MoonBit checks/tests + all checks above
 ```
 
@@ -102,8 +107,8 @@ Docs are built with `@ox-content/vite-plugin@3.0.0-beta.0` and deployed to
 Void. The production workflow uses GitHub OIDC, not a long-lived deploy token.
 
 ```sh
-vpr docs-build
-vpr docs-deploy
+vpr docs:build
+vpr docs:deploy
 ```
 
 Read [Docs deployment](docs/deployment.md) for Void project variables and the
@@ -159,7 +164,12 @@ Firefox can temporarily load `dist/firefox/manifest.json`; Safari uses
 
 ## A declarative language add-on
 
-An add-on is ordinary MoonBit data exported from a normal package. It describes facts; it does not supply a tokenizer callback:
+A local add-on is ordinary MoonBit data exported from a normal package. It is
+separate from the built-in catalog only by ownership: built-ins live in
+`src/builtin_languages*.mbt`, while private or project-specific language
+declarations live under `local_addons`. Both paths compile into the same Wasm
+catalog and use the same validation, scanner, fuzz, and proof-backed invariants.
+An add-on describes facts; it does not supply a tokenizer callback:
 
 ```moonbit
 pub fn contribution() -> @highlight.Addon {
@@ -190,9 +200,9 @@ pub fn contribution() -> @highlight.Addon {
 }
 ```
 
-For a local language, create a package under `addons/<name>`, import it from
-`cmd/analyzer/moon.pkg`, add `@name.contribution()` to `configured_addons` in
-`cmd/analyzer/main.mbt`, then run `nix develop -c vpr ready`.
+For a local language, create a package under `local_addons/<name>`, import it from
+`runtime/analyzer/moon.pkg`, add `@name.contribution()` to `configured_addons` in
+`runtime/analyzer/main.mbt`, then run `nix develop -c vpr ready`.
 
 The package imports the core as `@highlight`; the thin analyzer entrypoint imports selected add-on packages and lists their contributions in `configured_addons`. A theme uses the equally declarative `theme(...)` constructor and stable semantic roles. See [Writing add-ons](docs/plugins.md).
 
@@ -230,7 +240,7 @@ The local task bumps both version files, runs the complete verification suite, c
 
 To reconcile an existing release after an interrupted publication, run `gh workflow run release.yml --ref main -f tag=v0.1.0`. The workflow checks out that immutable tag, rebuilds and verifies every archive, and requires an exact byte-for-byte match with the published assets before succeeding.
 
-Store submissions use the canonical [listing copy](store/listing.md), [reviewer notes](store/reviewer-notes.md), and [privacy policy](PRIVACY.md). The [store publishing guide](docs/store-publishing.md) covers the protected workflow and each one-time account setup.
+Store submissions use the canonical [listing copy](publishing/browser-listings/listing.md), [reviewer notes](publishing/browser-listings/reviewer-notes.md), and [privacy policy](PRIVACY.md). The [browser-store publishing guide](docs/store-publishing.md) covers the protected workflow and each one-time account setup.
 
 ## License
 

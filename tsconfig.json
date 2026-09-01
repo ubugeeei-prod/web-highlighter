@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["extension/**/*.ts", "tools/scripts/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
+  "include": ["browsers/web/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
 }

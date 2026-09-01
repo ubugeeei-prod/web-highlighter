@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   chmodSync,
   copyFileSync,
+  existsSync,
   lstatSync,
   mkdirSync,
   readFileSync,
@@ -38,10 +39,17 @@ function filesUnder(directory, prefix = "") {
 }
 
 /** Lists reviewed source inputs without ever sweeping ignored local files or secrets. */
-function trackedFiles() {
-  return execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" })
+function reviewedSourceFiles() {
+  return execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+    cwd: root,
+    encoding: "utf8",
+  })
     .split("\0")
     .filter(Boolean)
+    .filter((path) => {
+      const source = resolve(root, path);
+      return existsSync(source) && lstatSync(source).isFile();
+    })
     .sort(compareText);
 }
 
@@ -86,7 +94,7 @@ for (const { name, target } of [
   createArchive(name, source, filesUnder(source));
 }
 
-createArchive(`web-highlighter-v${version}-firefox-source.zip`, root, trackedFiles());
+createArchive(`web-highlighter-v${version}-firefox-source.zip`, root, reviewedSourceFiles());
 rmSync(resolve(release, ".staging"), { recursive: true, force: true });
 
 const archives = readdirSync(release)

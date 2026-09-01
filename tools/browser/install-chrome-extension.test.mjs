@@ -80,7 +80,7 @@ await test("findBrowserExecutable picks the requested browser executable", () =>
   assert.equal(executable, "/Applications/Dia.app/Contents/MacOS/Dia");
 });
 
-await test("validateExtension requires the built browser bundle contract", () => {
+await test("validateExtension requires the built browser bundle shape", () => {
   const files = new Set([
     "/repo/dist/chromium/manifest.json",
     "/repo/dist/chromium/analyzer.wasm",

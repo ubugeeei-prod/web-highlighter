@@ -1,6 +1,13 @@
 # Writing add-ons
 
-Add-ons are declarative MoonBit values compiled into the extension's Wasm engine. They are build-time source dependencies, not remotely loaded code. This preserves Manifest V3 reviewability and guarantees that an add-on cannot execute an arbitrary matcher on untrusted page content.
+Add-ons are declarative MoonBit values compiled into the browser runtime's Wasm engine. They are build-time source dependencies, not remotely loaded code. This preserves Manifest V3 reviewability and guarantees that an add-on cannot execute an arbitrary matcher on untrusted page content.
+
+There are two catalog owners:
+
+- `src/builtin_languages*.mbt` is product-owned injected support shipped by default.
+- `local_addons/<name>` is user- or project-owned support selected by the analyzer package during a local build.
+
+Both owners produce the same `Language` and `Theme` values, pass through the same validation, and are compiled into one immutable catalog. The distinction is ownership and review surface, not runtime behavior.
 
 ## Package Shape
 
@@ -8,11 +15,11 @@ An add-on is a normal MoonBit package that imports `ubugeeei-prod/web_highlighte
 
 Catalog composition is explicit and deterministic. `addon_languages(...)` and `addon_themes(...)` retain built-ins first, then append contributions in package order. Production builds compile the composed language catalog once with `compile_catalog(...)`; `analyze_catalog_request(...)` remains available for tests and one-off tools.
 
-The bundled `addons/ush` and `addons/paper` packages are the executable add-on examples. They import only the public core API, own their declarations and tests, and are selected by the thin analyzer entrypoint. Removing an import and its `configured_addons` entry removes that language or theme without changing the scanner or browser shell.
+The bundled `local_addons/ush` and `local_addons/paper` packages are executable examples of local ownership. They import only the public core API, own their declarations and tests, and are selected by the thin analyzer entrypoint. Removing an import and its `configured_addons` entry removes that language or theme without changing the scanner or browser shell.
 
-For local development, create `addons/<name>/moon.pkg`, put a `contribution()`
-function beside it, import that package from `cmd/analyzer/moon.pkg`, and add
-the contribution to `configured_addons` in `cmd/analyzer/main.mbt`. Rebuild with
+For local development, create `local_addons/<name>/moon.pkg`, put a `contribution()`
+function beside it, import that package from `runtime/analyzer/moon.pkg`, and add
+the contribution to `configured_addons` in `runtime/analyzer/main.mbt`. Rebuild with
 `nix develop -c vpr ready`. No remote registry or extension-store upload is
 needed for a private language.
 

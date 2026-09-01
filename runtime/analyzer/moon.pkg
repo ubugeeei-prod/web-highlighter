@@ -1,7 +1,7 @@
 import {
   "ubugeeei-prod/web_highlighter/src" @core,
-  "ubugeeei-prod/web_highlighter/addons/paper",
-  "ubugeeei-prod/web_highlighter/addons/ush",
+  "ubugeeei-prod/web_highlighter/local_addons/paper",
+  "ubugeeei-prod/web_highlighter/local_addons/ush",
 }
 
 supported_targets = "wasm-gc"

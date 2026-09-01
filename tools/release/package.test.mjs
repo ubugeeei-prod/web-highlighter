@@ -80,6 +80,10 @@ await test("the Mozilla source bundle is complete and excludes generated or secr
     "moon.mod",
     "package.json",
     "pnpm-lock.yaml",
+    "assets/icons/icon-128.png",
+    "browsers/web/src/content.ts",
+    "local_addons/ush/addon.mbt",
+    "runtime/analyzer/main.mbt",
     "src/cursor_proof/kernel.mbt",
     "src/cursor_proof/moon.pkg",
     "src/cursor_proof/proof.mbtp",
@@ -98,17 +102,20 @@ await test("the Mozilla source bundle is complete and excludes generated or secr
     "src/theme_proof/kernel.mbt",
     "src/theme_proof/moon.pkg",
     "src/theme_proof/proof.mbtp",
+    "src/fuzz_wbtest.mbt",
+    "tools/bench/runtime-budget.mjs",
+    "tools/browser/smoke.mjs",
     "tools/nix/dev-shell.nix",
     "tools/nix/vp.nix",
-    "tools/scripts/moon-prove.sh",
-    "tools/scripts/package.mjs",
+    "tools/moon/prove.sh",
+    "tools/release/package.mjs",
     "vite.config.ts",
   ])
     assert(archived.includes(required), `source archive is missing ${required}`);
   assert(
     !archived.some(
       (path) =>
-        /(^|\/)(?:node_modules|dist|release|\.git)(?:\/|$)/u.test(path) ||
+        /^(?:node_modules|dist|release|\.git)\//u.test(path) ||
         /(^|\/)\.env(?:\.|$)/u.test(path) ||
         /\.(?:key|p12|pem)$/iu.test(path),
     ),
@@ -122,7 +129,7 @@ await test("checksums cover every archive and a rebuild is byte-for-byte reprodu
     .join("\n");
   assert.equal(readFileSync(resolve(release, "SHA256SUMS"), "utf8").trim(), expectedChecksums);
 
-  execFileSync(process.execPath, [resolve(root, "tools/scripts/package.mjs")], {
+  execFileSync(process.execPath, [resolve(root, "tools/release/package.mjs")], {
     cwd: root,
     stdio: "inherit",
   });

@@ -2,21 +2,9 @@ import { performance } from "node:perf_hooks";
 import { readFile } from "node:fs/promises";
 import { brotliCompressSync } from "node:zlib";
 
-interface Analyzer {
-  analyze_request(source: string, hint: string, filename: string): string;
-}
-
-interface Budgets {
-  runtimeBrotliBytes: number;
-  minimumScannerMiBPerSecond: number;
-  maximumColdStartMilliseconds: number;
-}
-
-const budgets = JSON.parse(
-  await readFile(new URL("../../bench/budgets.json", import.meta.url), "utf8"),
-) as Budgets;
+const budgets = JSON.parse(await readFile(new URL("budgets.json", import.meta.url), "utf8"));
 const wasm = await readFile(
-  new URL("../../_build/wasm-gc/release/build/cmd/analyzer/analyzer.wasm", import.meta.url),
+  new URL("../../_build/wasm-gc/release/build/runtime/analyzer/analyzer.wasm", import.meta.url),
 );
 const coldStart = performance.now();
 const { instance } = await WebAssembly.instantiate(
@@ -27,7 +15,7 @@ const { instance } = await WebAssembly.instantiate(
     importedStringConstants: "_",
   },
 );
-const analyzer = instance.exports as unknown as Analyzer;
+const analyzer = instance.exports;
 analyzer.analyze_request("fn main { let value = 42 }", "moonbit", "main.mbt");
 const coldStartMilliseconds = performance.now() - coldStart;
 

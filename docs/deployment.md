@@ -9,7 +9,7 @@ long-lived `VOID_TOKEN` secret.
 ```sh
 nix develop
 vpr install
-vpr docs-build
+vpr docs:build
 ```
 
 The output is written to `dist/docs`.
@@ -19,26 +19,27 @@ The output is written to `dist/docs`.
 ```sh
 nix develop
 vpr install
-vpr docs-deploy
+vpr docs:deploy
 ```
 
-The script builds the docs from the local checkout, then runs:
+The Vite+ task builds the docs from the local checkout, then runs:
 
 ```sh
 void deploy --project web-highlighter --dir dist/docs
 ```
 
-Extra arguments are forwarded to `void deploy`:
+Set `VOID_PROJECT` to deploy the same build shape to another project:
 
 ```sh
-vpr docs-deploy -- --project web-highlighter-preview
+VOID_PROJECT=web-highlighter-preview vpr docs:deploy
 ```
 
 ## GitHub Actions OIDC
 
 The deploy workflow lives at `.github/workflows/docs.yml`. The build job runs on
-pull requests and pushes. The deploy job runs only for `main` when
-`VOID_PROJECT` is configured, and grants:
+pull requests and pushes. The deploy job runs on every `main` push and defaults
+to the `web-highlighter` Void project unless `VOID_PROJECT` overrides it. It
+grants:
 
 ```yaml
 permissions:
@@ -46,17 +47,16 @@ permissions:
   id-token: write
 ```
 
-Void must trust GitHub's OIDC provider for this repository and workflow. Without
-that connection, GitHub Actions builds the docs but skips production deploy. At
-run time, `void deploy` receives the GitHub Actions OIDC environment, exchanges
-it for a short-lived Void deploy credential, and publishes `dist/docs`.
+Void must trust GitHub's OIDC provider for this repository and workflow. At run
+time, `void deploy` receives the GitHub Actions OIDC environment, exchanges it
+for a short-lived Void deploy credential, and publishes `dist/docs`.
 
 ## Configuration
 
 | Setting                         | Default                            | Purpose                      |
 | ------------------------------- | ---------------------------------- | ---------------------------- |
 | `VOID_API_URL`                  | `https://api.void.cloud`           | Void API endpoint            |
-| `VOID_PROJECT`                  | required in GitHub Actions         | Void project name            |
+| `VOID_PROJECT`                  | `web-highlighter`                  | Void project name            |
 | `WEB_HIGHLIGHTER_DOCS_BASE`     | `/`                                | Ox Content base path         |
 | `WEB_HIGHLIGHTER_DOCS_SITE_URL` | `https://web-highlighter.void.app` | Canonical metadata site URL  |
 | Deploy directory                | `dist/docs`                        | Directory passed to Void CLI |

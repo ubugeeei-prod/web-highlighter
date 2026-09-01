@@ -1,5 +1,5 @@
-name: Store publish
-run-name: Store ${{ inputs.store }} · ${{ inputs.tag }}
+name: Browser Store Publish
+run-name: Browser store ${{ inputs.store }} · ${{ inputs.tag }}
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ on:
           - safari
 
 concurrency:
-  group: store-publish-${{ inputs.tag }}
+  group: publish:browser-store-${{ inputs.tag }}
   cancel-in-progress: false
 
 permissions:
@@ -98,7 +98,7 @@ jobs:
           CHROME_ACCESS_TOKEN: ${{ steps.google-auth.outputs.access_token }}
           CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
           CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
-        run: nix develop --command vpr store-publish chrome "release/$ARCHIVE"
+        run: nix develop --command vpr publish:browser-store chrome "release/$ARCHIVE"
 
   firefox:
     name: Submit Firefox Add-ons
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload source and submit listed Firefox release
         env:
-          WEB_EXT_AMO_METADATA: store/amo-metadata.json
+          WEB_EXT_AMO_METADATA: publishing/browser-listings/amo-metadata.json
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
           WEB_EXT_APPROVAL_TIMEOUT: "0"
@@ -148,7 +148,7 @@ jobs:
           WEB_EXT_NO_INPUT: "true"
           WEB_EXT_SOURCE_DIR: .publish/firefox
           WEB_EXT_UPLOAD_SOURCE_CODE: release/web-highlighter-${{ inputs.tag }}-firefox-source.zip
-        run: nix develop --command vpr firefox-sign
+        run: nix develop --command vpr firefox:sign
 
   edge:
     name: Submit Microsoft Edge Add-ons
@@ -189,7 +189,7 @@ jobs:
           EDGE_CERTIFICATION_NOTES: Web Highlighter ${{ inputs.tag }}; reproducible source and reviewer instructions are linked from the store listing.
           EDGE_CLIENT_ID: ${{ vars.EDGE_CLIENT_ID }}
           EDGE_PRODUCT_ID: ${{ vars.EDGE_PRODUCT_ID }}
-        run: nix develop --command vpr store-publish edge "release/$ARCHIVE"
+        run: nix develop --command vpr publish:browser-store edge "release/$ARCHIVE"
 
   safari:
     name: Prepare Safari App Store submission
@@ -234,7 +234,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$SAFARI_BUNDLE_ID"
-          nix develop --command vpr safari-package .publish/safari \
+          nix develop --command vpr safari:package .publish/safari \
             --project-location .publish/project \
             --app-name "Web Highlighter" \
             --bundle-identifier "$SAFARI_BUNDLE_ID" \

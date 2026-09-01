@@ -138,14 +138,46 @@ test("Nix and helper scripts are wired through tools", async () => {
   assert(flake.includes("flake-parts.lib.mkFlake"));
   assert(flake.includes("./tools/nix/vp.nix"));
   assert(flake.includes("./tools/nix/dev-shell.nix"));
-  assert(config.includes("node tools/scripts/package.mjs"));
-  assert(config.includes("bash tools/scripts/moon-prove.sh"));
+  assert(config.includes("node tools/release/package.mjs"));
+  assert(config.includes("node tools/bench/runtime-budget.mjs"));
+  assert(config.includes("node tools/browser/smoke.mjs"));
+  assert(config.includes("bash tools/moon/prove.sh"));
+  for (const taskName of [
+    "docs:build",
+    "docs:deploy",
+    "moon:check",
+    "moon:prove",
+    "moon:test",
+    "moon:fuzz",
+    "tools:bench",
+    "browser:smoke",
+    "publish:browser-store",
+    "release:package",
+  ])
+    assert(config.includes(`"${taskName}"`), `missing grouped Vite task ${taskName}`);
+  for (const legacyTaskName of [
+    "docs-build",
+    "docs-deploy",
+    "moon-check",
+    "moon-prove",
+    "moon-test",
+    "browser-smoke",
+    "store-publish",
+    "chrome-ready-test",
+    "package",
+  ])
+    assert(!config.includes(`"${legacyTaskName}"`), `legacy Vite task ${legacyTaskName} returned`);
   assert(!config.includes("node scripts/"));
   assert(!config.includes("bash scripts/"));
-  assert(tsconfig.includes("tools/scripts/**/*.ts"));
-  assert(workflow.includes("tools/scripts/deploy-docs-to-void.mjs"));
+  assert(!tsconfig.includes("tools/**/*.ts"));
+  assert(
+    config.includes(
+      "vp exec void deploy --project ${VOID_PROJECT:-web-highlighter} --dir dist/docs",
+    ),
+  );
+  assert(workflow.includes("VOID_PROJECT: ${{ vars.VOID_PROJECT || 'web-highlighter' }}"));
   assert(!workflow.includes('"scripts/deploy-docs-to-void.mjs"'));
-  assert((await stat(new URL("../tools/scripts/package.mjs", import.meta.url))).isFile());
+  assert((await stat(new URL("../tools/release/package.mjs", import.meta.url))).isFile());
   assert((await stat(new URL("../tools/nix/dev-shell.nix", import.meta.url))).isFile());
 });
 
@@ -162,10 +194,7 @@ test("MoonBit proof kernels are owner-named and not contract packages", async ()
   assert(!sourceEntries.some((entry) => entry.isFile() && entry.name === legacyProofWbtest));
 
   const pkg = await readFile(new URL("../src/moon.pkg", import.meta.url), "utf8");
-  const proveScript = await readFile(
-    new URL("../tools/scripts/moon-prove.sh", import.meta.url),
-    "utf8",
-  );
+  const proveScript = await readFile(new URL("../tools/moon/prove.sh", import.meta.url), "utf8");
   for (const owner of ["cursor", "scanner", "model", "detection", "sweep", "theme"]) {
     const proofPackage = `src/${owner}_proof`;
     assert(pkg.includes(`"ubugeeei-prod/web_highlighter/${proofPackage}"`));
@@ -187,19 +216,21 @@ test("built-in language source files are discoverable by name", async () => {
     assert((await stat(new URL(`../src/${file}`, import.meta.url))).isFile());
 });
 
-test("the docs deploy path requires explicit Void project configuration in Actions", async () => {
+test("the docs deploy path always exercises the Void deployment job on main", async () => {
+  const config = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
   const workflow = await readFile(
     new URL("../.github/workflows/docs.yml", import.meta.url),
     "utf8",
   );
-  const deployScript = await readFile(
-    new URL("../tools/scripts/deploy-docs-to-void.mjs", import.meta.url),
-    "utf8",
+  assert(
+    workflow.includes("github.event_name != 'pull_request' && github.ref == 'refs/heads/main'"),
   );
-  assert(workflow.includes("vars.VOID_PROJECT != ''"));
-  assert(deployScript.includes('process.env.GITHUB_ACTIONS === "true"'));
-  assert(deployScript.includes("Skipping Void deploy"));
-  assert(!deployScript.includes('process.env.VOID_PROJECT || "web-highlighter"'));
+  assert(workflow.includes("VOID_PROJECT: ${{ vars.VOID_PROJECT || 'web-highlighter' }}"));
+  assert(!workflow.includes("vars.VOID_PROJECT != ''"));
+  assert(config.includes("vpr docs:build"));
+  assert(config.includes("vp exec void deploy"));
+  assert(!config.includes("tools/docs/deploy-to-void.mjs"));
+  assert(!config.includes("Skipping Void deploy"));
 });
 
 test("the packaged Wasm-GC engine exports real injected support", async () => {

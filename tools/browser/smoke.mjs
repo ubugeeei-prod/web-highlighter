@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { join, resolve } from "node:path";
-import { chromium, type BrowserContext, type Page } from "playwright";
+import { chromium } from "playwright";
 
 const gitlabBlobFixture = `<!doctype html>
 <html><body>
@@ -24,7 +24,7 @@ const gitlabDiffFixture = `<!doctype html>
 </body></html>`;
 
 /** Mirrors the nested React blob DOM GitHub ships: the LC node holds the text. */
-function githubLines(lines: readonly string[]): string {
+function githubLines(lines) {
   return lines
     .map(
       (line, index) =>
@@ -33,7 +33,7 @@ function githubLines(lines: readonly string[]): string {
     .join("\n");
 }
 
-function githubBlobPage(lines: readonly string[]): string {
+function githubBlobPage(lines) {
   return `<!doctype html>
 <html data-color-mode="dark"><body>
 <div class="react-code-file-contents">
@@ -118,9 +118,9 @@ const server = createServer((_request, response) => {
   response.end(gitlabBlobFixture);
 });
 const temporary = await mkdtemp(resolve(".browser-smoke-"));
-let context: BrowserContext | undefined;
+let context;
 
-async function assertDistinctTokenColor(page: Page, selector: string) {
+async function assertDistinctTokenColor(page, selector) {
   const colors = await page
     .locator(selector)
     .first()
@@ -135,7 +135,7 @@ async function assertDistinctTokenColor(page: Page, selector: string) {
 }
 
 try {
-  await new Promise<void>((resolveListen, reject) => {
+  await new Promise((resolveListen, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolveListen);
   });
@@ -145,17 +145,14 @@ try {
   const extension = join(temporary, "extension");
   await cp(resolve("dist/chromium"), extension, { recursive: true });
   const manifestPath = join(extension, "manifest.json");
-  const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
-    host_permissions: string[];
-    content_scripts: Array<{ matches: string[] }>;
-  };
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   manifest.host_permissions = [
     "http://127.0.0.1/*",
     "https://github.com/*",
     "https://gitlab.com/*",
     "https://discord.com/*",
   ];
-  manifest.content_scripts[0]!.matches = manifest.host_permissions;
+  manifest.content_scripts[0].matches = manifest.host_permissions;
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   context = await chromium.launchPersistentContext(join(temporary, "profile"), {
@@ -164,7 +161,7 @@ try {
     args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
   });
   const page = context.pages()[0] ?? (await context.newPage());
-  const startupErrors: string[] = [];
+  const startupErrors = [];
   page.on("console", (message) => {
     if (message.text().includes("Web Highlighter")) startupErrors.push(message.text());
   });
@@ -173,11 +170,10 @@ try {
     .locator(".wh-token")
     .first()
     .waitFor({ timeout: 10_000 })
-    .catch(async (cause: unknown) => {
+    .catch(async (cause) => {
       const pageState = await page.evaluate(() => ({
         booted: document.documentElement.dataset.whBooted ?? null,
-        language:
-          document.querySelector<HTMLElement>("[data-wh-language]")?.dataset.whLanguage ?? null,
+        language: document.querySelector("[data-wh-language]")?.dataset.whLanguage ?? null,
         tokens: document.querySelectorAll(".wh-token").length,
       }));
       const state = { ...pageState, startupErrors };
@@ -354,7 +350,7 @@ try {
 } finally {
   await context?.close();
   server.closeAllConnections();
-  await new Promise<void>((resolveClose, reject) =>
+  await new Promise((resolveClose, reject) =>
     server.close((error) => (error ? reject(error) : resolveClose())),
   );
   await rm(temporary, { recursive: true, force: true });

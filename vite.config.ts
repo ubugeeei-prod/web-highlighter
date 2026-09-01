@@ -7,7 +7,7 @@ import { defineConfig } from "vite-plus";
 const root = import.meta.dirname;
 const staging = resolve(root, ".vite-build");
 const dist = resolve(root, "dist");
-const wasm = resolve(root, "_build/wasm-gc/release/build/cmd/analyzer/analyzer.wasm");
+const wasm = resolve(root, "_build/wasm-gc/release/build/runtime/analyzer/analyzer.wasm");
 const targets = ["chromium", "firefox", "safari"] as const;
 const automaticHosts = [
   "https://github.com/*",
@@ -88,9 +88,9 @@ export default defineConfig({
     minify: true,
     rolldownOptions: {
       input: {
-        content: resolve(root, "extension/src/content.ts"),
-        engine: resolve(root, "extension/src/engine.ts"),
-        popup: resolve(root, "extension/src/popup.ts"),
+        content: resolve(root, "browsers/web/src/content.ts"),
+        engine: resolve(root, "browsers/web/src/engine.ts"),
+        popup: resolve(root, "browsers/web/src/popup.ts"),
       },
       output: { entryFileNames: "[name].js", chunkFileNames: "chunks/[name]-[hash].js" },
     },
@@ -111,12 +111,12 @@ export default defineConfig({
           const out = resolve(dist, target);
           mkdirSync(out, { recursive: true });
           cpSync(staging, out, { recursive: true });
-          cpSync(resolve(root, "extension/src/content.css"), resolve(out, "content.css"));
-          cpSync(resolve(root, "extension/static/popup.html"), resolve(out, "popup.html"));
-          cpSync(resolve(root, "extension/static/icons"), resolve(out, "icons"), {
+          cpSync(resolve(root, "browsers/web/src/content.css"), resolve(out, "content.css"));
+          cpSync(resolve(root, "assets/browser/popup.html"), resolve(out, "popup.html"));
+          cpSync(resolve(root, "assets/icons"), resolve(out, "icons"), {
             recursive: true,
           });
-          cpSync(resolve(root, "extension/static/_locales"), resolve(out, "_locales"), {
+          cpSync(resolve(root, "assets/browser/_locales"), resolve(out, "_locales"), {
             recursive: true,
           });
           cpSync(wasm, resolve(out, "analyzer.wasm"));
@@ -141,61 +141,73 @@ export default defineConfig({
       check: "vp check",
       build: { command: "vp build", cache: false },
       test: "vp test",
-      ready: {
-        command: ["vpr build", "node tools/scripts/install-chrome-extension.mjs"],
+      "browser:ready": {
+        command: ["vpr build", "node tools/browser/install-chrome-extension.mjs"],
         cache: false,
       },
-      "docs-build": "vp exec vite build --config docs/vite.config.mjs",
-      "docs-dev": {
+      ready: {
+        command: "vpr browser:ready",
+        cache: false,
+      },
+      "docs:build": "vp exec vite build --config docs/vite.config.mjs",
+      "docs:dev": {
         command: "vp exec vite --config docs/vite.config.mjs --host 127.0.0.1",
         cache: false,
       },
-      "docs-preview": {
+      "docs:preview": {
         command: "vp exec vite preview --config docs/vite.config.mjs",
         cache: false,
       },
-      "docs-deploy": {
-        command: "vp exec node tools/scripts/deploy-docs-to-void.mjs",
+      "docs:deploy": {
+        command: [
+          "vpr docs:build",
+          "vp exec void deploy --project ${VOID_PROJECT:-web-highlighter} --dir dist/docs",
+        ],
         cache: false,
       },
-      "moon-check": "moon check --target wasm-gc --deny-warn",
-      "moon-prove": "bash tools/scripts/moon-prove.sh",
-      "moon-test": "moon test --target wasm-gc --deny-warn",
-      bench: "node tools/scripts/benchmark.ts",
-      "browser-smoke": {
-        command: "node --experimental-strip-types tools/scripts/browser-smoke.ts",
+      "moon:check": "moon check --target wasm-gc --deny-warn",
+      "moon:prove": "bash tools/moon/prove.sh",
+      "moon:test": "moon test --target wasm-gc --deny-warn",
+      "moon:fuzz": "moon test --target wasm-gc --deny-warn --filter '*fuzz*'",
+      "tools:bench": "node tools/bench/runtime-budget.mjs",
+      "browser:smoke": {
+        command: "node tools/browser/smoke.mjs",
         cache: false,
       },
-      "firefox-lint": "vp exec addons-linter dist/firefox --warnings-as-errors",
-      "firefox-sign": { command: "vp exec web-ext sign", cache: false },
-      "playwright-install-chromium": {
+      "firefox:lint": "vp exec addons-linter dist/firefox --warnings-as-errors",
+      "firefox:sign": { command: "vp exec web-ext sign", cache: false },
+      "playwright:install:chromium": {
         command: "vp exec playwright install --with-deps --no-shell chromium",
         cache: false,
       },
-      "actions-lint": "actionlint",
-      "safari-package": { command: "xcrun safari-web-extension-packager", cache: false },
-      "store-publish": { command: "node tools/scripts/store-publish.mjs", cache: false },
-      "store-publish-test": "node --test tools/scripts/store-publish.test.mjs",
-      "chrome-ready-test": "node --test tools/scripts/install-chrome-extension.test.mjs",
+      "actions:lint": "actionlint",
+      "safari:package": { command: "xcrun safari-web-extension-packager", cache: false },
+      "publish:browser-store": {
+        command: "node tools/publishing/submit-browser-store.mjs",
+        cache: false,
+      },
+      "publish:browser-store:test": "node --test tools/publishing/submit-browser-store.test.mjs",
+      "browser:install:test": "node --test tools/browser/install-chrome-extension.test.mjs",
       verify: [
-        "vpr moon-check",
-        "vpr moon-prove",
-        "vpr moon-test",
+        "vpr moon:check",
+        "vpr moon:prove",
+        "vpr moon:test",
+        "vpr moon:fuzz",
         "vpr check",
-        "vpr actions-lint",
-        "vpr package",
-        "vpr firefox-lint",
-        "vpr store-publish-test",
-        "vpr chrome-ready-test",
+        "vpr actions:lint",
+        "vpr release:package",
+        "vpr firefox:lint",
+        "vpr publish:browser-store:test",
+        "vpr browser:install:test",
         "vpr test",
-        "vpr bench",
+        "vpr tools:bench",
       ],
-      release: { command: "node tools/scripts/release.mjs", cache: false },
-      package: {
+      release: { command: "node tools/release/bump-and-tag.mjs", cache: false },
+      "release:package": {
         command: [
           "vpr build",
-          "node tools/scripts/package.mjs",
-          "node --test tools/scripts/package.test.mjs",
+          "node tools/release/package.mjs",
+          "node --test tools/release/package.test.mjs",
         ],
         cache: false,
       },

@@ -1,15 +1,15 @@
-# Store publishing
+# Browser Store Publishing
 
 Store delivery has two separate trust boundaries:
 
 1. Every pull request and release builds the same deterministic, checksummed browser archives without store credentials.
-2. `.github/workflows/store-publish.yml` accepts an existing final GitHub Release, verifies its checksum, waits for approval in the `store-publish` environment, and submits only the selected store.
+2. `.github/workflows/browser-store-publish.yml` accepts an existing final GitHub Release, verifies its checksum, waits for approval in the existing `store-publish` environment, and submits only the selected browser store.
 
 The repository environment is already configured with `@ubugeeei` as its required reviewer and a custom deployment policy that permits `main` only. Do not move store credentials to repository-wide secrets: keeping them in this environment prevents unapproved jobs from reading them.
 
 ## Required environment values
 
-Open **Settings → Environments → store-publish**. Add the following values after completing each store's one-time setup.
+Open **Settings -> Environments -> store-publish**. Add the following values after completing each store's one-time setup.
 
 | Store   | Kind     | Name                             | Value                                                                                       |
 | ------- | -------- | -------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Open **Settings → Environments → store-publish**. Add the following values a
 
 ## Chrome Web Store: tokenless OIDC
 
-Chrome requires a developer account with 2-step verification and an existing item whose **Store listing** and **Privacy** tabs are complete. Create the item and perform its initial dashboard setup using `web-highlighter-vVERSION-chrome-web-store.zip`; the API then handles subsequent package uploads and review submissions. Use the canonical copy in `store/listing.md`, the declarations in `PRIVACY.md`, and the manual checks in `store/reviewer-notes.md`.
+Chrome requires a developer account with 2-step verification and an existing item whose **Store listing** and **Privacy** tabs are complete. Create the item and perform its initial dashboard setup using `web-highlighter-vVERSION-chrome-web-store.zip`; the API then handles subsequent package uploads and review submissions. Use the canonical copy in `publishing/browser-listings/listing.md`, the declarations in `PRIVACY.md`, and the manual checks in `publishing/browser-listings/reviewer-notes.md`.
 
 Configure Google Cloud without creating a service-account key:
 
@@ -69,7 +69,7 @@ References: [Chrome Web Store API setup](https://developer.chrome.com/docs/webst
 
 1. Sign in to [AMO Developer Hub](https://addons.mozilla.org/developers/) and create API credentials.
 2. Store the JWT issuer and secret under the two Firefox environment secret names above.
-3. Confirm `store/amo-metadata.json` and the Firefox listing copy before the first submission.
+3. Confirm `publishing/browser-listings/amo-metadata.json` and the Firefox listing copy before the first submission.
 
 The pinned `web-ext` submission command uses the packaged Gecko ID, the `listed` channel, the canonical AMO metadata, and the complete human-readable source ZIP. It can create the listing for the first listed version and add later versions. The job exits after AMO accepts the submission; AMO review continues asynchronously.
 
@@ -114,7 +114,7 @@ The atomic tag push starts the same `.github/workflows/release.yml`. In either p
 
 If publication was interrupted after the tag or GitHub Release was created, rerun **Release** on `main` with the existing tag in the optional `tag` input. This recovery mode checks out the immutable tag and succeeds only when a fresh verified build matches every published asset byte-for-byte.
 
-Then open **Actions → Store publish → Run workflow** on `main`:
+Then open **Actions -> Browser Store Publish -> Run workflow** on `main`:
 
 1. Enter the exact final tag, such as `v0.2.0`.
 2. Choose one store or `all`.
@@ -122,4 +122,4 @@ Then open **Actions → Store publish → Run workflow** on `main`:
 4. Review the pending deployment, inspect the selected tag, and approve `store-publish`.
 5. Follow the store dashboard until its review is approved. A green workflow means the store accepted the submission, not that human review is complete.
 
-For a dry build with no credentials or external writes, run `vpr package` locally or download `store-submission-artifacts` from any successful CI run.
+For a dry build with no credentials or external writes, run `vpr release:package` locally or download `store-submission-artifacts` from any successful CI run.

@@ -49,10 +49,10 @@ jobs:
         run: nix develop --command vpr install
 
       - name: Check MoonBit source
-        run: nix develop --command vpr moon-check
+        run: nix develop --command vpr moon:check
 
-      - name: Prove MoonBit contracts
-        run: nix develop --command vpr moon-prove
+      - name: Prove MoonBit invariants
+        run: nix develop --command vpr moon:prove
 
       - name: Check formatting, lint, and types
         run: nix develop --command vpr check
@@ -74,7 +74,10 @@ jobs:
         run: nix develop --command vpr install
 
       - name: Run MoonBit tests
-        run: nix develop --command vpr moon-test
+        run: nix develop --command vpr moon:test
+
+      - name: Run MoonBit fuzz checks
+        run: nix develop --command vpr moon:fuzz
 
   browser-tests:
     name: Browser distributions
@@ -96,19 +99,19 @@ jobs:
         run: nix develop --command vpr build
 
       - name: Test Chrome ready launcher
-        run: nix develop --command vpr chrome-ready-test
+        run: nix develop --command vpr browser:install:test
 
       - name: Validate Firefox submission
-        run: nix develop --command vpr firefox-lint
+        run: nix develop --command vpr firefox:lint
 
       - name: Test DOM integration and distributions
         run: nix develop --command vpr test --run
 
       - name: Install pinned Chromium
-        run: nix develop --command vpr playwright-install-chromium
+        run: nix develop --command vpr playwright:install:chromium
 
       - name: Smoke test the packaged extension
-        run: nix develop --command vpr browser-smoke
+        run: nix develop --command vpr browser:smoke
 
       - name: Upload unpacked extensions
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -138,10 +141,10 @@ jobs:
         run: nix develop --command vpr build
 
       - name: Enforce size, startup, and throughput budgets
-        run: nix develop --command vpr bench
+        run: nix develop --command vpr tools:bench
 
   store-artifacts:
-    name: Store artifacts
+    name: Browser store artifacts
     runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
@@ -157,7 +160,7 @@ jobs:
         run: nix develop --command vpr install
 
       - name: Build and verify store archives
-        run: nix develop --command vpr package
+        run: nix develop --command vpr release:package
 
       - name: Upload store submission artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

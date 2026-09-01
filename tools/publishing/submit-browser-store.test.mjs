@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { edgeOperationUrl, publishChrome, publishEdge } from "./store-publish.mjs";
+import { edgeOperationUrl, publishChrome, publishEdge } from "./submit-browser-store.mjs";
 
 const archive = readFileSync(new URL("../../LICENSE", import.meta.url));
 const noDelay = async () => {};
