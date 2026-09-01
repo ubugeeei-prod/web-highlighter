@@ -346,10 +346,10 @@ try {
     await page
       .locator("html")
       .evaluate((element) => element.style.getPropertyValue("--wh-keyword")),
-    "#9c1c1c",
+    "#ff8f87",
   );
   console.log(
-    "Chromium covered GitHub MoonBit #| strings, vpkg/Veryl blobs, GitHub/GitLab diffs, Discord recovery, and the Paper theme.",
+    "Chromium covered GitHub MoonBit #| strings, vpkg/Veryl blobs, GitHub/GitLab diffs, Discord recovery, and Paper-on-dark contrast.",
   );
 } finally {
   await context?.close();

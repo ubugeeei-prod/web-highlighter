@@ -4,6 +4,7 @@ import {
   "ubugeeei-prod/web_highlighter/src/model_contract",
   "ubugeeei-prod/web_highlighter/src/scanner_contract",
   "ubugeeei-prod/web_highlighter/src/sweep_contract",
+  "ubugeeei-prod/web_highlighter/src/theme_contract",
 }
 
 supported_targets = "wasm-gc"

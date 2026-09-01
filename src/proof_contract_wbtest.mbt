@@ -30,6 +30,10 @@ test "verified cursor and scanner helpers accept only bounded shapes" {
   assert_true(@detection_contract.score_is_dominant(6, 2, 3, 2))
   assert_true(!@detection_contract.score_is_dominant(2, 0, 3, 2))
   assert_true(!@detection_contract.score_is_dominant(4, 3, 3, 2))
+  assert_true(!@theme_contract.theme_needs_surface_fallback_flag(1, 1))
+  assert_true(@theme_contract.theme_needs_surface_fallback_flag(0, 1))
+  assert_eq(@theme_contract.resolved_surface_dark_flag(0, 1), 1)
+  assert_eq(@theme_contract.resolved_surface_dark_flag(1, 0), 0)
 }
 
 ///|

@@ -153,6 +153,7 @@ test("the packaged Wasm-GC engine exports real injected support", async () => {
   );
   const exports = instance.exports as unknown as {
     analyze_request(source: string, hint: string, filename: string): string;
+    theme_wire(theme: string, dark: boolean): string;
     themes_wire(): string;
   };
   const result = exports.analyze_request("fn greet() {}\ngreet()", "ush", "example.ush");
@@ -163,4 +164,12 @@ test("the packaged Wasm-GC engine exports real injected support", async () => {
     exports.themes_wire(),
     "T\tadaptive\tAdaptive\t0\nT\tmidnight\tMidnight\t1\nT\tpaper\tPaper\t0\n",
   );
+  const adaptiveOnDark = exports.theme_wire("adaptive", true);
+  assert(adaptiveOnDark.startsWith("M\tadaptive\n"));
+  assert(adaptiveOnDark.includes("C\tforeground\t#f4f7fb\n"));
+  assert(adaptiveOnDark.includes("C\tkeyword\t#ff8f87\n"));
+  const paperOnDark = exports.theme_wire("paper", true);
+  assert(paperOnDark.startsWith("M\tpaper\n"));
+  assert(paperOnDark.includes("C\tforeground\t#f4f7fb\n"));
+  assert(!paperOnDark.includes("#252525"));
 });

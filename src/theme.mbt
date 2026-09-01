@@ -140,7 +140,111 @@ fn select_theme(
       return candidate
     }
   }
+  surface_default_theme(catalog, prefers_dark)
+}
+
+///|
+/// Returns the built-in palette for the page surface polarity.
+///
+/// This is the final readability guard: add-on catalogs may be incomplete, but
+/// the browser must still receive a palette whose foreground roles are designed
+/// for the actual rendered background.
+fn builtin_surface_theme(prefers_dark : Bool) -> Theme {
+  let catalog = builtin_themes()
+  for candidate in catalog {
+    if candidate.dark == prefers_dark {
+      return candidate
+    }
+  }
   catalog[0]
+}
+
+///|
+/// Finds the safest catalog theme for the rendered page surface.
+///
+/// The named built-ins are preferred because they are the audited palettes used
+/// by the fallback stylesheet. If a composed catalog replaces them, the first
+/// theme with matching polarity is still better than emitting a light palette
+/// onto a dark code block.
+fn surface_default_theme(catalog : Array[Theme], prefers_dark : Bool) -> Theme {
+  let wanted = if prefers_dark { "midnight" } else { "adaptive" }
+  for candidate in catalog {
+    if candidate.id == wanted {
+      return candidate
+    }
+  }
+  for candidate in catalog {
+    if candidate.dark == prefers_dark {
+      return candidate
+    }
+  }
+  builtin_surface_theme(prefers_dark)
+}
+
+///|
+/// Converts the executable theme polarity into the proof-side flag domain.
+fn surface_flag(dark : Bool) -> Int {
+  if dark { 1 } else { 0 }
+}
+
+///|
+/// Decides the proof-backed mismatch relation for two executable polarities.
+fn theme_needs_surface_fallback(
+  selected_dark : Bool,
+  prefers_dark : Bool,
+) -> Bool {
+  @theme_contract.theme_needs_surface_fallback_flag(
+    surface_flag(selected_dark), surface_flag(prefers_dark),
+  )
+}
+
+///|
+/// Converts the proof-backed emitted polarity back to the Theme representation.
+fn resolved_surface_dark(selected_dark : Bool, prefers_dark : Bool) -> Bool {
+  @theme_contract.resolved_surface_dark_flag(
+    surface_flag(selected_dark), surface_flag(prefers_dark),
+  ) ==
+  1
+}
+
+///|
+/// Resolves a selected theme into colors that match the rendered surface.
+///
+/// Theme `dark` is a contrast contract, not just popup metadata. When a user
+/// explicitly selects a light add-on such as Paper on Discord/GitHub dark mode,
+/// keeping the selected id is useful, but emitting its raw dark-on-light colors
+/// is not. In that mismatch case the semantic role colors are borrowed from the
+/// audited surface-default palette so code remains readable without changing
+/// layout or injecting backgrounds into the host page.
+fn readable_theme_for_surface(
+  catalog : Array[Theme],
+  selected : Theme,
+  prefers_dark : Bool,
+) -> Theme {
+  if !theme_needs_surface_fallback(selected.dark, prefers_dark) {
+    selected
+  } else {
+    let fallback = surface_default_theme(catalog, prefers_dark)
+    theme(
+      id=selected.id,
+      name=selected.name,
+      dark=resolved_surface_dark(selected.dark, prefers_dark),
+      foreground=fallback.foreground,
+      background=fallback.background,
+      selection=fallback.selection,
+      keyword=fallback.keyword,
+      type_=fallback.type_,
+      constant=fallback.constant,
+      string=fallback.string,
+      number=fallback.number,
+      comment=fallback.comment,
+      operator=fallback.operator,
+      function_=fallback.function_,
+      variable=fallback.variable,
+      property=fallback.property,
+      punctuation=fallback.punctuation,
+    )
+  }
 }
 
 ///|
@@ -151,7 +255,9 @@ pub fn theme_catalog_wire(
   prefers_dark : Bool,
 ) -> String {
   let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
-  let selected = select_theme(available, requested, prefers_dark)
+  let selected = readable_theme_for_surface(
+    available, select_theme(available, requested, prefers_dark), prefers_dark,
+  )
   let output = StringBuilder()
   output..write_string("M\t")..write_string(selected.id).write_char('\n')
   theme_color(output, "foreground", selected.foreground)

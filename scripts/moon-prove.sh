@@ -41,6 +41,7 @@ targets=(
   src/model_contract
   src/detection_contract
   src/sweep_contract
+  src/theme_contract
 )
 
 if [[ $# -gt 0 ]]; then

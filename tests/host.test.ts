@@ -648,6 +648,13 @@ test("automatic theme mode follows page background before OS preference", () => 
   github.document.documentElement.setAttribute("data-color-mode", "dark");
   assert.equal(documentPrefersDark(github.document, false), true);
 
+  const embeddedDark = testWindow("https://example.com/docs");
+  embeddedDark.document.documentElement.setAttribute("data-color-mode", "light");
+  embeddedDark.document.body.style.backgroundColor = "rgb(255, 255, 255)";
+  embeddedDark.document.body.innerHTML =
+    '<pre style="background-color: rgb(9, 12, 13)"><code class="language-ush">fn greet() {}</code></pre>';
+  assert.equal(documentPrefersDark(embeddedDark.document, false), true);
+
   const light = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
   light.document.body.style.backgroundColor = "rgb(255, 255, 255)";
   light.document.body.innerHTML = '<pre><code class="language-ush">fn greet() {}</code></pre>';

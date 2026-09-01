@@ -45,7 +45,7 @@ between two add-ons must leave the block untouched.
 
 ## Theme contract
 
-`theme(...)` declares colors for stable semantic roles: foreground, background, selection, keyword, type, constant, string, number, comment, operator, function, variable, property, and punctuation. Theme selection, fallback, and the popup catalog all come from the composed MoonBit values. The host only installs the resulting CSS variables.
+`theme(...)` declares colors for stable semantic roles: foreground, background, selection, keyword, type, constant, string, number, comment, operator, function, variable, property, and punctuation. The `dark` flag is a contrast contract for the rendered code surface, not only popup metadata. If a light add-on theme is explicitly selected on a dark GitHub, Discord, or GitLab code block, the MoonBit resolver preserves the selected theme id but emits the audited dark role palette instead of dark-on-dark colors. Theme selection, fallback, and the popup catalog all come from the composed MoonBit values. The host only installs the resulting CSS variables.
 
 ## Quality checklist
 

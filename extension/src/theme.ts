@@ -73,19 +73,30 @@ function darkThemeHint(document: Document): boolean | undefined {
   return undefined;
 }
 
-export function documentPrefersDark(document: Document, fallback: boolean): boolean {
-  const hinted = darkThemeHint(document);
-  if (hinted !== undefined) return hinted;
+function codeSurfacePrefersDark(document: Document): boolean | undefined {
   for (const selector of [
-    "html",
     '[data-testid="code-cell"]',
-    "td.blob-code",
     "[id^='LC'].line",
     gitLabDiffLineSelector,
     "pre code",
     "pre",
-    "body",
+    '[class*="codeBlockText"]',
+    '[class*="codeBlockCode"]',
+    '[class*="codeContainer"]',
   ]) {
+    const element = document.querySelector<HTMLElement>(selector);
+    const background = element ? visibleBackground(element) : undefined;
+    if (background) return luminance(background) < 0.28;
+  }
+  return undefined;
+}
+
+export function documentPrefersDark(document: Document, fallback: boolean): boolean {
+  const surfaced = codeSurfacePrefersDark(document);
+  if (surfaced !== undefined) return surfaced;
+  const hinted = darkThemeHint(document);
+  if (hinted !== undefined) return hinted;
+  for (const selector of ["html", "body"]) {
     const element = document.querySelector<HTMLElement>(selector);
     const background = element ? visibleBackground(element) : undefined;
     if (background) return luminance(background) < 0.28;

@@ -1,0 +1,40 @@
+///|
+/// Encodes a light or dark surface polarity as a small integer.
+pub predicate surface_flag(flag : Int) {
+  (flag == 0) || (flag == 1)
+}
+
+///|
+/// A selected palette can be emitted raw only when its polarity matches the
+/// rendered code surface.
+pub predicate surface_palette_matches(
+  selected_dark : Int,
+  prefers_dark : Int,
+) {
+  surface_flag(selected_dark) &&
+  surface_flag(prefers_dark) &&
+  (selected_dark == prefers_dark)
+}
+
+///|
+/// A fallback palette is required exactly for light-on-dark or dark-on-light
+/// theme mismatches.
+pub predicate surface_palette_fallback_needed(
+  selected_dark : Int,
+  prefers_dark : Int,
+) {
+  surface_flag(selected_dark) &&
+  surface_flag(prefers_dark) &&
+  !(selected_dark == prefers_dark)
+}
+
+///|
+/// The emitted theme polarity must match the rendered code surface.
+pub predicate emitted_palette_matches_surface(
+  emitted_dark : Int,
+  prefers_dark : Int,
+) {
+  surface_flag(emitted_dark) &&
+  surface_flag(prefers_dark) &&
+  (emitted_dark == prefers_dark)
+}

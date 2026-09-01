@@ -104,7 +104,7 @@ test "add-on validation reports shadowed language and theme identities" {
 ///|
 test "an empty explicit theme catalog falls back safely" {
   assert_true(
-    theme_catalog_wire([], "missing", true).has_prefix("M\tadaptive\n"),
+    theme_catalog_wire([], "missing", true).has_prefix("M\tmidnight\n"),
   )
 }
 
