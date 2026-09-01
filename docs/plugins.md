@@ -23,6 +23,98 @@ the contribution to `configured_addons` in `runtime/analyzer/main.mbt`. Rebuild 
 `nix develop -c vpr ready`. No remote registry or extension-store upload is
 needed for a private language.
 
+## Worked example
+
+Create a normal MoonBit package for the local language:
+
+```moonbit
+import {
+  "ubugeeei-prod/web_highlighter/src" @highlight,
+}
+
+supported_targets = "wasm-gc"
+```
+
+Then export a contribution from `local_addons/effects/addon.mbt`:
+
+```moonbit
+pub fn contribution() -> @highlight.Addon {
+  @highlight.addon(
+    languages=[
+      @highlight.make_language(
+        id="effect-script",
+        name="Effect Script",
+        aliases=["effect", "effects"],
+        extensions=["effect"],
+        filenames=["effects.pkg"],
+        signatures=[
+          @highlight.signature("effect ", 3),
+          @highlight.signature("handler ", 2),
+          @highlight.signature("capability ", 2),
+        ],
+        keywords="capability do effect else handle handler if let perform return with",
+        types="Bool Bytes Capability Error Result String Unit",
+        constants="false none true",
+        declarations=[
+          ("effect", @highlight.FunctionSymbol),
+          ("handler", @highlight.FunctionSymbol),
+          ("capability", @highlight.TypeSymbol),
+          ("let", @highlight.VariableSymbol),
+        ],
+        line_comments=["//"],
+        block_comments=[@highlight.delimiter("/*", "*/")],
+        strings=[@highlight.quoted("\""), @highlight.quoted("'")],
+        operator_chars="+-*/=<>!&|?.:",
+        identifier_extra="$",
+        functions="emit log retry",
+        properties="ctx std",
+      ),
+    ],
+    themes=[],
+  )
+}
+```
+
+Select that package in the analyzer package:
+
+```moonbit
+import {
+  "ubugeeei-prod/web_highlighter/src" @core,
+  "ubugeeei-prod/web_highlighter/local_addons/effects",
+  "ubugeeei-prod/web_highlighter/local_addons/paper",
+  "ubugeeei-prod/web_highlighter/local_addons/ush",
+}
+```
+
+Add the contribution to the explicit registry:
+
+```moonbit
+let configured_addons : Array[@core.Addon] = [
+  @ush.contribution(),
+  @paper.contribution(),
+  @effects.contribution(),
+]
+```
+
+Keep a local conformance test beside the add-on:
+
+```moonbit
+test "effect script validates and detects by extension" {
+  let contribution = contribution()
+  assert_eq(@highlight.validate_addons([contribution]), [])
+
+  let catalog = @highlight.addon_languages([contribution])
+  let result = @highlight.analyze_catalog_request(
+    catalog,
+    "let cached = 1",
+    "",
+    "service.effect",
+  )
+
+  assert_true(result.has_prefix("L\teffect-script\n"))
+}
+```
+
 ## Language Shape
 
 `language(...)` and its compact convenience constructor `make_language(...)` take every parameter as a labeled argument, so an add-on reads as a table rather than as fifteen positional values. Both accept:

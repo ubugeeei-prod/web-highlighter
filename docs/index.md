@@ -26,6 +26,38 @@ surfaces and applies the token plan returned by Wasm.
 - Veryl
 - Idris 2, Mojo, Gleam, Roc, Typst, Nushell, Lean 4, Koka, Nickel, Pkl, and Uiua
 
+## Sample code
+
+These are the kinds of fenced blocks Web Highlighter is built to recover on
+services that would otherwise show plain text.
+
+```moonbit
+pub fn theme_wire(requested : String, prefers_dark : Bool) -> String {
+  @core.theme_catalog_wire(theme_catalog, requested, prefers_dark)
+}
+```
+
+```veryl
+module DataSelector #(param Width: u32 = 8) (
+  i_clk: input clock,
+  i_rst: input reset,
+  i_data: input logic<Width>,
+  o_data: output logic<Width>,
+) {
+  always_ff (i_clk, i_rst) {
+    if_reset {
+      o_data = 0;
+    } else {
+      o_data = i_data;
+    }
+  }
+}
+```
+
+```ush-shell
+std::env::get("HOME") | len | print
+```
+
 ## Engineering shape
 
 - MoonBit owns detection, compiled lexical indexes, scanning, symbol discovery,
