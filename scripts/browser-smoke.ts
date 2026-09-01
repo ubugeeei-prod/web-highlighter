@@ -48,6 +48,12 @@ const githubBlobFixture = githubBlobPage([
   'in if enabled then { status = "enabled"; }',
 ]);
 
+const githubMoonBitPipeStringFixture = githubBlobPage([
+  "let message =",
+  "#| String predicate proof_require stay prose",
+  "pub fn main { message }",
+]);
+
 const githubVpkgFixture = githubBlobPage([
   "name = @vibe/ast",
   "export enum TypeExpr { TyName(String) }",
@@ -174,11 +180,13 @@ try {
     const url = route.request().url();
     const body = url.includes("/pull/")
       ? githubDiffFixture
-      : url.endsWith("/index.vpkg")
-        ? githubVpkgFixture
-        : url.endsWith("/a.veryl")
-          ? githubVerylFixture
-          : githubBlobFixture;
+      : url.endsWith("/pipe-string.mbt")
+        ? githubMoonBitPipeStringFixture
+        : url.endsWith("/index.vpkg")
+          ? githubVpkgFixture
+          : url.endsWith("/a.veryl")
+            ? githubVerylFixture
+            : githubBlobFixture;
     return route.fulfill({
       contentType: "text/html; charset=utf-8",
       body,
@@ -213,6 +221,21 @@ try {
   assert.equal(await page.locator("#LC1 .wh-keyword").first().textContent(), "let");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
   await assertDistinctTokenColor(page, "#LC1 .wh-keyword");
+
+  await page.goto("https://github.com/moonbitlang/core/blob/main/pipe-string.mbt");
+  await page.locator("#LC2 .wh-string").first().waitFor({ timeout: 10_000 });
+  assert.equal(
+    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
+    "moonbit",
+  );
+  assert.equal(
+    await page.locator("#LC2 .wh-string").first().textContent(),
+    "#| String predicate proof_require stay prose",
+  );
+  assert.equal(await page.locator("#LC2 .wh-keyword").count(), 0);
+  assert.equal(await page.locator("#LC2 .wh-type").count(), 0);
+  assert.equal(await page.locator("#LC3 .wh-keyword").first().textContent(), "pub");
+  await assertDistinctTokenColor(page, "#LC2 .wh-string");
 
   await page.goto("https://github.com/mizchi/vibe-lang/blob/main/lib/%40vibe/ast/index.vpkg");
   await page.locator("#LC2 .wh-keyword").first().waitFor({ timeout: 10_000 });
@@ -308,7 +331,7 @@ try {
     "#9c1c1c",
   );
   console.log(
-    "Chromium covered GitHub vpkg/Veryl blobs, GitHub/GitLab diffs, Discord recovery, and the Paper theme.",
+    "Chromium covered GitHub MoonBit #| strings, vpkg/Veryl blobs, GitHub/GitLab diffs, Discord recovery, and the Paper theme.",
   );
 } finally {
   await context?.close();

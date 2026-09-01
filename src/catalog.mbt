@@ -95,6 +95,14 @@ fn c_strings() -> Array[Delimiter] {
 }
 
 ///|
+/// MoonBit's `#|` multi-line string syntax is line-prefixed. Treat each
+/// prefixed line as one string region so prose inside snapshots and long text
+/// literals cannot leak keyword or type tokens.
+fn moonbit_strings() -> Array[Delimiter] {
+  [delimiter("#|", "\n"), quoted("\""), quoted("'")]
+}
+
+///|
 /// Returns the built-in injected-language support catalog.
 ///
 /// These entries target languages whose adoption by every upstream service is
