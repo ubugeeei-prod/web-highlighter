@@ -108,6 +108,24 @@ test("the content stylesheet has visible startup fallback colors", async () => {
   assert(stylesheet.includes(".wh-keyword"));
 });
 
+test("the extension popup stays flat and supports dark mode", async () => {
+  const html = await readFile(new URL("../dist/chromium/popup.html", import.meta.url), "utf8");
+  const popup = html.toLowerCase();
+  for (const banned of [
+    "linear-gradient",
+    "radial-gradient",
+    "conic-gradient",
+    "box-shadow",
+    "text-shadow",
+    "drop-shadow",
+    "backdrop-filter",
+  ])
+    assert(!popup.includes(banned), `popup must not use ${banned}`);
+  assert(popup.includes("@media (prefers-color-scheme: dark)"));
+  assert(popup.includes("--surface-muted"));
+  assert(popup.includes("sample-strip"));
+});
+
 test("the packaged Wasm-GC engine exports real injected support", async () => {
   const wasm = await readFile(new URL("../dist/chromium/analyzer.wasm", import.meta.url));
   const { instance } = await WebAssembly.instantiate(
