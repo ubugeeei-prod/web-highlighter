@@ -62,18 +62,23 @@ const ignoredLanguageClasses = new Set([
   "line",
   "line_content",
   "nohighlight",
+  "plain",
+  "plaintext",
   "react-code-line-contents",
   "react-code-text",
   "react-file-line",
   "shiki",
+  "text",
+  "txt",
   "wh-token",
 ]);
 
 function classHint(value: string): string {
-  const explicit = value.match(languageClass)?.[1];
-  if (explicit) return explicit.toLowerCase();
+  const explicit = value.match(languageClass)?.[1]?.toLowerCase();
+  if (explicit && !ignoredLanguageClasses.has(explicit)) return explicit;
   for (const token of value.split(/\s+/u)) {
     const normalized = token.trim().toLowerCase();
+    if (/^(?:language|lang)-/u.test(normalized)) continue;
     if (/^[a-z][a-z0-9+.#-]{1,31}$/u.test(normalized) && !ignoredLanguageClasses.has(normalized))
       return normalized;
   }
@@ -144,7 +149,11 @@ function gitHubCodeTarget(element: HTMLElement): HTMLElement {
   );
 }
 
-function makeSurface(elements: HTMLElement[], filename = ""): Surface | undefined {
+function makeSurface(
+  elements: HTMLElement[],
+  filename = "",
+  fallbackHint = "",
+): Surface | undefined {
   if (!elements.length) return undefined;
   const segments: Segment[] = [];
   let source = "";
@@ -157,7 +166,13 @@ function makeSurface(elements: HTMLElement[], filename = ""): Surface | undefine
   }
   const key = elements[0];
   if (!key || !source.trim()) return undefined;
-  return { key, source, segments, hint: elements.map(hintOf).find(Boolean) ?? "", filename };
+  return {
+    key,
+    source,
+    segments,
+    hint: elements.map(hintOf).find(Boolean) ?? fallbackHint,
+    filename,
+  };
 }
 
 function firstSurfaceBySelector(
@@ -243,6 +258,18 @@ function gitLabDiffSurfaces(document: Document): Surface[] {
     .filter((surface): surface is Surface => Boolean(surface));
 }
 
+function discordVisibleLanguage(block: HTMLElement): string {
+  for (const selector of [
+    '[class*="codeLanguage"]',
+    '[class*="codeLang"]',
+    '[class*="languageName"]',
+  ]) {
+    const value = block.querySelector<HTMLElement>(selector)?.textContent?.trim();
+    if (value && /^[\w+.#-]{1,32}$/u.test(value)) return value.toLowerCase();
+  }
+  return "";
+}
+
 function discordSurfaces(document: Document): Surface[] {
   const result: Surface[] = [];
   const seen = new Set<HTMLElement>();
@@ -258,7 +285,7 @@ function discordSurfaces(document: Document): Surface[] {
       if (!block) continue;
       const text = element.textContent ?? "";
       if (!element.closest("pre") && !text.includes("\n") && text.length < 80) continue;
-      const surface = makeSurface([element]);
+      const surface = makeSurface([element], "", hintOf(block) || discordVisibleLanguage(block));
       if (surface) result.push(surface);
     }
   }

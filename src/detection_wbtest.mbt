@@ -267,8 +267,44 @@ test "weighted signatures recover discarded fence metadata" {
     catalog, "///|\npub predicate bounded(x : Int) { x >= 0 }", "", "",
   ).unwrap()
   assert_eq(moonbit_plan.reason, WeightedEvidence)
-  assert_eq(moonbit_plan.score, 6)
+  assert_eq(moonbit_plan.score, 8)
   assert_eq(moonbit_plan.runner_up, 0)
+}
+
+///|
+test "Discord unlabelled MoonBit snippets recover from typed function evidence" {
+  let source = "pub fn shift_hex(hex : String, amount : Int, shift : Shift) -> String {\n  let digits = strip_hash(hex)\n  if digits.length() != 6 {\n    return hex\n  }\n  let mut out = \"#\"\n  out\n}"
+  let plan = detect_compiled_plan(compile_catalog(builtin_languages()), source, "", "").unwrap()
+  assert_eq(plan.language.language.id, "moonbit")
+  assert_eq(plan.reason, WeightedEvidence)
+  assert_eq(plan.score, 6)
+  assert_eq(plan.runner_up, 2)
+  assert_true(
+    @proof.score_is_dominant(
+      plan.score, plan.runner_up, inference_threshold(), inference_margin(),
+    ),
+  )
+}
+
+///|
+test "Discord unlabelled Vibe package snippets prefer Vibe over MoonBit" {
+  let source = "name = @vibe/random\nversion = 0.0.1\ndescription =\n  #|@vibe/random keeps state explicit\ndeps = {}\n\n// import @vibe/random { ... } for scoped imports\nfn seed(seed_value: Int) -> Int\nfn next(state: Int) -> (Int, Int)"
+  let plan = detect_compiled_plan(compile_catalog(builtin_languages()), source, "", "").unwrap()
+  assert_eq(plan.language.language.id, "vibe")
+  assert_eq(plan.reason, WeightedEvidence)
+  assert_eq(plan.score, 13)
+  assert_eq(plan.runner_up, 1)
+  assert_true(
+    @proof.score_is_dominant(
+      plan.score, plan.runner_up, inference_threshold(), inference_margin(),
+    ),
+  )
+}
+
+///|
+test "Rust-shaped snippets without MoonBit spacing stay untouched" {
+  let source = "pub fn shift_hex(hex: String, amount: i32) -> String {\n  let mut out = String::new();\n  out\n}"
+  assert_true(detect_language(builtin_languages(), source, "", "") is None)
 }
 
 ///|
