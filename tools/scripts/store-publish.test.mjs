@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { edgeOperationUrl, publishChrome, publishEdge } from "./store-publish.mjs";
 
-const archive = readFileSync(new URL("../LICENSE", import.meta.url));
+const archive = readFileSync(new URL("../../LICENSE", import.meta.url));
 const noDelay = async () => {};
 const immediatePoll = { attempts: 3, delayMs: 0 };
 

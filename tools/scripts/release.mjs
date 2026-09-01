@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = new URL("../..", import.meta.url).pathname;
 const level = process.argv[2];
 if (!["major", "minor", "patch"].includes(level)) {
   throw new Error("usage: vpr release <major|minor|patch>");

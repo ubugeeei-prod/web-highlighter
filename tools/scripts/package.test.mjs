@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const release = resolve(root, "release");
 const version = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).version;
 const names = {
@@ -80,6 +80,10 @@ await test("the Mozilla source bundle is complete and excludes generated or secr
     "moon.mod",
     "package.json",
     "pnpm-lock.yaml",
+    "tools/nix/dev-shell.nix",
+    "tools/nix/vp.nix",
+    "tools/scripts/moon-prove.sh",
+    "tools/scripts/package.mjs",
     "vite.config.ts",
   ])
     assert(archived.includes(required), `source archive is missing ${required}`);
@@ -100,7 +104,7 @@ await test("checksums cover every archive and a rebuild is byte-for-byte reprodu
     .join("\n");
   assert.equal(readFileSync(resolve(release, "SHA256SUMS"), "utf8").trim(), expectedChecksums);
 
-  execFileSync(process.execPath, [resolve(root, "scripts/package.mjs")], {
+  execFileSync(process.execPath, [resolve(root, "tools/scripts/package.mjs")], {
     cwd: root,
     stdio: "inherit",
   });

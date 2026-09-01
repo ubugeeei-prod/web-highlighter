@@ -6,7 +6,7 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - "docs/**"
-      - "scripts/deploy-docs-to-void.mjs"
+      - "tools/scripts/deploy-docs-to-void.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "flake.nix"
@@ -15,7 +15,7 @@ on:
     paths:
       - ".github/workflows/docs.yml"
       - "docs/**"
-      - "scripts/deploy-docs-to-void.mjs"
+      - "tools/scripts/deploy-docs-to-void.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
       - "flake.nix"

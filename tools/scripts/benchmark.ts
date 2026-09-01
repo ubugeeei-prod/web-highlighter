@@ -13,10 +13,10 @@ interface Budgets {
 }
 
 const budgets = JSON.parse(
-  await readFile(new URL("../bench/budgets.json", import.meta.url), "utf8"),
+  await readFile(new URL("../../bench/budgets.json", import.meta.url), "utf8"),
 ) as Budgets;
 const wasm = await readFile(
-  new URL("../_build/wasm-gc/release/build/cmd/analyzer/analyzer.wasm", import.meta.url),
+  new URL("../../_build/wasm-gc/release/build/cmd/analyzer/analyzer.wasm", import.meta.url),
 );
 const coldStart = performance.now();
 const { instance } = await WebAssembly.instantiate(
@@ -41,8 +41,8 @@ for (let index = 0; index < runs; index += 1)
 const elapsedSeconds = (performance.now() - start) / 1000;
 const mibPerSecond = (source.length * runs) / 1024 / 1024 / elapsedSeconds;
 
-const content = await readFile(new URL("../dist/chromium/content.js", import.meta.url));
-const engine = await readFile(new URL("../dist/chromium/engine.js", import.meta.url));
+const content = await readFile(new URL("../../dist/chromium/content.js", import.meta.url));
+const engine = await readFile(new URL("../../dist/chromium/engine.js", import.meta.url));
 const contentBrotliBytes = brotliCompressSync(content).length;
 const engineBrotliBytes = brotliCompressSync(engine).length;
 const analyzerBrotliBytes = brotliCompressSync(wasm).length;

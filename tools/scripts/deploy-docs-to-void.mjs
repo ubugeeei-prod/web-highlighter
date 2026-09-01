@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { delimiter, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const extraArgs = process.argv.slice(2);
 const voidProject = process.env.VOID_PROJECT?.trim() || "";
 const defaultProject =

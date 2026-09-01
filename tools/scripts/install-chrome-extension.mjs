@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import puppeteer from "puppeteer-core";
 
 export const defaultUrl = "https://github.com/mizchi/vibe-lang/blob/main/lib/%40vibe/ast/ast.vibe";
-const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const repoRoot = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const browserLabels = {
   chrome: "Chrome",
   chromium: "Chromium",

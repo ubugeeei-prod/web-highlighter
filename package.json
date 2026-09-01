@@ -7,7 +7,7 @@
     "docs:dev": "vite --config docs/vite.config.mjs --host 127.0.0.1",
     "docs:build": "vite build --config docs/vite.config.mjs",
     "docs:preview": "vite preview --config docs/vite.config.mjs",
-    "docs:deploy": "node scripts/deploy-docs-to-void.mjs"
+    "docs:deploy": "node tools/scripts/deploy-docs-to-void.mjs"
   },
   "devDependencies": {
     "@ox-content/vite-plugin": "3.0.0-beta.0",

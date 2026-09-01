@@ -126,13 +126,36 @@ test("the extension popup stays flat and supports dark mode", async () => {
   assert(popup.includes("sample-strip"));
 });
 
+test("Nix and helper scripts are wired through tools", async () => {
+  const flake = await readFile(new URL("../flake.nix", import.meta.url), "utf8");
+  const config = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
+  const tsconfig = await readFile(new URL("../tsconfig.json", import.meta.url), "utf8");
+  const workflow = await readFile(
+    new URL("../.github/workflows/docs.yml", import.meta.url),
+    "utf8",
+  );
+
+  assert(flake.includes("flake-parts.lib.mkFlake"));
+  assert(flake.includes("./tools/nix/vp.nix"));
+  assert(flake.includes("./tools/nix/dev-shell.nix"));
+  assert(config.includes("node tools/scripts/package.mjs"));
+  assert(config.includes("bash tools/scripts/moon-prove.sh"));
+  assert(!config.includes("node scripts/"));
+  assert(!config.includes("bash scripts/"));
+  assert(tsconfig.includes("tools/scripts/**/*.ts"));
+  assert(workflow.includes("tools/scripts/deploy-docs-to-void.mjs"));
+  assert(!workflow.includes('"scripts/deploy-docs-to-void.mjs"'));
+  assert((await stat(new URL("../tools/scripts/package.mjs", import.meta.url))).isFile());
+  assert((await stat(new URL("../tools/nix/dev-shell.nix", import.meta.url))).isFile());
+});
+
 test("the docs deploy path requires explicit Void project configuration in Actions", async () => {
   const workflow = await readFile(
     new URL("../.github/workflows/docs.yml", import.meta.url),
     "utf8",
   );
   const deployScript = await readFile(
-    new URL("../scripts/deploy-docs-to-void.mjs", import.meta.url),
+    new URL("../tools/scripts/deploy-docs-to-void.mjs", import.meta.url),
     "utf8",
   );
   assert(workflow.includes("vars.VOID_PROJECT != ''"));

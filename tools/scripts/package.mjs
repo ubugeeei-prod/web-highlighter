@@ -14,7 +14,7 @@ import {
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const version = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).version;
 const release = resolve(root, "release");
 const zipTimestamp = new Date("1980-01-01T00:00:00.000Z");
