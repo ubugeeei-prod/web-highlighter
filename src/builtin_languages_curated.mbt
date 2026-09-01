@@ -1,9 +1,9 @@
 ///|
-/// Languages picked from the 2026-07 hosted-service gap survey.
+/// Built-in languages picked from the 2026-07 hosted-service gap survey.
 ///
 /// Each one was recurring in shared code yet missing from the default bundles
 /// the surveyed services ship. See `docs/research.md`.
-fn curated_languages() -> Array[Language] {
+fn builtin_curated_languages() -> Array[Language] {
   [
     make_language(
       id="mojo",

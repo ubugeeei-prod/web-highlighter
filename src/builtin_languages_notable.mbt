@@ -1,10 +1,10 @@
 ///|
-/// Languages from the 2026-09 survey, ordered by how widely known they are.
+/// Built-in languages from the 2026-09 survey, ordered by how widely known they are.
 ///
 /// Every entry is missing from at least one of GitHub, GitLab, Discord, Zenn,
 /// and Qiita, and the order is the notability ranking recorded in
 /// `docs/research.md`.
-fn notable_languages() -> Array[Language] {
+fn builtin_notable_languages() -> Array[Language] {
   [
     make_language(
       id="zig",

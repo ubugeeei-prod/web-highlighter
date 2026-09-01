@@ -1,10 +1,10 @@
 ///|
-/// Languages this deployment was asked to support.
+/// Built-in languages this deployment was asked to support.
 ///
 /// They are private, experimental, or composite formats whose adoption by any
 /// upstream service is unlikely, so the extension is their only realistic
 /// highlighting path.
-fn requested_languages() -> Array[Language] {
+fn builtin_requested_languages() -> Array[Language] {
   [
     make_language(
       id="idris",

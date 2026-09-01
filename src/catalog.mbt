@@ -113,20 +113,3 @@ fn moonbit_strings() -> Array[Delimiter] {
 fn vibe_strings() -> Array[Delimiter] {
   pipe_line_strings()
 }
-
-///|
-/// Returns the built-in injected-language support catalog.
-///
-/// These entries target languages whose adoption by every upstream service is
-/// unlikely or slow. The catalog is product policy, not a generic highlighting
-/// library registry. Detection keeps this order, so the groups are concatenated
-/// exactly as they are declared.
-pub fn builtin_languages() -> Array[Language] {
-  let catalog : Array[Language] = []
-  for group in [requested_languages(), curated_languages(), notable_languages()] {
-    for language in group {
-      catalog.push(language)
-    }
-  }
-  catalog
-}

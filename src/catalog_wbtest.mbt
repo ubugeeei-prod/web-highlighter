@@ -66,6 +66,24 @@ test "built-in ids and aliases are unique" {
 }
 
 ///|
+test "built-in catalog source groups are explicit and ordered" {
+  let requested = builtin_requested_languages()
+  let curated = builtin_curated_languages()
+  let notable = builtin_notable_languages()
+  let catalog = builtin_languages()
+  assert_eq(
+    catalog.length(),
+    requested.length() + curated.length() + notable.length(),
+  )
+  assert_eq(requested.length(), 6)
+  assert_eq(curated.length(), 10)
+  assert_eq(notable.length(), 8)
+  assert_eq(catalog[0].id, requested[0].id)
+  assert_eq(catalog[requested.length()].id, curated[0].id)
+  assert_eq(catalog[requested.length() + curated.length()].id, notable[0].id)
+}
+
+///|
 test "built-in catalog satisfies strict add-on validation" {
   assert_eq(validate_language_catalog(builtin_languages()), [])
 }

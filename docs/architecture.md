@@ -7,7 +7,10 @@ Web Highlighter is an injected-language-support product, not an embeddable highl
 1. `src/model.mbt` defines immutable language, compiled grammar, symbol, token, and theme data.
 2. `src/compile.mbt` builds the lexeme, codepoint, alias, filename, and signature indexes once per catalog.
 3. `src/analysis_oracle.mbt` is the executable analysis oracle the scanner tests assert against.
-4. `src/catalog.mbt` composes the built-in catalog from `src/languages_requested.mbt`, `src/languages_curated.mbt`, and `src/languages_notable.mbt`, one file per selection round.
+4. `src/builtin_languages.mbt` is the built-in catalog entrypoint. It composes
+   `src/builtin_languages_requested.mbt`,
+   `src/builtin_languages_curated.mbt`, and
+   `src/builtin_languages_notable.mbt`, one file per selection round.
 5. Proof kernels are colocated by owner: `src/cursor_proof/` sits beside
    `src/cursor.mbt`, `src/scanner_proof/` beside `src/scanner.mbt`,
    `src/model_proof/` beside `src/model.mbt`, `src/detection_proof/` beside

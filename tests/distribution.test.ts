@@ -177,6 +177,16 @@ test("MoonBit proof kernels are owner-named and not contract packages", async ()
   assert(!proveScript.includes(legacyProofSuffix));
 });
 
+test("built-in language source files are discoverable by name", async () => {
+  for (const file of [
+    "builtin_languages.mbt",
+    "builtin_languages_requested.mbt",
+    "builtin_languages_curated.mbt",
+    "builtin_languages_notable.mbt",
+  ])
+    assert((await stat(new URL(`../src/${file}`, import.meta.url))).isFile());
+});
+
 test("the docs deploy path requires explicit Void project configuration in Actions", async () => {
   const workflow = await readFile(
     new URL("../.github/workflows/docs.yml", import.meta.url),

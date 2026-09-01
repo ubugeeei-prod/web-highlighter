@@ -28,6 +28,10 @@ The product is deliberately opinionated:
 
 The requested languages ship in the Wasm catalog:
 
+Source lives under `src/builtin_languages*.mbt`: start at
+`src/builtin_languages.mbt`, then edit the requested, curated, or notable group
+file that owns the language.
+
 - Idris 2 (`idris`, `idris2`, `.idr`, `.lidr`, `.ipkg`)
 - MoonBit (`moonbit`, `mbt`, `mbtx`, `mbti`, `mbtp`, `.mbt`, `.mbtx`, `.mbti`, `.mbtp`)
 - [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `vpkg`, `.vibe`, `.vibex`, `.vpkg`)
