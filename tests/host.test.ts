@@ -86,6 +86,39 @@ const multilineAnalyzer: Analyzer = {
   theme_wire: () => "",
 };
 
+const discordMoonBitSnippet = `pub fn shift_hex(hex : String, amount : Int, shift : Shift) -> String {
+  let digits = strip_hash(hex)
+  if digits.length() != 6 {
+    return hex
+  }
+}`;
+
+const discordVpkgSnippet = `name = @vibe/random
+version = 0.0.1
+description =
+  #|@vibe/random keeps state explicit
+deps = {}
+
+fn seed(seed_value: Int) -> Int`;
+
+const discordInferenceAnalyzer: Analyzer = {
+  analyze_request(source, hint, filename) {
+    assert.equal(filename, "");
+    if (hint === "vibe" || source.includes("name = @vibe/")) {
+      const prose = source.indexOf("#|");
+      const proseEnd = source.indexOf("\n", prose) + 1;
+      const fn = source.indexOf("fn");
+      return `L\tvibe\nT\t${prose}\t${proseEnd}\tstring\nT\t${fn}\t${fn + 2}\tkeyword\n`;
+    }
+    assert.equal(hint, "");
+    const pub = source.indexOf("pub");
+    const fn = source.indexOf("fn");
+    const stringType = source.indexOf("String");
+    return `L\tmoonbit\nT\t${pub}\t${pub + 3}\tkeyword\nT\t${fn}\t${fn + 2}\tkeyword\nT\t${stringType}\t${stringType + 6}\ttype\n`;
+  },
+  theme_wire: () => "",
+};
+
 test("tokens covering several lines are injected into every line they reach", async () => {
   const window = testWindow("https://github.com/ubugeeei-prod/ush/blob/main/example.ush");
   const lines = ["/* multi", "   line */", "fn greet() {}", "greet()"];
@@ -384,6 +417,59 @@ test("Discord CSS-module code blocks preserve controls and accept bare language 
   assert.equal(window.document.querySelector(".hljs .wh-keyword")?.textContent, "fn");
   assert.equal(window.document.querySelector("#copy"), copy);
   assert.equal(copy?.textContent, "Copy");
+});
+
+test("Discord unlabelled code blocks are handed to evidence inference", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <article>
+      <button id="copy">Copy</button>
+      <div class="codeContainer_ab12">
+        <pre><code class="hljs"></code></pre>
+      </div>
+    </article>`;
+  const copy = window.document.querySelector("#copy");
+  window.document.querySelector<HTMLElement>("code")!.textContent = discordMoonBitSnippet;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "");
+  assert.equal(surface?.filename, "");
+  assert.equal(surface?.source, discordMoonBitSnippet);
+  assert.equal(await new BrowserHost(window.document, discordInferenceAnalyzer).highlight(), 1);
+  assert.equal(window.document.querySelector(".hljs .wh-keyword")?.textContent, "pub");
+  assert.equal(window.document.querySelector(".hljs .wh-type")?.textContent, "String");
+  assert.equal(
+    window.document.querySelector<HTMLElement>("[data-wh-language]")?.dataset.whLanguage,
+    "moonbit",
+  );
+  assert.equal(window.document.querySelector("#copy"), copy);
+});
+
+test("Discord visible language labels are used when class metadata is absent", async () => {
+  const window = testWindow("https://discord.com/channels/1/2/3");
+  window.document.body.innerHTML = `
+    <article>
+      <div class="codeContainer_ab12">
+        <div class="codeLanguage_cd34">vibe</div>
+        <code class="scrollbarGhostHairline__506b3 hljs language-plaintext"></code>
+      </div>
+    </article>`;
+  window.document.querySelector<HTMLElement>("code")!.textContent = discordVpkgSnippet;
+
+  const [surface] = discoverSurfaces(window.document);
+  assert.equal(surface?.hint, "vibe");
+  assert.equal(surface?.filename, "");
+  assert.equal(surface?.source, discordVpkgSnippet);
+  assert.equal(await new BrowserHost(window.document, discordInferenceAnalyzer).highlight(), 1);
+  assert.equal(
+    window.document.querySelector("code .wh-string")?.textContent,
+    "#|@vibe/random keeps state explicit\n",
+  );
+  assert.equal(window.document.querySelector("code .wh-keyword")?.textContent, "fn");
+  assert.equal(
+    window.document.querySelector<HTMLElement>("[data-wh-language]")?.dataset.whLanguage,
+    "vibe",
+  );
 });
 
 test("Discord wrapper metadata is enough when code has no language class", async () => {

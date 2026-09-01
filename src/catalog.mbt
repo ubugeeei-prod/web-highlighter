@@ -95,11 +95,23 @@ fn c_strings() -> Array[Delimiter] {
 }
 
 ///|
-/// MoonBit's `#|` multi-line string syntax is line-prefixed. Treat each
-/// prefixed line as one string region so prose inside snapshots and long text
-/// literals cannot leak keyword or type tokens.
-fn moonbit_strings() -> Array[Delimiter] {
+/// Treats `#|` prose lines as string regions.
+///
+/// MoonBit documents `#|` as a multi-line string form, and Vibe package
+/// metadata uses the same line-prefixed shape for long descriptions. Keeping
+/// the prefix as a delimiter prevents prose from leaking keyword or type tokens.
+fn pipe_line_strings() -> Array[Delimiter] {
   [delimiter("#|", "\n"), quoted("\""), quoted("'")]
+}
+
+///|
+fn moonbit_strings() -> Array[Delimiter] {
+  pipe_line_strings()
+}
+
+///|
+fn vibe_strings() -> Array[Delimiter] {
+  pipe_line_strings()
 }
 
 ///|

@@ -84,13 +84,31 @@ const githubDiffFixture = `<!doctype html>
 </div>
 </body></html>`;
 
+const discordVpkgCode = `name = @vibe/random
+version = 0.0.1
+description =
+  #|@vibe/random keeps state explicit
+deps = {}
+
+// import @vibe/random { ... } for scoped imports
+fn seed(seed_value: Int) -> Int`;
+
+const discordMoonBitCode = `pub fn shift_hex(hex : String, amount : Int, shift : Shift) -> String {
+  let digits = strip_hash(hex)
+  if digits.length() != 6 {
+    return hex
+  }
+}`;
+
 const discordFixture = `<!doctype html>
 <html class="theme-dark"><body>
 <article>
   <button id="discord-copy">Copy</button>
   <div class="codeContainer_ab12">
-    <pre><code id="discord-code" class="hljs ush">fn greet() {}
-greet()</code></pre>
+    <pre><code id="discord-vpkg" class="hljs language-plaintext">${discordVpkgCode}</code></pre>
+  </div>
+  <div class="codeContainer_cd34">
+    <pre><code id="discord-moonbit" class="hljs language-plaintext">${discordMoonBitCode}</code></pre>
   </div>
 </article>
 </body></html>`;
@@ -283,35 +301,35 @@ try {
     route.fulfill({ contentType: "text/html; charset=utf-8", body: discordFixture }),
   );
   await page.goto("https://discord.com/channels/1/2/3");
-  await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
+  await page.locator("#discord-vpkg .wh-keyword").first().waitFor({ timeout: 10_000 });
+  await page.locator("#discord-moonbit .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(await page.locator("#discord-vpkg").getAttribute("data-wh-language"), "vibe");
+  assert.equal(await page.locator("#discord-vpkg .wh-keyword").first().textContent(), "fn");
   assert.equal(
-    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
-    "ush",
+    await page.locator("#discord-vpkg .wh-string").first().textContent(),
+    "#|@vibe/random keeps state explicit\n",
   );
-  assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+  assert.equal(await page.locator("#discord-moonbit").getAttribute("data-wh-language"), "moonbit");
+  assert.equal(await page.locator("#discord-moonbit .wh-keyword").first().textContent(), "pub");
+  assert.equal(await page.locator("#discord-moonbit .wh-type").first().textContent(), "String");
   assert.equal(await page.locator("#discord-copy").textContent(), "Copy");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
-  await assertDistinctTokenColor(page, "#discord-code .wh-keyword");
-  await page.locator("#discord-code").evaluate((code) => {
-    code.addEventListener(
-      "click",
-      () => code.replaceChildren(document.createTextNode("fn greet() {}\ngreet()")),
-      { once: true },
-    );
-  });
-  await page.locator("#discord-code .wh-keyword").first().click();
-  await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
-  assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+  await assertDistinctTokenColor(page, "#discord-moonbit .wh-keyword");
+  await page.locator("#discord-moonbit").evaluate((code, source) => {
+    code.addEventListener("click", () => code.replaceChildren(document.createTextNode(source)), {
+      once: true,
+    });
+  }, discordMoonBitCode);
+  await page.locator("#discord-moonbit .wh-keyword").first().click();
+  await page.locator("#discord-moonbit .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(await page.locator("#discord-moonbit .wh-keyword").first().textContent(), "pub");
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.locator("#discord-code .wh-keyword").first().waitFor({ timeout: 10_000 });
-  assert.equal(
-    await page.locator("[data-wh-language]").first().getAttribute("data-wh-language"),
-    "ush",
-  );
-  assert.equal(await page.locator("#discord-code .wh-keyword").first().textContent(), "fn");
+  await page.locator("#discord-moonbit .wh-keyword").first().waitFor({ timeout: 10_000 });
+  assert.equal(await page.locator("#discord-moonbit").getAttribute("data-wh-language"), "moonbit");
+  assert.equal(await page.locator("#discord-moonbit .wh-keyword").first().textContent(), "pub");
   assert.equal(await page.locator("html").getAttribute("data-wh-theme"), "midnight");
-  await assertDistinctTokenColor(page, "#discord-code .wh-keyword");
+  await assertDistinctTokenColor(page, "#discord-moonbit .wh-keyword");
 
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
   const popup = await context.newPage();

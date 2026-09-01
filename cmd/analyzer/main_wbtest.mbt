@@ -33,3 +33,23 @@ test "the production analyzer uses the compiled catalog for bundled add-ons" {
   assert_true(veryl.has_prefix("L\tveryl\n"))
   assert_true(veryl.contains("D\t7\t19\ttype\t1\n"))
 }
+
+///|
+test "the production analyzer recovers Discord blocks with no language metadata" {
+  let moonbit = analyze_request(
+    "pub fn shift_hex(hex : String, amount : Int, shift : Shift) -> String {\n  let digits = strip_hash(hex)\n  if digits.length() != 6 {\n    return hex\n  }\n}",
+    "",
+    "",
+  )
+  assert_true(moonbit.has_prefix("L\tmoonbit\n"))
+  assert_true(moonbit.contains("T\t0\t3\tkeyword\n"))
+  assert_true(moonbit.contains("T\t23\t29\ttype\n"))
+  let vpkg = analyze_request(
+    "name = @vibe/random\nversion = 0.0.1\ndescription =\n  #|@vibe/random keeps state explicit\ndeps = {}\n\n// import @vibe/random { ... } for scoped imports\nfn seed(seed_value: Int) -> Int",
+    "",
+    "",
+  )
+  assert_true(vpkg.has_prefix("L\tvibe\n"))
+  assert_true(vpkg.contains("T\t52\t88\tstring\n"))
+  assert_true(vpkg.contains("T\t149\t151\tkeyword\n"))
+}

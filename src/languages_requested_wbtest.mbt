@@ -109,6 +109,22 @@ test "Vibe support" {
 }
 
 ///|
+test "Vibe vpkg #| prose is scanned as string text" {
+  let source = "name = @vibe/random\ndescription =\n#| String Option import stay prose\nfn seed(seed_value: Int) -> Int"
+  let language = detect_language(builtin_languages(), source, "", "").unwrap()
+  assert_eq(language.id, "vibe")
+  let result = analyze(language, source)
+  assert_analysis_safe(result, source)
+  let strings = result.tokens.filter(fn(item) { item.scope == String })
+  assert_eq(strings.length(), 1)
+  assert_eq(token_text(source, strings[0]), "#| String Option import stay prose\n")
+  assert_true(!contains_scoped_token(result, source, "String", Type))
+  assert_true(!contains_scoped_token(result, source, "Option", Type))
+  assert_true(!contains_scoped_token(result, source, "import", Keyword))
+  assert_true(contains_scoped_token(result, source, "fn", Keyword))
+}
+
+///|
 test "Veryl support" {
   assert_builtin(
     "veryl", "veryl", "rtl/DataSelector.veryl", "module DataSelector #(param Width: u32 = 8) (i_clk: input clock, o_data: output logic<Width>) { always_ff { if_reset { o_data = 0; } } }",
