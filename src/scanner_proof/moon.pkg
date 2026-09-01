@@ -1,5 +1,5 @@
 import {
-  "ubugeeei-prod/web_highlighter/src/cursor_contract",
+  "ubugeeei-prod/web_highlighter/src/cursor_proof",
 }
 
 supported_targets = "wasm-gc"

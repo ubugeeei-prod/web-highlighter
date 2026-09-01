@@ -55,7 +55,7 @@ export function decodeAnalysis(wire: string, source: string): Analysis | undefin
       const start = +a;
       const end = +b;
       // Rendering sweeps this list once, so keep the analyzer's own colocated
-      // contract (`ordered_span_after` in `src/scanner_contract/contract.mbtp`):
+      // invariant (`ordered_span_after` in `src/scanner_proof/proof.mbtp`):
       // spans stay ordered and non-empty even if a plan ever arrives malformed.
       if (start >= cursor && start < end) {
         analysis.tokens.push({ start, end, scope: c });
@@ -90,16 +90,16 @@ export function symbolAt<Item extends { start: number; end: number }>(
 /**
  * Pairs every segment with the half-open token range covering it.
  *
- * Tokens are ordered, non-empty, and non-overlapping by MoonBit contract, and
+ * Tokens are ordered, non-empty, and non-overlapping by MoonBit invariant, and
  * segments are built in source order, so both cursors only move forward. A
  * surface therefore costs segments plus tokens instead of one token scan per
  * line, which is what a large GitHub blob is made of.
  *
  * The two conditions are the executable predicates `span_precedes_segment` and
- * `span_follows_segment` colocated in `src/sweep_contract.mbt`, where
+ * `span_follows_segment` colocated in `src/analysis_oracle.mbt`, where
  * `skipped_token_cannot_cover`, `stopped_token_cannot_cover`,
  * `skipped_token_skips_its_prefix`, and `stopped_token_stops_its_suffix` in
- * `src/sweep_contract/contract.mbtp` prove that skipping and stopping can
+ * `src/sweep_proof/proof.mbtp` proves that skipping and stopping can
  * never drop a token that covers the segment.
  */
 export function* coveredTokens(

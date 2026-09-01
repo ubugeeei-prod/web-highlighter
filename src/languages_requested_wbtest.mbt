@@ -42,7 +42,12 @@ test "MoonBit mbtx mbti and mbtp support" {
 ///|
 test "MoonBit #| prose is scanned as string text" {
   let source = "let message =\n  #| String predicate proof_require are prose\n  #| Int Option and Result stay prose too\npub fn main { message }"
-  let language = detect_language(builtin_languages(), source, "moonbit", "main.mbt").unwrap()
+  let language = detect_language(
+    builtin_languages(),
+    source,
+    "moonbit",
+    "main.mbt",
+  ).unwrap()
   let result = analyze(language, source)
   assert_analysis_safe(result, source)
   let strings = result.tokens.filter(fn(item) { item.scope == String })
@@ -66,7 +71,12 @@ test "MoonBit #| prose is scanned as string text" {
 ///|
 test "MoonBit #| final line stays one string without a trailing newline" {
   let source = "let message =\n#| String predicate proof_require"
-  let language = detect_language(builtin_languages(), source, "moonbit", "main.mbt").unwrap()
+  let language = detect_language(
+    builtin_languages(),
+    source,
+    "moonbit",
+    "main.mbt",
+  ).unwrap()
   let result = analyze(language, source)
   assert_analysis_safe(result, source)
   let strings = result.tokens.filter(fn(item) { item.scope == String })
@@ -117,7 +127,10 @@ test "Vibe vpkg #| prose is scanned as string text" {
   assert_analysis_safe(result, source)
   let strings = result.tokens.filter(fn(item) { item.scope == String })
   assert_eq(strings.length(), 1)
-  assert_eq(token_text(source, strings[0]), "#| String Option import stay prose\n")
+  assert_eq(
+    token_text(source, strings[0]),
+    "#| String Option import stay prose\n",
+  )
   assert_true(!contains_scoped_token(result, source, "String", Type))
   assert_true(!contains_scoped_token(result, source, "Option", Type))
   assert_true(!contains_scoped_token(result, source, "import", Keyword))
@@ -218,7 +231,12 @@ test "mbtv support" {
 ///|
 test "mbtv MoonBit #| prose is scanned as string text" {
   let source = "<script>\nlet body =\n#| fn String Option prose\n</script>"
-  let language = detect_language(builtin_languages(), source, "mbtv", "App.mbtv").unwrap()
+  let language = detect_language(
+    builtin_languages(),
+    source,
+    "mbtv",
+    "App.mbtv",
+  ).unwrap()
   let result = analyze(language, source)
   assert_analysis_safe(result, source)
   let strings = result.tokens.filter(fn(item) { item.scope == String })

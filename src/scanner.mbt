@@ -7,8 +7,8 @@ fn token(
   source_length : Int,
   budget : ScannerBudget,
 ) -> Unit {
-  if @scanner_contract.span_is_nonempty(start, end_, source_length) &&
-    @scanner_contract.item_budget_allows(tokens.length(), budget.max_tokens) {
+  if @scanner_proof.span_is_nonempty(start, end_, source_length) &&
+    @scanner_proof.item_budget_allows(tokens.length(), budget.max_tokens) {
     tokens.push({ span: { start, end_, }, scope, })
   }
 }
@@ -25,8 +25,8 @@ fn reference_token(
   budget : ScannerBudget,
 ) -> Unit {
   let used = tokens.length() + reference_tokens.length()
-  if @scanner_contract.span_is_nonempty(start, end_, source_length) &&
-    @scanner_contract.item_budget_allows(used, budget.max_tokens) {
+  if @scanner_proof.span_is_nonempty(start, end_, source_length) &&
+    @scanner_proof.item_budget_allows(used, budget.max_tokens) {
     reference_tokens.push({ span: { start, end_, }, scope, })
   }
 }
@@ -39,10 +39,7 @@ fn record_definition(
   item : Definition,
   budget : ScannerBudget,
 ) -> Unit {
-  if @scanner_contract.item_budget_allows(
-    definitions.length(),
-    budget.max_symbols,
-  ) {
+  if @scanner_proof.item_budget_allows(definitions.length(), budget.max_symbols) {
     definitions.push(item)
     if definitions_by_name.get(item.name) is None {
       definitions_by_name[item.name] = item
@@ -59,7 +56,7 @@ fn reference_candidate(
   needs_token : Bool,
   budget : ScannerBudget,
 ) -> Unit {
-  if @scanner_contract.item_budget_allows(
+  if @scanner_proof.item_budget_allows(
       identifiers.length(),
       budget.max_reference_candidates,
     ) {
@@ -75,10 +72,7 @@ fn reference(
   span : Span,
   budget : ScannerBudget,
 ) -> Bool {
-  if @scanner_contract.item_budget_allows(
-    references.length(),
-    budget.max_symbols,
-  ) {
+  if @scanner_proof.item_budget_allows(references.length(), budget.max_symbols) {
     references.push({ name, span, })
     true
   } else {
@@ -101,7 +95,7 @@ fn symbol_scope(kind : SymbolKind) -> Scope {
 ///
 /// The browser renderer sweeps this list once against ordered DOM segments
 /// instead of re-scanning it per line, so the merge re-checks the same verified
-/// append contract the scanner uses for a single stream: only spans that stay
+/// append invariant the scanner uses for a single stream: only spans that stay
 /// ordered, non-empty, and in range survive the merge.
 fn merge_tokens(
   left : Array[Token],
@@ -124,14 +118,14 @@ fn merge_tokens(
       right_index += 1
       right[right_index - 1]
     }
-    if @scanner_contract.span_is_ordered_after(
+    if @scanner_proof.span_is_ordered_after(
         cursor,
         next.span.start,
         next.span.end_,
         source_length,
       ) {
       merged.push(next)
-      cursor = @scanner_contract.cursor_after_ordered_span(
+      cursor = @scanner_proof.cursor_after_ordered_span(
         cursor,
         next.span.start,
         next.span.end_,
@@ -194,7 +188,7 @@ pub fn analyze_compiled_with_budget(
       Some(prefix) => {
         let end_ = skip_to_line_end(source, cursor + prefix.length())
         token(tokens, cursor, end_, Comment, source_length, budget)
-        line = @scanner_contract.add_line_count(
+        line = @scanner_proof.add_line_count(
           line,
           line_breaks(source, cursor, end_),
         )
@@ -207,7 +201,7 @@ pub fn analyze_compiled_with_budget(
       Some(delimiter) => {
         let end_ = skip_region(source, cursor, delimiter)
         token(tokens, cursor, end_, Comment, source_length, budget)
-        line = @scanner_contract.add_line_count(
+        line = @scanner_proof.add_line_count(
           line,
           line_breaks(source, cursor, end_),
         )
@@ -220,7 +214,7 @@ pub fn analyze_compiled_with_budget(
       Some(delimiter) => {
         let end_ = skip_region(source, cursor, delimiter)
         token(tokens, cursor, end_, String, source_length, budget)
-        line = @scanner_contract.add_line_count(
+        line = @scanner_proof.add_line_count(
           line,
           line_breaks(source, cursor, end_),
         )
@@ -354,7 +348,7 @@ pub fn analyze_compiled_with_budget(
       token(tokens, cursor, next_cursor, Punctuation, source_length, budget)
     }
     if current == '\n'.to_int() {
-      line = @scanner_contract.add_line_count(line, 1)
+      line = @scanner_proof.add_line_count(line, 1)
     }
     cursor = next_cursor
   }

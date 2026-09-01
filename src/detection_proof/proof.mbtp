@@ -1,7 +1,7 @@
 ///|
 /// Weighted language evidence is strong enough and clearly separated.
 ///
-/// This predicate is local to detection because it is the fail-closed contract
+/// This predicate is local to detection because it is the fail-closed invariant
 /// for Discord/Zenn-style blocks where the host dropped the original language
 /// label.
 pub predicate dominant_score(

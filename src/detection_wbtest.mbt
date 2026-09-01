@@ -49,19 +49,14 @@ test "custom project extensions are recognized" {
   )
   assert_true(
     detect_language(
-      languages,
-      "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }",
-      "",
+      languages, "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }", "",
       "lib/@vibe/ast/index.vpkg",
     ).map(fn(item) { item.id }) ==
     Some("vibe"),
   )
   assert_true(
     detect_language(
-      languages,
-      "module DataSelector { always_ff { if_reset {} } }",
-      "",
-      "rtl/DataSelector.veryl",
+      languages, "module DataSelector { always_ff { if_reset {} } }", "", "rtl/DataSelector.veryl",
     ).map(fn(item) { item.id }) ==
     Some("veryl"),
   )
@@ -159,18 +154,20 @@ test "compiled catalog indexes explicit hints filenames and extensions" {
   )
   assert_true(
     detect_compiled_language(catalog, "plain", "", "lib/@vibe/ast/index.vpkg").map(fn(
-      item,
-    ) {
-      item.language.id
-    }) ==
+        item,
+      ) {
+        item.language.id
+      },
+    ) ==
     Some("vibe"),
   )
   assert_true(
     detect_compiled_language(catalog, "plain", "", "rtl/DataSelector.veryl").map(fn(
-      item,
-    ) {
-      item.language.id
-    }) ==
+        item,
+      ) {
+        item.language.id
+      },
+    ) ==
     Some("veryl"),
   )
   assert_true(
@@ -217,16 +214,10 @@ test "compiled and declarative detectors agree across target languages" {
       "main.vibex",
     ),
     (
-      "vibe",
-      "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }",
-      "",
-      "lib/@vibe/ast/index.vpkg",
+      "vibe", "name = @vibe/ast\nexport enum TypeExpr { TyName(String) }", "", "lib/@vibe/ast/index.vpkg",
     ),
     (
-      "veryl",
-      "module DataSelector { always_ff { if_reset {} } }",
-      "",
-      "rtl/DataSelector.veryl",
+      "veryl", "module DataSelector { always_ff { if_reset {} } }", "", "rtl/DataSelector.veryl",
     ),
     (
       "mbtv", "<script>let props = defineProps()</script><template><input v-model=\"name\" /></template>",
@@ -274,14 +265,22 @@ test "weighted signatures recover discarded fence metadata" {
 ///|
 test "Discord unlabelled MoonBit snippets recover from typed function evidence" {
   let source = "pub fn shift_hex(hex : String, amount : Int, shift : Shift) -> String {\n  let digits = strip_hash(hex)\n  if digits.length() != 6 {\n    return hex\n  }\n  let mut out = \"#\"\n  out\n}"
-  let plan = detect_compiled_plan(compile_catalog(builtin_languages()), source, "", "").unwrap()
+  let plan = detect_compiled_plan(
+    compile_catalog(builtin_languages()),
+    source,
+    "",
+    "",
+  ).unwrap()
   assert_eq(plan.language.language.id, "moonbit")
   assert_eq(plan.reason, WeightedEvidence)
   assert_eq(plan.score, 6)
   assert_eq(plan.runner_up, 2)
   assert_true(
-    @detection_contract.score_is_dominant(
-      plan.score, plan.runner_up, inference_threshold(), inference_margin(),
+    @detection_proof.score_is_dominant(
+      plan.score,
+      plan.runner_up,
+      inference_threshold(),
+      inference_margin(),
     ),
   )
 }
@@ -289,14 +288,22 @@ test "Discord unlabelled MoonBit snippets recover from typed function evidence" 
 ///|
 test "Discord unlabelled Vibe package snippets prefer Vibe over MoonBit" {
   let source = "name = @vibe/random\nversion = 0.0.1\ndescription =\n  #|@vibe/random keeps state explicit\ndeps = {}\n\n// import @vibe/random { ... } for scoped imports\nfn seed(seed_value: Int) -> Int\nfn next(state: Int) -> (Int, Int)"
-  let plan = detect_compiled_plan(compile_catalog(builtin_languages()), source, "", "").unwrap()
+  let plan = detect_compiled_plan(
+    compile_catalog(builtin_languages()),
+    source,
+    "",
+    "",
+  ).unwrap()
   assert_eq(plan.language.language.id, "vibe")
   assert_eq(plan.reason, WeightedEvidence)
   assert_eq(plan.score, 13)
   assert_eq(plan.runner_up, 1)
   assert_true(
-    @detection_contract.score_is_dominant(
-      plan.score, plan.runner_up, inference_threshold(), inference_margin(),
+    @detection_proof.score_is_dominant(
+      plan.score,
+      plan.runner_up,
+      inference_threshold(),
+      inference_margin(),
     ),
   )
 }

@@ -36,12 +36,12 @@ shortcut = "4"
 EOF
 
 targets=(
-  src/cursor_contract
-  src/scanner_contract
-  src/model_contract
-  src/detection_contract
-  src/sweep_contract
-  src/theme_contract
+  src/cursor_proof
+  src/scanner_proof
+  src/model_proof
+  src/detection_proof
+  src/sweep_proof
+  src/theme_proof
 )
 
 if [[ $# -gt 0 ]]; then

@@ -184,7 +184,11 @@ fn surface_default_theme(catalog : Array[Theme], prefers_dark : Bool) -> Theme {
 ///|
 /// Converts the executable theme polarity into the proof-side flag domain.
 fn surface_flag(dark : Bool) -> Int {
-  if dark { 1 } else { 0 }
+  if dark {
+    1
+  } else {
+    0
+  }
 }
 
 ///|
@@ -193,16 +197,18 @@ fn theme_needs_surface_fallback(
   selected_dark : Bool,
   prefers_dark : Bool,
 ) -> Bool {
-  @theme_contract.theme_needs_surface_fallback_flag(
-    surface_flag(selected_dark), surface_flag(prefers_dark),
+  @theme_proof.theme_needs_surface_fallback_flag(
+    surface_flag(selected_dark),
+    surface_flag(prefers_dark),
   )
 }
 
 ///|
 /// Converts the proof-backed emitted polarity back to the Theme representation.
 fn resolved_surface_dark(selected_dark : Bool, prefers_dark : Bool) -> Bool {
-  @theme_contract.resolved_surface_dark_flag(
-    surface_flag(selected_dark), surface_flag(prefers_dark),
+  @theme_proof.resolved_surface_dark_flag(
+    surface_flag(selected_dark),
+    surface_flag(prefers_dark),
   ) ==
   1
 }
@@ -210,7 +216,7 @@ fn resolved_surface_dark(selected_dark : Bool, prefers_dark : Bool) -> Bool {
 ///|
 /// Resolves a selected theme into colors that match the rendered surface.
 ///
-/// Theme `dark` is a contrast contract, not just popup metadata. When a user
+/// Theme `dark` is a contrast invariant, not just popup metadata. When a user
 /// explicitly selects a light add-on such as Paper on Discord/GitHub dark mode,
 /// keeping the selected id is useful, but emitting its raw dark-on-light colors
 /// is not. In that mismatch case the semantic role colors are borrowed from the
@@ -256,7 +262,9 @@ pub fn theme_catalog_wire(
 ) -> String {
   let available = if catalog.length() == 0 { builtin_themes() } else { catalog }
   let selected = readable_theme_for_surface(
-    available, select_theme(available, requested, prefers_dark), prefers_dark,
+    available,
+    select_theme(available, requested, prefers_dark),
+    prefers_dark,
   )
   let output = StringBuilder()
   output..write_string("M\t")..write_string(selected.id).write_char('\n')

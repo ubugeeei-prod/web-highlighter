@@ -6,7 +6,7 @@ When a service renders an `mbtx`, `mbti`, `mbtp`, `vpkg`, `veryl`, `ush`, `tnix`
 
 The product is deliberately opinionated:
 
-- language detection, declarative grammars, compiled lexical indexes, tokenization, symbols, proof contracts, and themes live in MoonBit;
+- language detection, declarative grammars, compiled lexical indexes, tokenization, symbols, proved invariants, and themes live in MoonBit;
 - TypeScript is only the WebExtension and DOM boundary;
 - add-ons are immutable build-time data, never downloaded executable code;
 - unknown, ambiguous, oversized, or unsupported input is left untouched;

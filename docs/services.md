@@ -44,7 +44,7 @@ later popup theme change to become visible.
 
 GitHub currently renders visible blob text in line cells with `data-testid="code-cell"` and stable `LC…` IDs. The adapter analyzes all lines as one source while rendering tokens back into each original line cell. Pull request diff rows are grouped per file container and pass that file path into MoonBit, so filename fallback still works when GitHub does not expose a language class. This preserves native line links, selection, copy behavior, and virtualized layout.
 
-The selector set also contains older blob table and React line variants. DOM contract tests cover each supported shape, and live verification should be repeated when GitHub changes its file renderer.
+The selector set also contains older blob table and React line variants. DOM selector tests cover each supported shape, and live verification should be repeated when GitHub changes its file renderer.
 
 ## GitLab blobs
 

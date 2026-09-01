@@ -6,13 +6,14 @@ Web Highlighter is an injected-language-support product, not an embeddable highl
 
 1. `src/model.mbt` defines immutable language, compiled grammar, symbol, token, and theme data.
 2. `src/compile.mbt` builds the lexeme, codepoint, alias, filename, and signature indexes once per catalog.
-3. `src/contract.mbt` is the executable analysis oracle the scanner tests assert against.
+3. `src/analysis_oracle.mbt` is the executable analysis oracle the scanner tests assert against.
 4. `src/catalog.mbt` composes the built-in catalog from `src/languages_requested.mbt`, `src/languages_curated.mbt`, and `src/languages_notable.mbt`, one file per selection round.
-5. Proof contracts are colocated with their owners: `src/cursor_contract/` for
-   UTF-16 cursor motion, `src/scanner_contract/` for spans and output budgets,
-   `src/model_contract/` for source budgets, `src/detection_contract/` for
-   evidence dominance, and `src/sweep_contract/` for the segment algebra the
-   renderer walks.
+5. Proof kernels are colocated by owner: `src/cursor_proof/` sits beside
+   `src/cursor.mbt`, `src/scanner_proof/` beside `src/scanner.mbt`,
+   `src/model_proof/` beside `src/model.mbt`, `src/detection_proof/` beside
+   `src/detection.mbt`, `src/sweep_proof/` beside `src/analysis_oracle.mbt`, and
+   `src/theme_proof/` beside `src/theme.mbt`. The executable kernel functions
+   carry `where` invariants, while `proof.mbtp` files hold logic-side predicates.
 6. `src/detection.mbt` selects support by indexed hint, filename, extension, or dominant weighted literal evidence.
 7. `src/cursor.mbt` holds the UTF-16 cursor and delimiter primitives; `src/scanner.mbt` performs one bounded lexical and symbol pass without constructing an AST.
 8. `src/theme.mbt` selects a declarative theme and emits semantic-role colors.
@@ -30,13 +31,20 @@ theme_wire(requested_theme, prefers_dark)        -> semantic CSS variables
 themes_wire()                                    -> selectable theme metadata
 ```
 
+MoonBit proofs stay as close to their runtime owners as the current verifier
+subset allows. The root implementation package owns Map-backed compiled catalog
+types, so the verifier cannot yet discharge it as one package. Instead, each
+hot arithmetic boundary calls an adjacent proof-enabled owner package whose
+executable functions carry `where` clauses and whose `.mbtp` file contains the
+logic predicates.
+
 ## Core invariants
 
 - Offsets are UTF-16 code units, matching browser strings and text nodes.
 - Tokens are ordered, non-empty, and non-overlapping.
 - Scanner cursor arithmetic, token span width, ordered append steps, region
   cursors, line-count arithmetic, analyzer budgets, and dominant evidence
-  checks are proved in colocated `.mbtp` contracts beside the MoonBit source
+  checks are proved in colocated `.mbtp` files beside the MoonBit source
   that owns each invariant.
 - Language and theme add-ons are data without callbacks or DOM access.
 - Declarative language tables compile once into exact-word and codepoint indexes before scanning.
@@ -45,7 +53,7 @@ themes_wire()                                    -> selectable theme metadata
 - Rendering sweeps ordered segments against ordered tokens once and resolves
   symbols through span-keyed indexes, so a surface costs segments plus tokens
   plus symbols rather than segments times tokens. Skipping, stopping, and slice
-  clipping are proved sound in `src/sweep_contract/contract.mbtp`.
+  clipping are proved sound in `src/sweep_proof/proof.mbtp`.
 - Theme changes never reparse source.
 - Unknown and ambiguous blocks are left untouched.
 - A browser pass is capped at 48 surfaces. The MoonBit analyzer also owns a
@@ -96,4 +104,4 @@ This narrower model gives predictable runtime cost and testable conflict rules. 
 - Wasm load or instantiate failure: report a bounded background error, remove the boot marker, and preserve the page.
 - Oversized surface: skip it.
 - Mutation storm: coalesce work through one idle callback.
-- Changed service DOM: repair only discovery and its DOM contract tests.
+- Changed service DOM: repair only discovery and its DOM selector tests.

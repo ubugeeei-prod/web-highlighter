@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { brotliCompressSync } from "node:zlib";
 import { test } from "vite-plus/test";
 
@@ -147,6 +147,34 @@ test("Nix and helper scripts are wired through tools", async () => {
   assert(!workflow.includes('"scripts/deploy-docs-to-void.mjs"'));
   assert((await stat(new URL("../tools/scripts/package.mjs", import.meta.url))).isFile());
   assert((await stat(new URL("../tools/nix/dev-shell.nix", import.meta.url))).isFile());
+});
+
+test("MoonBit proof kernels are owner-named and not contract packages", async () => {
+  const legacyProofSuffix = ["", "contract"].join("_");
+  const legacyProofWbtest = ["proof", "contract"].join("_") + "_wbtest.mbt";
+  const sourceEntries = await readdir(new URL("../src", import.meta.url), {
+    withFileTypes: true,
+  });
+  assert(
+    !sourceEntries.some((entry) => entry.isDirectory() && entry.name.endsWith(legacyProofSuffix)),
+  );
+  assert(sourceEntries.some((entry) => entry.isFile() && entry.name === "proof_wbtest.mbt"));
+  assert(!sourceEntries.some((entry) => entry.isFile() && entry.name === legacyProofWbtest));
+
+  const pkg = await readFile(new URL("../src/moon.pkg", import.meta.url), "utf8");
+  const proveScript = await readFile(
+    new URL("../tools/scripts/moon-prove.sh", import.meta.url),
+    "utf8",
+  );
+  for (const owner of ["cursor", "scanner", "model", "detection", "sweep", "theme"]) {
+    const proofPackage = `src/${owner}_proof`;
+    assert(pkg.includes(`"ubugeeei-prod/web_highlighter/${proofPackage}"`));
+    assert(proveScript.includes(proofPackage));
+    assert((await stat(new URL(`../${proofPackage}/kernel.mbt`, import.meta.url))).isFile());
+    assert((await stat(new URL(`../${proofPackage}/proof.mbtp`, import.meta.url))).isFile());
+  }
+  assert(!pkg.includes(legacyProofSuffix));
+  assert(!proveScript.includes(legacyProofSuffix));
 });
 
 test("the docs deploy path requires explicit Void project configuration in Actions", async () => {

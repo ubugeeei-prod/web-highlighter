@@ -75,9 +75,8 @@ pub struct Analysis {
 /// Large hosted blobs can contain millions of code units or identifiers. The
 /// scanner uses this value object to reject oversized input early and cap every
 /// untrusted output array without consulting the browser host. Its arithmetic
-/// predicate lives beside this model in `src/model_contract/contract.mbtp`,
-/// because the budget is part of the core data contract rather than a browser
-/// convention.
+/// proof kernel lives in the adjacent `src/model_proof` package because the
+/// budget is part of the core data invariant rather than a browser convention.
 pub struct ScannerBudget {
   max_source_units : Int
   max_tokens : Int
@@ -232,7 +231,7 @@ pub fn empty_analysis() -> Analysis {
 ///|
 /// Checks whether a source may be scanned under a budget.
 pub fn source_fits_budget(budget : ScannerBudget, source : String) -> Bool {
-  @model_contract.source_length_is_allowed(
+  @model_proof.source_length_is_allowed(
     source.length(),
     budget.max_source_units,
   )

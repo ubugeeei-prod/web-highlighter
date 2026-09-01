@@ -5,7 +5,7 @@
 /// a blank line. The predicates live beside `sweep_wbtest.mbt`, which mirrors
 /// the browser renderer's segment/token sweep.
 pub predicate segment_slice(start : Int, end_ : Int, length : Int) {
-  @scanner_contract.bounded_span(start, end_, length)
+  @scanner_proof.bounded_span(start, end_, length)
 }
 
 ///|
@@ -110,7 +110,7 @@ pub predicate ordered_pair_with_skipped_right(
   segment_start : Int,
   length : Int,
 ) {
-  @scanner_contract.ordered_pair(
+  @scanner_proof.ordered_pair(
     left_start,
     left_end,
     right_start,
@@ -130,7 +130,7 @@ pub predicate ordered_pair_with_stopping_left(
   segment_end : Int,
   length : Int,
 ) {
-  @scanner_contract.ordered_pair(
+  @scanner_proof.ordered_pair(
     left_start,
     left_end,
     right_start,
@@ -151,7 +151,7 @@ pub predicate covered_clip(
   end_ : Int,
   length : Int,
 ) {
-  @scanner_contract.nonempty_span(token_start, token_end, length) &&
+  @scanner_proof.nonempty_span(token_start, token_end, length) &&
   segment_slice(segment_start, segment_end, length) &&
   covers_segment(token_start, token_end, segment_start, segment_end) &&
   clipped_span(token_start, token_end, segment_start, segment_end, start, end_)
@@ -171,7 +171,7 @@ pub predicate covered_clip_of_nonempty_segment(
   covered_clip(
     token_start, token_end, segment_start, segment_end, start, end_, length,
   ) &&
-  @scanner_contract.nonempty_span(segment_start, segment_end, length)
+  @scanner_proof.nonempty_span(segment_start, segment_end, length)
 }
 
 ///|
@@ -285,7 +285,7 @@ lemma covered_clip_is_bounded(
     end_,
     length,
   ),
-  proof_ensure: @scanner_contract.bounded_span(start, end_, length),
+  proof_ensure: @scanner_proof.bounded_span(start, end_, length),
 } {}
 
 ///|
@@ -308,5 +308,5 @@ lemma covered_clip_is_nonempty(
     end_,
     length,
   ),
-  proof_ensure: @scanner_contract.nonempty_span(start, end_, length),
+  proof_ensure: @scanner_proof.nonempty_span(start, end_, length),
 } {}

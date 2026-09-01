@@ -1,7 +1,7 @@
 ///|
 /// Advances a synthetic cursor to a known limit.
 ///
-/// This proof kernel is colocated with `src/scanner.mbt` because it models the
+/// This proof kernel is the neighbor of `src/scanner.mbt` because it models the
 /// scanner's many "walk until a delimiter, newline, or token boundary" loops.
 /// The body deliberately ignores source contents; the loop invariant proves the
 /// monotonic bounded shape those loops must preserve before they hand a span to
@@ -12,8 +12,9 @@ pub fn walk_to_limit(
   limit : Int,
 ) -> Int where {
   proof_require: bounded_span(start, limit, length),
-  proof_ensure: result =>
-    result == limit && @cursor_contract.bounded_cursor(result, length),
+  proof_ensure: result => {
+    result == limit && @cursor_proof.bounded_cursor(result, length)
+  },
   proof_reasoning: (
     #| The cursor starts at the left edge of a bounded half-open span. Each
     #| iteration advances it by one code unit while the loop guard proves it is
@@ -29,10 +30,11 @@ pub fn walk_to_limit(
   } where {
     proof_invariant: start <= cursor,
     proof_invariant: cursor <= limit,
-    proof_invariant: @cursor_contract.bounded_cursor(cursor, length),
-    proof_invariant: @cursor_contract.bounded_cursor(limit, length),
-    proof_yield: result =>
-      result == limit && @cursor_contract.bounded_cursor(result, length),
+    proof_invariant: @cursor_proof.bounded_cursor(cursor, length),
+    proof_invariant: @cursor_proof.bounded_cursor(limit, length),
+    proof_yield: result => {
+      result == limit && @cursor_proof.bounded_cursor(result, length)
+    },
     proof_reasoning: (
       #| The increment preserves `cursor <= limit` because it only runs under
       #| `cursor < limit`. Since `limit` is already bounded by `length`, the new
@@ -55,7 +57,7 @@ pub fn span_is_bounded(
   proof_reasoning: (
     #| The executable guard and the predicate are intentionally the same
     #| half-open interval formula. Tests use the executable form as a regression
-    #| oracle, while `bounded_span` remains the logic-side name in contracts.
+    #| oracle, while `bounded_span` remains the logic-side proof name.
   ),
 } {
   0 <= start && start <= end_ && end_ <= length
@@ -115,7 +117,7 @@ pub fn cursor_after_ordered_span(
   proof_require: ordered_span_after(cursor, start, end_, length),
   proof_ensure: result => {
     result == end_ &&
-    @cursor_contract.bounded_cursor(result, length) &&
+    @cursor_proof.bounded_cursor(result, length) &&
     cursor < result
   },
   proof_reasoning: (
@@ -159,7 +161,7 @@ pub fn cursor_after_ordered_pair(
   ),
   proof_ensure: result => {
     result == right_end &&
-    @cursor_contract.bounded_cursor(result, length) &&
+    @cursor_proof.bounded_cursor(result, length) &&
     ordered_span_after(left_end, right_start, right_end, length)
   },
   proof_reasoning: (

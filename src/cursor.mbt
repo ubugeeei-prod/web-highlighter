@@ -37,7 +37,7 @@ fn advance_codepoint(source : String, index : Int) -> Int {
   } else {
     1
   }
-  @cursor_contract.advance_utf16_index(source.length(), index, width)
+  @cursor_proof.advance_utf16_index(source.length(), index, width)
 }
 
 ///|

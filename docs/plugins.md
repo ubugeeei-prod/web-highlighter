@@ -2,13 +2,13 @@
 
 Add-ons are declarative MoonBit values compiled into the extension's Wasm engine. They are build-time source dependencies, not remotely loaded code. This preserves Manifest V3 reviewability and guarantees that an add-on cannot execute an arbitrary matcher on untrusted page content.
 
-## Package contract
+## Package Shape
 
 An add-on is a normal MoonBit package that imports `ubugeeei-prod/web_highlighter/src` and exports one `Addon` value. The core package exposes `addon(...)`, `make_language(...)`, `theme(...)`, and the small delimiter/signature helpers. The executable analyzer imports selected packages and lists their values in `configured_addons`; no core source file or generated DSL is edited.
 
 Catalog composition is explicit and deterministic. `addon_languages(...)` and `addon_themes(...)` retain built-ins first, then append contributions in package order. Production builds compile the composed language catalog once with `compile_catalog(...)`; `analyze_catalog_request(...)` remains available for tests and one-off tools.
 
-The bundled `addons/ush` and `addons/paper` packages are the executable contract examples. They import only the public core API, own their declarations and tests, and are selected by the thin analyzer entrypoint. Removing an import and its `configured_addons` entry removes that language or theme without changing the scanner or browser shell.
+The bundled `addons/ush` and `addons/paper` packages are the executable add-on examples. They import only the public core API, own their declarations and tests, and are selected by the thin analyzer entrypoint. Removing an import and its `configured_addons` entry removes that language or theme without changing the scanner or browser shell.
 
 For local development, create `addons/<name>/moon.pkg`, put a `contribution()`
 function beside it, import that package from `cmd/analyzer/moon.pkg`, and add
@@ -16,7 +16,7 @@ the contribution to `configured_addons` in `cmd/analyzer/main.mbt`. Rebuild with
 `nix develop -c vpr ready`. No remote registry or extension-store upload is
 needed for a private language.
 
-## Language contract
+## Language Shape
 
 `language(...)` and its compact convenience constructor `make_language(...)` take every parameter as a labeled argument, so an add-on reads as a table rather than as fifteen positional values. Both accept:
 
@@ -43,9 +43,9 @@ unique syntax weight 3, characteristic APIs weight 2, and common contextual
 fragments weight 1. A common keyword alone must never recolor prose, and a tie
 between two add-ons must leave the block untouched.
 
-## Theme contract
+## Theme Shape
 
-`theme(...)` declares colors for stable semantic roles: foreground, background, selection, keyword, type, constant, string, number, comment, operator, function, variable, property, and punctuation. The `dark` flag is a contrast contract for the rendered code surface, not only popup metadata. If a light add-on theme is explicitly selected on a dark GitHub, Discord, or GitLab code block, the MoonBit resolver preserves the selected theme id but emits the audited dark role palette instead of dark-on-dark colors. Theme selection, fallback, and the popup catalog all come from the composed MoonBit values. The host only installs the resulting CSS variables.
+`theme(...)` declares colors for stable semantic roles: foreground, background, selection, keyword, type, constant, string, number, comment, operator, function, variable, property, and punctuation. The `dark` flag is a contrast invariant for the rendered code surface, not only popup metadata. If a light add-on theme is explicitly selected on a dark GitHub, Discord, or GitLab code block, the MoonBit resolver preserves the selected theme id but emits the audited dark role palette instead of dark-on-dark colors. Theme selection, fallback, and the popup catalog all come from the composed MoonBit values. The host only installs the resulting CSS variables.
 
 ## Quality checklist
 
@@ -60,10 +60,10 @@ between two add-ons must leave the block untouched.
 - Test weak and ambiguous signature evidence when adding a language that shares
   syntax with another package.
 - Run `nix develop -c vpr verify`; this includes `moon prove` for the
-  colocated proof-enabled contract packages and retains the 32 KiB combined
+  owner-colocated proof packages and retains the 32 KiB combined
   Brotli budget.
 
-The add-on contract suite lives in `src/addon_wbtest.mbt`; built-in cases live in `src/catalog_wbtest.mbt`; scanner edge cases live beside the scanner in `src/scanner_wbtest.mbt`.
+The add-on conformance suite lives in `src/addon_wbtest.mbt`; built-in cases live in `src/catalog_wbtest.mbt`; scanner edge cases live beside the scanner in `src/scanner_wbtest.mbt`.
 
 ## Distribution boundary
 

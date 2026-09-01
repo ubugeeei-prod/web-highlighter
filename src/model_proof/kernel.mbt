@@ -1,7 +1,7 @@
 ///|
 /// Decides whether a source length is allowed by an analyzer budget.
 ///
-/// This proof kernel is colocated with `src/model.mbt` because oversize
+/// This proof kernel is the neighbor of `src/model.mbt` because oversize
 /// rejection is part of the core data model, not a host-page convention.
 pub fn source_length_is_allowed(
   length : Int,

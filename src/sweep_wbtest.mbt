@@ -28,19 +28,13 @@ fn swept_token_indexes(
   let mut head = 0
   for segment in segments {
     while head < tokens.length() &&
-          render_span_precedes_segment(
-            tokens[head].span.end_,
-            segment.0,
-          ) {
+          render_span_precedes_segment(tokens[head].span.end_, segment.0) {
       head = head + 1
     }
     let indexes : Array[Int] = []
     let mut index = head
     while index < tokens.length() &&
-          !render_span_follows_segment(
-            tokens[index].span.start,
-            segment.1,
-          ) {
+          !render_span_follows_segment(tokens[index].span.start, segment.1) {
       indexes.push(index)
       index = index + 1
     }

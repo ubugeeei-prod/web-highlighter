@@ -1,10 +1,10 @@
 ///|
 /// Advances a UTF-16 cursor by a checked scalar width.
 ///
-/// This proof kernel is colocated with `src/cursor.mbt` because the scanner's
+/// This proof kernel is the neighbor of `src/cursor.mbt` because the scanner's
 /// safety boundary is the browser's UTF-16 code-unit coordinate system. The hot
 /// path computes `width` from real code units; this helper owns only the
-/// arithmetic contract that the next cursor is bounded and strictly forward.
+/// arithmetic invariant that the next cursor is bounded and strictly forward.
 pub fn advance_utf16_index(
   length : Int,
   index : Int,

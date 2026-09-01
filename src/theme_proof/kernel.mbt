@@ -1,8 +1,8 @@
 ///|
 /// Decides whether raw theme colors are safe for the rendered code surface.
 ///
-/// This proof kernel is colocated with `src/theme.mbt` because the browser host
-/// only supplies a surface polarity; the MoonBit theme resolver owns the
+/// This proof kernel is the neighbor of `src/theme.mbt` because the browser
+/// host only supplies a surface polarity; the MoonBit theme resolver owns the
 /// fail-readable decision before CSS variables are serialized.
 pub fn theme_needs_surface_fallback_flag(
   selected_dark : Int,
@@ -10,11 +10,12 @@ pub fn theme_needs_surface_fallback_flag(
 ) -> Bool where {
   proof_require: surface_flag(selected_dark),
   proof_require: surface_flag(prefers_dark),
-  proof_ensure: result =>
-    result == surface_palette_fallback_needed(selected_dark, prefers_dark),
+  proof_ensure: result => {
+    result == surface_palette_fallback_needed(selected_dark, prefers_dark)
+  },
   proof_reasoning: (
-    #| `Theme.dark` is the polarity contract for its foreground colors. Raw
-    #| colors are safe exactly when that contract equals the actual code
+    #| `Theme.dark` is the polarity invariant for its foreground colors. Raw
+    #| colors are safe exactly when that invariant equals the actual code
     #| surface polarity. Any inequality is therefore the complete fallback
     #| condition.
   ),

@@ -1,7 +1,7 @@
 ///|
 /// Decides whether weighted language evidence is safe to inject.
 ///
-/// This proof kernel is colocated with `src/detection.mbt` because Discord and
+/// This proof kernel is the neighbor of `src/detection.mbt` because Discord and
 /// other chat surfaces often discard language metadata, so this predicate is
 /// the fail-closed boundary between evidence and page mutation.
 pub fn score_is_dominant(

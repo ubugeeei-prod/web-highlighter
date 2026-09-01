@@ -1,10 +1,10 @@
 import {
-  "ubugeeei-prod/web_highlighter/src/cursor_contract",
-  "ubugeeei-prod/web_highlighter/src/detection_contract",
-  "ubugeeei-prod/web_highlighter/src/model_contract",
-  "ubugeeei-prod/web_highlighter/src/scanner_contract",
-  "ubugeeei-prod/web_highlighter/src/sweep_contract",
-  "ubugeeei-prod/web_highlighter/src/theme_contract",
+  "ubugeeei-prod/web_highlighter/src/cursor_proof",
+  "ubugeeei-prod/web_highlighter/src/detection_proof",
+  "ubugeeei-prod/web_highlighter/src/model_proof",
+  "ubugeeei-prod/web_highlighter/src/scanner_proof",
+  "ubugeeei-prod/web_highlighter/src/sweep_proof",
+  "ubugeeei-prod/web_highlighter/src/theme_proof",
 }
 
 supported_targets = "wasm-gc"

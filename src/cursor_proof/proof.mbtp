@@ -52,7 +52,7 @@ pub predicate cursor_advanced(
 }
 
 ///|
-/// Exact advance carries the simpler monotonic cursor contract.
+/// Exact advance carries the simpler monotonic cursor invariant.
 lemma exact_advance_implies_advanced(
   length : Int,
   before : Int,
