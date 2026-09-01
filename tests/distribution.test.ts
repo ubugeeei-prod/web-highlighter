@@ -126,6 +126,21 @@ test("the extension popup stays flat and supports dark mode", async () => {
   assert(popup.includes("sample-strip"));
 });
 
+test("the docs deploy path requires explicit Void project configuration in Actions", async () => {
+  const workflow = await readFile(
+    new URL("../.github/workflows/docs.yml", import.meta.url),
+    "utf8",
+  );
+  const deployScript = await readFile(
+    new URL("../scripts/deploy-docs-to-void.mjs", import.meta.url),
+    "utf8",
+  );
+  assert(workflow.includes("vars.VOID_PROJECT != ''"));
+  assert(deployScript.includes('process.env.GITHUB_ACTIONS === "true"'));
+  assert(deployScript.includes("Skipping Void deploy"));
+  assert(!deployScript.includes('process.env.VOID_PROJECT || "web-highlighter"'));
+});
+
 test("the packaged Wasm-GC engine exports real injected support", async () => {
   const wasm = await readFile(new URL("../dist/chromium/analyzer.wasm", import.meta.url));
   const { instance } = await WebAssembly.instantiate(

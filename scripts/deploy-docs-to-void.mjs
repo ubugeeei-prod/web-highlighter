@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const extraArgs = process.argv.slice(2);
-const defaultProject = process.env.VOID_PROJECT || "web-highlighter";
+const voidProject = process.env.VOID_PROJECT?.trim() || "";
+const defaultProject =
+  voidProject || (process.env.GITHUB_ACTIONS === "true" ? "" : "web-highlighter");
 const docsBase = process.env.WEB_HIGHLIGHTER_DOCS_BASE || "/";
 const docsSiteUrl = process.env.WEB_HIGHLIGHTER_DOCS_SITE_URL || "https://web-highlighter.void.app";
 
@@ -44,9 +46,16 @@ const run = (command, args, options = {}) => {
   }
 };
 
+const hasProjectArg = hasOption(extraArgs, "--project");
+
+if (!hasProjectArg && defaultProject.length === 0) {
+  console.log("Skipping Void deploy: VOID_PROJECT is not configured in GitHub Actions.");
+  process.exit(0);
+}
+
 const voidArgs = ["deploy"];
 
-if (!hasOption(extraArgs, "--project")) {
+if (!hasProjectArg) {
   voidArgs.push("--project", defaultProject);
 }
 
