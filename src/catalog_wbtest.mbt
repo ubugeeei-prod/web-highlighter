@@ -50,7 +50,7 @@ fn assert_builtin_scope(
 ///|
 test "built-in ids and aliases are unique" {
   let catalog = builtin_languages()
-  assert_eq(catalog.length(), 24)
+  assert_eq(catalog.length(), 25)
   for index in 0..<catalog.length() {
     assert_true(catalog[index].aliases.length() > 0)
     assert_true(catalog[index].aliases[0] == catalog[index].id)
@@ -75,7 +75,7 @@ test "built-in catalog source groups are explicit and ordered" {
     catalog.length(),
     requested.length() + curated.length() + notable.length(),
   )
-  assert_eq(requested.length(), 6)
+  assert_eq(requested.length(), 7)
   assert_eq(curated.length(), 10)
   assert_eq(notable.length(), 8)
   assert_eq(catalog[0].id, requested[0].id)
