@@ -149,7 +149,13 @@ export default defineConfig({
         command: "vpr browser:ready",
         cache: false,
       },
-      "docs:build": "vp exec vite build --config docs/vite.config.mjs",
+      "docs:build": {
+        command: [
+          "vp exec vite build --config docs/vite.config.mjs",
+          "node tools/docs/highlight.mjs verify dist/docs",
+        ],
+        cache: false,
+      },
       "docs:dev": {
         command: "vp exec vite --config docs/vite.config.mjs --host 127.0.0.1",
         cache: false,
@@ -195,6 +201,7 @@ export default defineConfig({
         "vpr moon:fuzz",
         "vpr check",
         "vpr actions:lint",
+        "vpr docs:build",
         "vpr release:package",
         "vpr firefox:lint",
         "vpr publish:browser-store:test",

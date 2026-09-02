@@ -139,6 +139,7 @@ test("Nix and helper scripts are wired through tools", async () => {
   assert(flake.includes("./tools/nix/vp.nix"));
   assert(flake.includes("./tools/nix/dev-shell.nix"));
   assert(config.includes("node tools/release/package.mjs"));
+  assert(config.includes("node tools/docs/highlight.mjs verify dist/docs"));
   assert(config.includes("node tools/bench/runtime-budget.mjs"));
   assert(config.includes("node tools/browser/smoke.mjs"));
   assert(config.includes("bash tools/moon/prove.sh"));
@@ -178,7 +179,24 @@ test("Nix and helper scripts are wired through tools", async () => {
   assert(workflow.includes("VOID_PROJECT: ${{ vars.VOID_PROJECT || 'web-highlighter' }}"));
   assert(!workflow.includes('"scripts/deploy-docs-to-void.mjs"'));
   assert((await stat(new URL("../tools/release/package.mjs", import.meta.url))).isFile());
+  assert((await stat(new URL("../tools/docs/highlight.mjs", import.meta.url))).isFile());
   assert((await stat(new URL("../tools/nix/dev-shell.nix", import.meta.url))).isFile());
+});
+
+test("the docs build runs Web Highlighter over unsupported Ox Content languages", async () => {
+  const docsConfig = await readFile(new URL("../docs/vite.config.mjs", import.meta.url), "utf8");
+  const highlighter = await readFile(
+    new URL("../tools/docs/highlight.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert(docsConfig.includes("webHighlighterDocsPlugin({ projectRoot, outDir: docsOutput })"));
+  assert(highlighter.includes('new Set(["moonbit", "ush-shell", "veryl"])'));
+  for (const language of ["moonbit", "ush-shell", "veryl"])
+    assert(highlighter.includes(`language: "${language}"`));
+  assert(highlighter.includes("--octc-syntax-${scope}"));
+  for (const scope of ["function", "keyword", "operator", "type"])
+    assert(highlighter.includes(`${scope}: "#`));
 });
 
 test("MoonBit proof kernels are owner-named and not contract packages", async () => {

@@ -2,6 +2,7 @@ import { cp, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { oxContent, defineTheme, defaultTheme } from "@ox-content/vite-plugin";
 import { defineConfig } from "vite";
+import { webHighlighterDocsPlugin } from "../tools/docs/highlight.mjs";
 
 const docsRoot = import.meta.dirname;
 const projectRoot = resolve(docsRoot, "..");
@@ -339,6 +340,7 @@ export default defineConfig({
         theme: [defaultTheme, editorialTheme, poimandresTheme, docsTheme],
       },
     }),
+    webHighlighterDocsPlugin({ projectRoot, outDir: docsOutput }),
     docsIdentityPlugin(),
   ],
   server: {
