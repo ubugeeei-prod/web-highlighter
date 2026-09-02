@@ -60,6 +60,15 @@ test "custom project extensions are recognized" {
     ).map(fn(item) { item.id }) ==
     Some("veryl"),
   )
+  assert_true(
+    detect_language(
+      languages,
+      "// @flow\ncomponent App() { return <div />; }",
+      "",
+      "src/App.js.flow",
+    ).map(fn(item) { item.id }) ==
+    Some("flow"),
+  )
 }
 
 ///|
@@ -222,6 +231,10 @@ test "compiled and declarative detectors agree across target languages" {
     (
       "mbtv", "<script>let props = defineProps()</script><template><input v-model=\"name\" /></template>",
       "", "App.mbtv",
+    ),
+    (
+      "flow", "// @flow\ncomponent App() { return <div />; }", "javascript",
+      "src/App.js",
     ),
   ]
   for item in cases {

@@ -6,7 +6,7 @@
 
 **Web Highlighter is not a syntax-highlighting library.** It is a browser-side language-support injection layer for GitHub, GitLab, Discord, Slack, ChatGPT, Zenn, Qiita, and other pages that are unlikely to support your private, experimental, composite, or simply overlooked language upstream.
 
-When a service renders an `mbtx`, `mbti`, `mbtp`, `vpkg`, `veryl`, `ush`, `tnix`, or brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
+When a service renders an `mbtx`, `mbti`, `mbtp`, `vpkg`, `veryl`, `ush`, `tnix`, Flow `@flow` JavaScript, or a brand-new language as plain text, the extension detects that code, asks a tiny MoonBit/Wasm-GC engine for semantic spans and same-file symbols, then patches only the existing code nodes. The page stays in control of layout, selection, copying, and line anchors.
 
 The product is deliberately opinionated:
 
@@ -37,6 +37,7 @@ Source lives under `src/builtin_languages*.mbt`: start at
 file that owns the language.
 
 - Idris 2 (`idris`, `idris2`, `.idr`, `.lidr`, `.ipkg`)
+- Flow (`flow`, `flowtype`, `flow-js`, `flow-jsx`, `.js.flow`, and `.js`/`.jsx` sources with `@flow`)
 - MoonBit (`moonbit`, `mbt`, `mbtx`, `mbti`, `mbtp`, `.mbt`, `.mbtx`, `.mbti`, `.mbtp`)
 - [mizchi/vibe-lang](https://github.com/mizchi/vibe-lang) (`vibe`, `vpkg`, `.vibe`, `.vibex`, `.vpkg`)
 - [ubugeeei-prod/tnix](https://github.com/ubugeeei-prod/tnix) (`tnix`, `.tnix`)

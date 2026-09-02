@@ -19,6 +19,7 @@ surfaces and applies the token plan returned by Wasm.
 ## Built-in language targets
 
 - MoonBit: `moonbit`, `mbt`, `mbtx`, `mbti`, `mbtp`
+- Flow: `flow`, `flowtype`, `flow-js`, `flow-jsx`, `@flow` in `.js`/`.jsx`
 - `ubugeeei-prod/ush`
 - `ubugeeei-prod/tnix`
 - `ubugeeei-prod/vapor-moon`

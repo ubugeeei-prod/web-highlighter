@@ -13,6 +13,88 @@ test "Idris package support" {
 }
 
 ///|
+test "Flow support detects explicit aliases and @flow JavaScript sources" {
+  let catalog = compile_catalog(builtin_languages())
+  assert_true(
+    detect_compiled_language(
+      catalog,
+      "component App() { return <div />; }",
+      "flow",
+      "",
+    ).map(fn(item) { item.language.id }) ==
+    Some("flow"),
+  )
+  let js_source = "// @flow strict-local\ncomponent App() { return <div />; }"
+  let js_plan = detect_compiled_plan(
+    catalog,
+    js_source,
+    "javascript",
+    "src/App.js",
+  ).unwrap()
+  assert_eq(js_plan.language.language.id, "flow")
+  assert_eq(js_plan.reason, WeightedEvidence)
+  assert_true(
+    @detection_proof.score_is_dominant(
+      js_plan.score,
+      js_plan.runner_up,
+      inference_threshold(),
+      inference_margin(),
+    ),
+  )
+  let jsx_source = "/* @flow */\nhook useReady(): boolean { return true; }\ncomponent App() { return <span />; }"
+  let jsx_plan = detect_compiled_plan(
+    catalog,
+    jsx_source,
+    "jsx",
+    "src/App.jsx",
+  ).unwrap()
+  assert_eq(jsx_plan.language.language.id, "flow")
+  assert_eq(jsx_plan.reason, WeightedEvidence)
+  assert_true(
+    detect_compiled_language(
+      catalog,
+      "const value = 1;\nexport default value;",
+      "javascript",
+      "src/plain.js",
+    ) is None,
+  )
+}
+
+///|
+test "Flow match component hook renders and JSX syntax" {
+  let source = (
+    #|// @flow strict-local
+    #|import * as React from 'react';
+    #|type Status = 'loading' | 'ready';
+    #|component Menu(children: React.Node) { return <ul>{children}</ul>; }
+    #|component MenuItem(label: string) { return <li className="item">{label}</li>; }
+    #|component Pane(children: renders* MenuItem) renders Menu { return <Menu>{children}</Menu>; }
+    #|hook useSelected(initial: Status): Status { const selected = match (initial) { 'loading' => 'ready', 'ready' => initial, }; return selected; }
+    #|component App(status: Status) { const item = match (status) { 'loading' => <MenuItem label="Loading" />, 'ready' => <MenuItem label="Ready" />, }; return <Pane>{item}</Pane>; }
+  )
+  let language = detect_language(
+    builtin_languages(),
+    source,
+    "javascript",
+    "src/App.js",
+  ).unwrap()
+  assert_eq(language.id, "flow")
+  let result = analyze(language, source)
+  assert_analysis_safe(result, source)
+  assert_true(contains_scoped_token(result, source, "component", Keyword))
+  assert_true(contains_scoped_token(result, source, "hook", Keyword))
+  assert_true(contains_scoped_token(result, source, "renders", Keyword))
+  assert_true(contains_scoped_token(result, source, "match", Keyword))
+  assert_true(contains_scoped_token(result, source, "React", Type))
+  assert_true(contains_scoped_token(result, source, "Node", Type))
+  assert_true(contains_scoped_token(result, source, "string", Type))
+  assert_true(contains_scoped_token(result, source, "li", Type))
+  assert_true(contains_scoped_token(result, source, "className", Property))
+  assert_true(contains_scoped_token(result, source, "MenuItem", Function))
+  assert_true(contains_scoped_token(result, source, "useSelected", Function))
+}
+
+///|
 test "MoonBit mbtx mbti and mbtp support" {
   assert_builtin(
     "moonbit", "mbtx", "tool.mbtx", "///|\npub fn main { println(\"ok\") }",

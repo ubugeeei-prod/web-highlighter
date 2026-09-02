@@ -98,6 +98,7 @@ Research snapshot: 2026-07-16.
 | Language      | Reason for inclusion                                                                        |
 | ------------- | ------------------------------------------------------------------------------------------- |
 | Idris 2       | explicitly requested; absent from GitHub native navigation; inconsistent web bundles        |
+| Flow          | explicitly requested; Flow-only `match`, `component`, `hook`, `renders`, and JSX syntax     |
 | MoonBit files | explicitly requested; young language; executable/interface/proof aliases are often lost     |
 | Vibe          | explicitly requested experimental language with `.vibe` and `.vpkg` sources                 |
 | tNix          | explicitly requested custom typed Nix language                                              |
